@@ -1,0 +1,92 @@
+<!-- backend/app/quotation/templates/quotation_pdf.html -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 2cm; }
+  body { font-family: "Noto Sans", "Arial", sans-serif; font-size: 12px; color: #333; }
+  h1 { text-align: center; font-size: 20px; margin-bottom: 5px; }
+  .shop-info { text-align: center; margin-bottom: 20px; color: #666; }
+  .customer { margin: 15px 0; font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+  th { background: #f0f0f0; padding: 8px; text-align: left; border: 1px solid #ddd; font-size: 11px; }
+  td { padding: 8px; border: 1px solid #ddd; font-size: 11px; }
+  .right { text-align: right; }
+  .summary { margin-top: 20px; }
+  .summary td { border: none; padding: 4px 8px; }
+  .summary .total { font-weight: bold; font-size: 14px; border-top: 2px solid #333; }
+  .footer { margin-top: 30px; font-size: 10px; color: #999; text-align: center; }
+</style>
+</head>
+<body>
+  <h1>{{ shop_name }}</h1>
+  <div class="shop-info">
+    {% if shop_address %}{{ shop_address }}<br>{% endif %}
+    {% if shop_phone %}ĐT: {{ shop_phone }}{% endif %}
+  </div>
+
+  <h2 style="text-align: center;">BÁO GIÁ</h2>
+
+  <div class="customer">
+    <strong>Khách hàng:</strong> {{ customer_name }}
+    {% if customer_phone %} — ĐT: {{ customer_phone }}{% endif %}
+    <br>
+    <strong>Ngày:</strong> {{ date }}
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Tên sản phẩm</th>
+        <th>Tình trạng</th>
+        <th class="right">Giá bán</th>
+        <th>Bảo hành</th>
+        <th>Ghi chú</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ item.name }}</td>
+        <td>{{ item.condition or '' }}</td>
+        <td class="right">{{ "{:,.0f}".format(item.selling_price) }}</td>
+        <td>{{ item.warranty or '' }}</td>
+        <td>{{ item.notes or '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <table class="summary" style="width: 300px; margin-left: auto;">
+    <tr>
+      <td>Tổng cộng:</td>
+      <td class="right"><strong>{{ "{:,.0f}".format(total_amount) }}</strong></td>
+    </tr>
+    {% if total_paid > 0 %}
+    <tr>
+      <td>Đã thanh toán:</td>
+      <td class="right">{{ "{:,.0f}".format(total_paid) }}</td>
+    </tr>
+    {% endif %}
+    {% if total_trade_in > 0 %}
+    <tr>
+      <td>Thu cũ:</td>
+      <td class="right">{{ "{:,.0f}".format(total_trade_in) }}</td>
+    </tr>
+    {% endif %}
+    {% if remaining > 0 %}
+    <tr class="total">
+      <td>Còn lại:</td>
+      <td class="right">{{ "{:,.0f}".format(remaining) }}</td>
+    </tr>
+    {% endif %}
+  </table>
+
+  <div class="footer">
+    Đơn vị tiền: nghìn đồng (x1.000 VNĐ) — {{ shop_name }}
+  </div>
+</body>
+</html>

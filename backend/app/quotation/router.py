@@ -1,5 +1,6 @@
 # backend/app/quotation/router.py
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_role
@@ -140,3 +141,28 @@ def delete_quotation_endpoint(
 ):
     if not delete_quotation(db, quotation_id):
         raise HTTPException(status_code=400, detail="Cannot delete (not found or already confirmed)")
+
+
+@router.get("/quotations/{quotation_id}/pdf")
+def export_pdf_endpoint(
+    quotation_id: int,
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models import Setting
+    from app.quotation.pdf import generate_quotation_pdf
+
+    quotation = get_quotation(db, quotation_id)
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+
+    settings_rows = db.query(Setting).all()
+    settings_dict = {s.key: s.value for s in settings_rows}
+
+    pdf_bytes = generate_quotation_pdf(quotation, settings_dict)
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=bao-gia-{quotation_id}.pdf"},
+    )
