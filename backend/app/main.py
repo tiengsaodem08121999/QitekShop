@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth.router import router as auth_router
 from app.quotation.router import router as quotation_router
+from app.finance.router import router as finance_router
 
 app = FastAPI(title="QitekShop API")
 
@@ -17,6 +18,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(quotation_router)
+app.include_router(finance_router)
 
 
 @app.get("/api/health")
