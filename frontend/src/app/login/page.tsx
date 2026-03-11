@@ -18,8 +18,9 @@ export default function LoginPage() {
     try {
       await login(username, password);
       router.push("/dashboard");
-    } catch {
-      setError("Sai ten dang nhap hoac mat khau");
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err instanceof Error ? err.message : "Sai tên đăng nhập hoặc mật khẩu");
     } finally {
       setLoading(false);
     }
@@ -31,7 +32,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-center mb-6">QitekShop</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ten dang nhap</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tên đăng nhập</label>
             <input
               type="text"
               value={username}
@@ -41,7 +42,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mat khau</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
             <input
               type="password"
               value={password}
@@ -56,7 +57,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? "Dang dang nhap..." : "Dang nhap"}
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
       </div>
