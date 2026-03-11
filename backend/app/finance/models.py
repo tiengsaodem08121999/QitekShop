@@ -1,6 +1,7 @@
 import enum
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Optional
 
 from sqlalchemy import (
     Boolean, Date, DateTime, Enum, ForeignKey, Index, Numeric, String, Text, func,
@@ -24,7 +25,7 @@ class Transaction(Base):
     description: Mapped[str] = mapped_column(String(300))
     type: Mapped[TransactionType] = mapped_column(Enum(TransactionType))
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 0))
-    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

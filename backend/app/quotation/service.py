@@ -1,5 +1,6 @@
 # backend/app/quotation/service.py
 from decimal import Decimal
+from typing import List, Optional, Tuple
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -7,7 +8,7 @@ from app.quotation.models import Customer, Quotation, QuotationItem, QuotationSt
 from app.quotation.schemas import QuotationCreate, QuotationItemCreate, QuotationUpdate
 
 
-def get_customers(db: Session, search: str | None = None, page: int = 1, limit: int = 20):
+def get_customers(db: Session, search: Optional[str] = None, page: int = 1, limit: int = 20):
     query = db.query(Customer)
     if search:
         query = query.filter(Customer.name.ilike(f"%{search}%"))
@@ -16,14 +17,14 @@ def get_customers(db: Session, search: str | None = None, page: int = 1, limit: 
     return items, total
 
 
-def create_customer(db: Session, name: str, phone: str | None = None, notes: str | None = None) -> Customer:
+def create_customer(db: Session, name: str, phone: Optional[str] = None, notes: Optional[str] = None) -> Customer:
     customer = Customer(name=name, phone=phone, notes=notes)
     db.add(customer)
     db.flush()
     return customer
 
 
-def update_customer(db: Session, customer_id: int, **kwargs) -> Customer | None:
+def update_customer(db: Session, customer_id: int, **kwargs) -> Optional[Customer]:
     customer = db.query(Customer).filter(Customer.id == customer_id).first()
     if not customer:
         return None
@@ -34,7 +35,7 @@ def update_customer(db: Session, customer_id: int, **kwargs) -> Customer | None:
     return customer
 
 
-def _compute_totals(items: list[QuotationItem]) -> tuple[Decimal, Decimal]:
+def _compute_totals(items: List[QuotationItem]) -> Tuple[Decimal, Decimal]:
     """Returns (total_amount, total_trade_in)"""
     total_amount = sum(item.selling_price for item in items if not item.is_trade_in)
     total_trade_in = sum(item.purchase_price for item in items if item.is_trade_in)
@@ -68,7 +69,7 @@ def create_quotation(db: Session, data: QuotationCreate, user_id: int) -> Quotat
     return quotation
 
 
-def get_quotation(db: Session, quotation_id: int) -> Quotation | None:
+def get_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
     return (
         db.query(Quotation)
         .options(joinedload(Quotation.customer), joinedload(Quotation.items))
@@ -79,8 +80,8 @@ def get_quotation(db: Session, quotation_id: int) -> Quotation | None:
 
 def list_quotations(
     db: Session,
-    status: QuotationStatus | None = None,
-    search: str | None = None,
+    status: Optional[QuotationStatus] = None,
+    search: Optional[str] = None,
     page: int = 1,
     limit: int = 20,
 ):
@@ -108,7 +109,7 @@ def list_quotations(
     return items, total
 
 
-def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> Quotation | None:
+def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> Optional[Quotation]:
     quotation = get_quotation(db, quotation_id)
     if not quotation or quotation.status == QuotationStatus.confirmed:
         return None
@@ -133,7 +134,7 @@ def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> Q
     return quotation
 
 
-def confirm_quotation(db: Session, quotation_id: int) -> Quotation | None:
+def confirm_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
     quotation = get_quotation(db, quotation_id)
     if not quotation or quotation.status != QuotationStatus.draft:
         return None

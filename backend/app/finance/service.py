@@ -1,5 +1,6 @@
 # backend/app/finance/service.py
 from decimal import Decimal
+from typing import Optional, Tuple
 
 from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
@@ -14,7 +15,7 @@ def _get_initial_balance(db: Session) -> Decimal:
     return Decimal(setting.value) if setting and setting.value else Decimal(0)
 
 
-def _get_month_totals(db: Session, year: int, month: int) -> tuple[Decimal, Decimal]:
+def _get_month_totals(db: Session, year: int, month: int) -> Tuple[Decimal, Decimal]:
     """Returns (total_income, total_expense) for a given month."""
     result = (
         db.query(
@@ -101,7 +102,7 @@ def create_transaction(db: Session, data: TransactionCreate, user_id: int) -> Tr
     return txn
 
 
-def update_transaction(db: Session, txn_id: int, data: TransactionUpdate) -> Transaction | None:
+def update_transaction(db: Session, txn_id: int, data: TransactionUpdate) -> Optional[Transaction]:
     txn = db.query(Transaction).filter(Transaction.id == txn_id, Transaction.is_deleted == False).first()
     if not txn:
         return None

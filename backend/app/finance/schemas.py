@@ -1,6 +1,7 @@
 # backend/app/finance/schemas.py
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -16,15 +17,15 @@ class TransactionCreate(BaseModel):
     description: str
     type: TransactionType
     amount: Decimal
-    notes: str | None = None
+    notes: Optional[str] = None
 
 
 class TransactionUpdate(BaseModel):
-    date: date | None = None
-    description: str | None = None
-    type: TransactionType | None = None
-    amount: Decimal | None = None
-    notes: str | None = None
+    date: Optional[date] = None
+    description: Optional[str] = None
+    type: Optional[TransactionType] = None
+    amount: Optional[Decimal] = None
+    notes: Optional[str] = None
 
 
 class TransactionResponse(DecimalModel):
@@ -33,7 +34,7 @@ class TransactionResponse(DecimalModel):
     description: str
     type: TransactionType
     amount: Decimal
-    notes: str | None
+    notes: Optional[str]
     created_by: int
     created_at: datetime
 

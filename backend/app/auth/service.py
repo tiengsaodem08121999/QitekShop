@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from jose import jwt
 from passlib.context import CryptContext
@@ -10,7 +11,7 @@ from app.config import settings
 pwd_context = CryptContext(schemes=["bcrypt"])
 
 
-def authenticate_user(db: Session, username: str, password: str) -> User | None:
+def authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
     user = db.query(User).filter(User.username == username, User.is_active == True).first()
     if not user or not pwd_context.verify(password, user.password_hash):
         return None

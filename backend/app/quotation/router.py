@@ -1,4 +1,6 @@
 # backend/app/quotation/router.py
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
@@ -36,7 +38,7 @@ router = APIRouter(prefix="/api", tags=["quotation"])
 
 @router.get("/customers", response_model=list[CustomerResponse])
 def list_customers_endpoint(
-    search: str | None = None,
+    search: Optional[str] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     _user: User = Depends(get_current_user),
@@ -75,8 +77,8 @@ def update_customer_endpoint(
 
 @router.get("/quotations")
 def list_quotations_endpoint(
-    status: QuotationStatus | None = None,
-    search: str | None = None,
+    status: Optional[QuotationStatus] = None,
+    search: Optional[str] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     _user: User = Depends(get_current_user),

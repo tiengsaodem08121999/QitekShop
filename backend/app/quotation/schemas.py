@@ -1,6 +1,7 @@
 # backend/app/quotation/schemas.py
 from datetime import date, datetime
 from decimal import Decimal
+from typing import List, Optional
 
 from pydantic import BaseModel, model_validator
 
@@ -11,21 +12,21 @@ from app.quotation.models import QuotationStatus
 
 class CustomerCreate(BaseModel):
     name: str
-    phone: str | None = None
-    notes: str | None = None
+    phone: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class CustomerUpdate(BaseModel):
-    name: str | None = None
-    phone: str | None = None
-    notes: str | None = None
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class CustomerResponse(BaseModel):
     id: int
     name: str
-    phone: str | None
-    notes: str | None
+    phone: Optional[str]
+    notes: Optional[str]
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -41,13 +42,13 @@ class DecimalModel(BaseModel):
 class QuotationItemCreate(DecimalModel):
     is_trade_in: bool = False
     name: str
-    condition: str | None = None
+    condition: Optional[str] = None
     purchase_price: Decimal = 0
     selling_price: Decimal = 0
-    warranty: str | None = None
-    warranty_start: date | None = None
-    delivery_date: date | None = None
-    notes: str | None = None
+    warranty: Optional[str] = None
+    warranty_start: Optional[date] = None
+    delivery_date: Optional[date] = None
+    notes: Optional[str] = None
 
     @model_validator(mode="after")
     def validate_trade_in(self):
@@ -61,13 +62,13 @@ class QuotationItemResponse(DecimalModel):
     id: int
     is_trade_in: bool
     name: str
-    condition: str | None
+    condition: Optional[str]
     purchase_price: Decimal
     selling_price: Decimal
-    warranty: str | None
-    warranty_start: date | None
-    delivery_date: date | None
-    notes: str | None
+    warranty: Optional[str]
+    warranty_start: Optional[date]
+    delivery_date: Optional[date]
+    notes: Optional[str]
 
     model_config = {"from_attributes": True}
 
@@ -75,9 +76,9 @@ class QuotationItemResponse(DecimalModel):
 # --- Quotation ---
 
 class QuotationCreate(BaseModel):
-    customer_id: int | None = None
-    new_customer: CustomerCreate | None = None
-    items: list[QuotationItemCreate] = []
+    customer_id: Optional[int] = None
+    new_customer: Optional[CustomerCreate] = None
+    items: List[QuotationItemCreate] = []
 
     @model_validator(mode="after")
     def require_customer(self):
@@ -87,8 +88,8 @@ class QuotationCreate(BaseModel):
 
 
 class QuotationUpdate(BaseModel):
-    total_paid: Decimal | None = None
-    items: list[QuotationItemCreate] | None = None
+    total_paid: Optional[Decimal] = None
+    items: Optional[List[QuotationItemCreate]] = None
 
 
 class QuotationResponse(DecimalModel):
@@ -101,7 +102,7 @@ class QuotationResponse(DecimalModel):
     remaining: Decimal
     total_purchase: Decimal
     profit: Decimal
-    items: list[QuotationItemResponse]
+    items: List[QuotationItemResponse]
     created_by: int
     created_at: datetime
     updated_at: datetime
