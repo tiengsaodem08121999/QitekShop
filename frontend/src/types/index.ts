@@ -88,6 +88,8 @@ export interface PaginatedResponse<T> {
   limit: number;
 }
 
+export type YearlySummary = MonthlySummary[];
+
 export interface DashboardData {
   quotation_count: number;
   total_income: number;

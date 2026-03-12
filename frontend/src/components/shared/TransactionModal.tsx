@@ -7,7 +7,7 @@ import type { Transaction, TransactionType } from "@/types";
 
 interface Props {
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (txn: Transaction) => void;
   initial?: Transaction;
 }
 
@@ -24,12 +24,13 @@ export default function TransactionModal({ onClose, onSaved, initial }: Props) {
     setSaving(true);
     try {
       const body = { date, description, type, amount: parseNumber(amountDisplay), notes: notes || null };
+      let txn: Transaction;
       if (initial) {
-        await apiFetch(`/api/finance/transactions/${initial.id}`, { method: "PUT", body: JSON.stringify(body) });
+        txn = await apiFetch<Transaction>(`/api/finance/transactions/${initial.id}`, { method: "PUT", body: JSON.stringify(body) });
       } else {
-        await apiFetch("/api/finance/transactions", { method: "POST", body: JSON.stringify(body) });
+        txn = await apiFetch<Transaction>("/api/finance/transactions", { method: "POST", body: JSON.stringify(body) });
       }
-      onSaved();
+      onSaved(txn);
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Lỗi");
     } finally {

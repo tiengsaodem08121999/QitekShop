@@ -13,6 +13,7 @@ from app.finance.schemas import (
 from app.finance.service import (
     create_transaction,
     get_monthly_summary,
+    get_yearly_summary,
     list_transactions,
     soft_delete_transaction,
     update_transaction,
@@ -69,6 +70,15 @@ def delete_transaction_endpoint(
 ):
     if not soft_delete_transaction(db, txn_id):
         raise HTTPException(status_code=404, detail="Transaction not found")
+
+
+@router.get("/yearly-summary", response_model=list[MonthlySummary])
+def yearly_summary_endpoint(
+    year: int = Query(...),
+    _user: User = Depends(require_role(UserRole.admin, UserRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    return get_yearly_summary(db, year)
 
 
 @router.get("/summary", response_model=MonthlySummary)

@@ -79,6 +79,21 @@ def get_monthly_summary(db: Session, year: int, month: int) -> dict:
     }
 
 
+def get_yearly_summary(db: Session, year: int) -> list[dict]:
+    """Return summary for each month that has transactions in the given year."""
+    months_with_data = (
+        db.query(extract("month", Transaction.date))
+        .filter(
+            extract("year", Transaction.date) == year,
+            Transaction.is_deleted == False,
+        )
+        .distinct()
+        .all()
+    )
+    months = sorted([int(row[0]) for row in months_with_data])
+    return [get_monthly_summary(db, year, m) for m in months]
+
+
 def list_transactions(db: Session, year: int, month: int, page: int = 1, limit: int = 50):
     query = (
         db.query(Transaction)
