@@ -23,7 +23,7 @@ export default function QuotationDetailPage() {
 
   async function handleExportPDF() {
     const token = localStorage.getItem("token");
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/quotations/${id}/pdf`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/quotations/${id}/pdf`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const blob = await res.blob();

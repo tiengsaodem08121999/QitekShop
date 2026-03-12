@@ -5,8 +5,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
-    ports:
-      - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -18,46 +16,39 @@ services:
   backend:
     build: ./backend
     restart: unless-stopped
-    ports:
-      - "${BACKEND_PORT:-8000}:8000"
     environment:
       DATABASE_URL: "mysql+pymysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/${MYSQL_DATABASE}"
       SECRET_KEY: ${SECRET_KEY}
     depends_on:
       db:
         condition: service_healthy
-    command: >
-      sh -c "alembic upgrade head && python -m app.seed &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
-    develop:
-      watch:
-        - action: sync
-          path: ./backend/app
-          target: /app/app
-        - action: rebuild
-          path: ./backend/requirements.txt
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      args:
+        NEXT_PUBLIC_API_URL: ""
     restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     depends_on:
       - backend
-    develop:
-      watch:
-        - action: sync
-          path: ./frontend/src
-          target: /app/src
-        - action: sync
-          path: ./frontend/public
-          target: /app/public
-        - action: rebuild
-          path: ./frontend/package.json
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:${APP_PORT:-80}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://nginx:80
+    depends_on:
+      - nginx
 
 volumes:
   mysql_data:
