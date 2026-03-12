@@ -37,80 +37,129 @@ export default function FinancePage() {
     load();
   }
 
-  // Running balance
   const openingBalance = summary?.opening_balance || 0;
   let runningBalance = openingBalance;
 
   return (
     <AppLayout>
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-3">
-          <button onClick={prevMonth} className="border px-3 py-1 rounded hover:bg-gray-50">&lt;</button>
-          <span className="text-lg font-bold">Tháng {String(month).padStart(2, "0")} / {year}</span>
-          <button onClick={nextMonth} className="border px-3 py-1 rounded hover:bg-gray-50">&gt;</button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Tài chính</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Quản lý thu chi hàng tháng</p>
         </div>
         <button onClick={() => { setEditTxn(undefined); setShowModal(true); }}
-          className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
+          className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
           + Thêm giao dịch
         </button>
       </div>
 
-      <div className="grid grid-cols-[2fr_1fr] gap-0">
-        {/* Transactions table */}
-        <div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-4 py-2 text-left font-semibold">Ngày</th>
-                <th className="px-3 py-2 text-left font-semibold">Danh mục</th>
-                <th className="px-3 py-2 font-semibold">Loại</th>
-                <th className="px-3 py-2 text-right font-semibold">Số tiền</th>
-                <th className="px-3 py-2 text-left font-semibold">Ghi chú</th>
-                <th className="px-3 py-2 text-right font-semibold">Số dư</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {txns.map((t) => {
-                runningBalance += t.type === "thu" ? t.amount : -t.amount;
-                return (
-                  <tr key={t.id} className="border-b border-gray-100">
-                    <td className="px-4 py-2">{new Date(t.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</td>
-                    <td className="px-3 py-2">{t.description}</td>
-                    <td className="px-3 py-2 text-center">
-                      <span className={t.type === "thu" ? "text-green-600" : "text-red-600"}>
-                        {t.type === "thu" ? "Thu" : "Chi"}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right">{t.amount.toLocaleString()}</td>
-                    <td className="px-3 py-2 text-gray-500">{t.notes}</td>
-                    <td className="px-3 py-2 text-right">{runningBalance.toLocaleString()}</td>
-                    <td className="px-2 py-2">
-                      <button onClick={() => { setEditTxn(t); setShowModal(true); }} className="text-gray-400 hover:text-blue-600 text-xs mr-1">Edit</button>
-                      <button onClick={() => handleDelete(t.id)} className="text-gray-400 hover:text-red-600 text-xs">Del</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {/* Summary cards */}
+      {summary && (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Tài khoản đầu</p>
+            <p className="text-lg font-bold text-gray-700 mt-1">{summary.opening_balance.toLocaleString()}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-green-200 p-4">
+            <p className="text-xs font-medium text-green-500 uppercase tracking-wide">Tổng thu</p>
+            <p className="text-lg font-bold text-green-600 mt-1">+{summary.total_income.toLocaleString()}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-red-200 p-4">
+            <p className="text-xs font-medium text-red-400 uppercase tracking-wide">Tổng chi</p>
+            <p className="text-lg font-bold text-red-500 mt-1">-{summary.total_expense.toLocaleString()}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Lợi nhuận</p>
+            <p className={`text-lg font-bold mt-1 ${summary.profit >= 0 ? "text-gray-800" : "text-red-500"}`}>{summary.profit.toLocaleString()}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4 col-span-2 lg:col-span-1">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Số dư hiện tại</p>
+            <p className="text-xl font-bold text-gray-700 mt-1">{summary.closing_balance.toLocaleString()}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Month nav + Table */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {/* Month navigation */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+          <div className="flex items-center gap-2">
+            <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-white hover:border-gray-300 transition-colors text-gray-500">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <span className="text-sm font-semibold text-gray-700 min-w-[140px] text-center">
+              Tháng {String(month).padStart(2, "0")} / {year}
+            </span>
+            <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-white hover:border-gray-300 transition-colors text-gray-500">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+          <span className="text-xs text-gray-400">{txns.length} giao dịch</span>
         </div>
 
-        {/* Summary panel */}
-        {summary && (
-          <div className="border-l border-gray-200 p-4">
-            <div className="font-semibold mb-3">Tổng Hợp</div>
-            <table className="w-full text-sm">
-              <tbody>
-                <tr><td className="py-2">Tài khoản đầu</td><td className="py-2 text-right">{summary.opening_balance.toLocaleString()}</td></tr>
-                <tr className="border-t"><td className="py-2 text-green-600">Tổng Thu</td><td className="py-2 text-right text-green-600">{summary.total_income.toLocaleString()}</td></tr>
-                <tr className="border-t"><td className="py-2 text-red-600">Tổng Chi</td><td className="py-2 text-right text-red-600">{summary.total_expense.toLocaleString()}</td></tr>
-                <tr className="border-t-2 border-gray-800"><td className="py-2 font-semibold">Lợi nhuận</td><td className="py-2 text-right font-semibold">{summary.profit.toLocaleString()}</td></tr>
-                <tr className="border-t bg-green-50"><td className="py-2 font-semibold">Tài khoản hiện tại</td><td className="py-2 text-right font-semibold text-green-600">{summary.closing_balance.toLocaleString()}</td></tr>
-              </tbody>
-            </table>
-          </div>
-        )}
+        {/* Table */}
+        <div className="overflow-auto max-h-[calc(100vh-320px)]">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 bg-white z-10">
+            <tr className="border-b border-gray-100">
+              <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Ngày</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Danh mục</th>
+              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Loại</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Số tiền</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Ghi chú</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Số dư</th>
+              <th className="px-4 py-3 w-20"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {txns.map((t) => {
+              runningBalance += t.type === "thu" ? t.amount : -t.amount;
+              return (
+                <tr key={t.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <td className="px-5 py-3 text-gray-500 tabular-nums">
+                    {new Date(t.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-gray-800">{t.description}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      t.type === "thu"
+                        ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-200"
+                        : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200"
+                    }`}>
+                      {t.type === "thu" ? "Thu" : "Chi"}
+                    </span>
+                  </td>
+                  <td className={`px-4 py-3 text-right font-semibold tabular-nums ${t.type === "thu" ? "text-green-600" : "text-red-500"}`}>
+                    {t.type === "thu" ? "+" : "-"}{t.amount.toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-gray-400 max-w-[200px] truncate">{t.notes}</td>
+                  <td className="px-4 py-3 text-right font-medium text-gray-700 tabular-nums">{runningBalance.toLocaleString()}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
+                      <button onClick={() => { setEditTxn(t); setShowModal(true); }}
+                        className="p-1.5 rounded-md hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      </button>
+                      <button onClick={() => handleDelete(t.id)}
+                        className="p-1.5 rounded-md hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {txns.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-5 py-12 text-center text-gray-400">
+                  Chưa có giao dịch nào trong tháng này
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        </div>
       </div>
 
       {showModal && (

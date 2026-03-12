@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { formatNumber, parseNumber } from "@/lib/format";
 import type { Customer, PaginatedResponse, QuotationItem } from "@/types";
 
 interface Props {
@@ -38,7 +39,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
   const [tradeIns, setTradeIns] = useState<QuotationItem[]>(
     initialItems?.filter((i) => i.is_trade_in) || []
   );
-  const [totalPaid, setTotalPaid] = useState(initialPaid || 0);
+  const [totalPaidDisplay, setTotalPaidDisplay] = useState(initialPaid ? formatNumber(initialPaid) : "0");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -80,7 +81,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
       } else {
         await apiFetch(`/api/quotations/${quotationId}`, {
           method: "PUT",
-          body: JSON.stringify({ total_paid: totalPaid, items: allItems }),
+          body: JSON.stringify({ total_paid: parseNumber(totalPaidDisplay), items: allItems }),
         });
         router.push(`/quotations/${quotationId}`);
       }
@@ -157,8 +158,8 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                     <option value="2nd">2nd</option><option value="new">new</option>
                   </select>
                 </td>
-                <td className="px-1 py-1"><input type="number" value={item.purchase_price} onChange={(e) => updateItem(i, "purchase_price", Number(e.target.value))} className="border rounded px-2 py-1 w-20 text-right text-sm" /></td>
-                <td className="px-1 py-1"><input type="number" value={item.selling_price} onChange={(e) => updateItem(i, "selling_price", Number(e.target.value))} className="border rounded px-2 py-1 w-20 text-right text-sm" /></td>
+                <td className="px-1 py-1"><input type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateItem(i, "purchase_price", parseNumber(e.target.value))} className="border rounded px-2 py-1 w-24 text-right text-sm" /></td>
+                <td className="px-1 py-1"><input type="text" inputMode="numeric" value={formatNumber(item.selling_price)} onChange={(e) => updateItem(i, "selling_price", parseNumber(e.target.value))} className="border rounded px-2 py-1 w-24 text-right text-sm" /></td>
                 <td className="px-1 py-1"><input value={item.warranty || ""} onChange={(e) => updateItem(i, "warranty", e.target.value)} className="border rounded px-2 py-1 w-16 text-sm" /></td>
                 <td className="px-1 py-1"><input type="date" value={item.warranty_start || ""} onChange={(e) => updateItem(i, "warranty_start", e.target.value)} className="border rounded px-2 py-1 text-sm" /></td>
                 <td className="px-1 py-1"><input type="date" value={item.delivery_date || ""} onChange={(e) => updateItem(i, "delivery_date", e.target.value)} className="border rounded px-2 py-1 text-sm" /></td>
@@ -184,7 +185,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
               {tradeIns.map((item, i) => (
                 <tr key={i} className="border-b">
                   <td className="px-1 py-1"><input value={item.name} onChange={(e) => updateTradeIn(i, "name", e.target.value)} className="border rounded px-2 py-1 w-full text-sm" /></td>
-                  <td className="px-1 py-1"><input type="number" value={item.purchase_price} onChange={(e) => updateTradeIn(i, "purchase_price", Number(e.target.value))} className="border rounded px-2 py-1 w-28 text-right text-sm" /></td>
+                  <td className="px-1 py-1"><input type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateTradeIn(i, "purchase_price", parseNumber(e.target.value))} className="border rounded px-2 py-1 w-28 text-right text-sm" /></td>
                   <td className="px-1"><button type="button" onClick={() => setTradeIns(tradeIns.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600">x</button></td>
                 </tr>
               ))}
@@ -197,8 +198,8 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
       {mode === "edit" && (
         <div>
           <label className="block text-sm font-medium mb-1">Số tiền đã thanh toán</label>
-          <input type="number" value={totalPaid} onChange={(e) => setTotalPaid(Number(e.target.value))}
-            className="border rounded px-3 py-2 w-48 text-sm" />
+          <input type="text" inputMode="numeric" value={totalPaidDisplay} onChange={(e) => setTotalPaidDisplay(formatNumber(e.target.value))}
+            className="border rounded px-3 py-2 w-48 text-sm text-right" />
         </div>
       )}
 

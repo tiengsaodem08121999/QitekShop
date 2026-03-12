@@ -9,7 +9,6 @@ from app.finance.schemas import (
     MonthlySummary,
     TransactionCreate,
     TransactionResponse,
-    TransactionUpdate,
 )
 from app.finance.service import (
     create_transaction,
@@ -52,7 +51,7 @@ def create_transaction_endpoint(
 @router.put("/transactions/{txn_id}", response_model=TransactionResponse)
 def update_transaction_endpoint(
     txn_id: int,
-    data: TransactionUpdate,
+    data: TransactionCreate,
     _user: User = Depends(require_role(UserRole.admin, UserRole.accountant)),
     db: Session = Depends(get_db),
 ):

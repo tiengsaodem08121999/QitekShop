@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { formatNumber, parseNumber } from "@/lib/format";
 import type { Transaction, TransactionType } from "@/types";
 
 interface Props {
@@ -14,7 +15,7 @@ export default function TransactionModal({ onClose, onSaved, initial }: Props) {
   const [date, setDate] = useState(initial?.date || new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState(initial?.description || "");
   const [type, setType] = useState<TransactionType>(initial?.type || "thu");
-  const [amount, setAmount] = useState(initial?.amount || 0);
+  const [amountDisplay, setAmountDisplay] = useState(initial?.amount ? formatNumber(initial.amount) : "");
   const [notes, setNotes] = useState(initial?.notes || "");
   const [saving, setSaving] = useState(false);
 
@@ -22,7 +23,7 @@ export default function TransactionModal({ onClose, onSaved, initial }: Props) {
     e.preventDefault();
     setSaving(true);
     try {
-      const body = { date, description, type, amount, notes: notes || null };
+      const body = { date, description, type, amount: parseNumber(amountDisplay), notes: notes || null };
       if (initial) {
         await apiFetch(`/api/finance/transactions/${initial.id}`, { method: "PUT", body: JSON.stringify(body) });
       } else {
@@ -59,7 +60,7 @@ export default function TransactionModal({ onClose, onSaved, initial }: Props) {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Số tiền *</label>
-              <input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="border rounded px-3 py-2 w-full text-sm" required min={1} />
+              <input type="text" inputMode="numeric" value={amountDisplay} onChange={(e) => setAmountDisplay(formatNumber(e.target.value))} className="border rounded px-3 py-2 w-full text-sm text-right" required />
             </div>
           </div>
           <div>

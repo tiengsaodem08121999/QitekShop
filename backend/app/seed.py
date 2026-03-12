@@ -1,6 +1,7 @@
 from app.database import SessionLocal
 from app.models import Setting
 from app.auth.models import User, UserRole
+from app.seed_transactions import seed_transactions
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"])
@@ -31,6 +32,8 @@ def seed():
         db.commit()
     finally:
         db.close()
+
+    seed_transactions()
 
 
 if __name__ == "__main__":

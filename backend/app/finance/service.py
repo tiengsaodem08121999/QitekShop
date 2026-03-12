@@ -6,7 +6,7 @@ from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 
 from app.finance.models import Transaction, TransactionType
-from app.finance.schemas import TransactionCreate, TransactionUpdate
+from app.finance.schemas import TransactionCreate
 from app.models import Setting
 
 
@@ -102,7 +102,7 @@ def create_transaction(db: Session, data: TransactionCreate, user_id: int) -> Tr
     return txn
 
 
-def update_transaction(db: Session, txn_id: int, data: TransactionUpdate) -> Optional[Transaction]:
+def update_transaction(db: Session, txn_id: int, data: TransactionCreate) -> Optional[Transaction]:
     txn = db.query(Transaction).filter(Transaction.id == txn_id, Transaction.is_deleted == False).first()
     if not txn:
         return None

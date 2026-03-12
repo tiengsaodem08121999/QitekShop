@@ -25,7 +25,9 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail || `API error: ${res.status}`);
+    const detail = body.detail;
+    const message = typeof detail === "string" ? detail : detail ? JSON.stringify(detail) : `API error: ${res.status}`;
+    throw new Error(message);
   }
 
   if (res.status === 204) return undefined as T;
