@@ -186,7 +186,13 @@ const en = {
     "", "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
   ],
-} as const;
+};
 
-export type Translations = typeof en;
+export type Translations = {
+  [K in keyof typeof en]: (typeof en)[K] extends (...args: infer A) => string
+    ? (...args: A) => string
+    : (typeof en)[K] extends readonly string[]
+      ? readonly string[]
+      : string;
+};
 export default en;
