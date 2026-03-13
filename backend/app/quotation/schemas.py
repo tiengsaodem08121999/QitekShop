@@ -1,11 +1,11 @@
 # backend/app/quotation/schemas.py
-from datetime import date, datetime
+import datetime as _dt
 from decimal import Decimal
 from typing import List, Optional
 
 from pydantic import BaseModel, model_validator
 
-from app.quotation.models import QuotationStatus
+from app.quotation.models import PaymentMethod, QuotationStatus
 
 
 # --- Customer ---
@@ -33,7 +33,7 @@ class CustomerResponse(BaseModel):
     email: Optional[str]
     address: Optional[str]
     notes: Optional[str]
-    created_at: datetime
+    created_at: _dt.datetime
 
     model_config = {"from_attributes": True}
 
@@ -52,8 +52,8 @@ class QuotationItemCreate(DecimalModel):
     purchase_price: Decimal = 0
     selling_price: Decimal = 0
     warranty: Optional[str] = None
-    warranty_start: Optional[date] = None
-    delivery_date: Optional[date] = None
+    warranty_start: Optional[_dt.date] = None
+    delivery_date: Optional[_dt.date] = None
     notes: Optional[str] = None
 
     @model_validator(mode="after")
@@ -72,8 +72,8 @@ class QuotationItemResponse(DecimalModel):
     purchase_price: Decimal
     selling_price: Decimal
     warranty: Optional[str]
-    warranty_start: Optional[date]
-    delivery_date: Optional[date]
+    warranty_start: Optional[_dt.date]
+    delivery_date: Optional[_dt.date]
     notes: Optional[str]
 
     model_config = {"from_attributes": True}
@@ -94,7 +94,6 @@ class QuotationCreate(BaseModel):
 
 
 class QuotationUpdate(BaseModel):
-    total_paid: Optional[Decimal] = None
     items: Optional[List[QuotationItemCreate]] = None
 
 
@@ -109,9 +108,39 @@ class QuotationResponse(DecimalModel):
     total_purchase: Decimal
     profit: Decimal
     items: List[QuotationItemResponse]
+    payments: List["PaymentResponse"] = []
     created_by: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: _dt.datetime
+    updated_at: _dt.datetime
+
+
+# --- Payment ---
+
+class PaymentCreate(BaseModel):
+    amount: Decimal
+    method: PaymentMethod
+    date: Optional[_dt.date] = None
+    note: Optional[str] = None
+
+
+class PaymentUpdate(BaseModel):
+    amount: Optional[Decimal] = None
+    method: Optional[PaymentMethod] = None
+    date: Optional[_dt.date] = None
+    note: Optional[str] = None
+
+
+class PaymentResponse(DecimalModel):
+    id: int
+    quotation_id: int
+    amount: Decimal
+    method: PaymentMethod
+    date: _dt.date
+    note: Optional[str]
+    transaction_id: Optional[int]
+    created_by: int
+    created_at: _dt.datetime
+    updated_at: _dt.datetime
 
 
 class QuotationListItem(DecimalModel):
@@ -123,7 +152,7 @@ class QuotationListItem(DecimalModel):
     total_paid: Decimal
     total_trade_in: Decimal
     remaining: Decimal
-    created_at: datetime
+    created_at: _dt.datetime
 
 
 class PaginatedResponse(BaseModel):

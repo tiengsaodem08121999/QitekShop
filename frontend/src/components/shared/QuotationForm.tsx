@@ -12,7 +12,6 @@ interface Props {
   quotationId?: number;
   initialCustomer?: Customer;
   initialItems?: QuotationItem[];
-  initialPaid?: number;
 }
 
 const EMPTY_ITEM: QuotationItem = {
@@ -27,7 +26,7 @@ const EMPTY_TRADE_IN: QuotationItem = {
   warranty_start: null, delivery_date: null, notes: null,
 };
 
-export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems, initialPaid }: Props) {
+export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems }: Props) {
   const router = useRouter();
   const t = useT();
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -43,7 +42,6 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
   const [tradeIns, setTradeIns] = useState<QuotationItem[]>(
     initialItems?.filter((i) => i.is_trade_in) || []
   );
-  const [totalPaidDisplay, setTotalPaidDisplay] = useState(initialPaid ? formatNumber(initialPaid) : "0");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -102,7 +100,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
       } else {
         await apiFetch(`/api/quotations/${quotationId}`, {
           method: "PUT",
-          body: JSON.stringify({ total_paid: parseNumber(totalPaidDisplay), items: allItems }),
+          body: JSON.stringify({ items: allItems }),
         });
         router.push(`/quotations/${quotationId}`);
       }
@@ -257,14 +255,6 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
           <div className="px-5 py-6 text-center text-gray-400 text-sm">{t.form_no_trade_ins}</div>
         )}
       </div>
-
-      {mode === "edit" && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <label className="block text-sm font-medium text-gray-600 mb-1">{t.form_amount_paid}</label>
-          <input type="text" inputMode="numeric" value={totalPaidDisplay} onChange={(e) => setTotalPaidDisplay(formatNumber(e.target.value))}
-            className="border border-gray-200 rounded-lg px-3 py-2.5 w-48 text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
-        </div>
-      )}
 
       <div className="flex gap-3">
         <button type="submit" disabled={saving}

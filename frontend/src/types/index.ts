@@ -30,6 +30,21 @@ export interface QuotationItem {
   notes: string | null;
 }
 
+export type PaymentMethod = "cash" | "transfer";
+
+export interface Payment {
+  id: number;
+  quotation_id: number;
+  amount: number;
+  method: PaymentMethod;
+  date: string;
+  note: string | null;
+  transaction_id: number | null;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export type QuotationStatus = "draft" | "confirmed";
 
 export interface Quotation {
@@ -43,6 +58,7 @@ export interface Quotation {
   total_purchase: number;
   profit: number;
   items: QuotationItem[];
+  payments: Payment[];
   created_by: number;
   created_at: string;
   updated_at: string;

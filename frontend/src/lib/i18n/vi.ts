@@ -67,6 +67,7 @@ const vi: Translations = {
   quotation_confirm_prompt: "Chốt báo giá này?",
   quotation_delete_prompt: "Xóa báo giá này?",
   quotation_export_pdf: "Xuất PDF",
+  quotation_screenshot: "Chụp màn hình",
   quotation_products: "Sản phẩm",
   quotation_trade_ins: "Thu cũ",
   quotation_summary: "Tổng hợp",
@@ -84,6 +85,22 @@ const vi: Translations = {
   quotation_trade_in: "Thu cũ",
   quotation_remaining: "Còn lại",
   quotation_profit: "Lợi nhuận",
+
+  // Payments
+  payment_history: "Lịch sử thanh toán",
+  payment_add: "Thêm thanh toán",
+  payment_edit: "Sửa thanh toán",
+  payment_delete: "Xóa thanh toán",
+  payment_amount: "Số tiền",
+  payment_method: "Phương thức",
+  payment_method_cash: "Tiền mặt",
+  payment_method_transfer: "Chuyển khoản",
+  payment_note: "Ghi chú",
+  payment_date: "Ngày",
+  payment_confirm_delete: "Xóa thanh toán này?",
+  payment_total: "Tổng đã thanh toán",
+  payment_balance: "Số dư",
+  payment_overpaid_warning: "Thanh toán vượt mức",
 
   // Quotation form
   quotation_new_title: "Tạo báo giá mới",

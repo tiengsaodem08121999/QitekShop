@@ -65,6 +65,7 @@ const en = {
   quotation_confirm_prompt: "Confirm this quotation?",
   quotation_delete_prompt: "Delete this quotation?",
   quotation_export_pdf: "Export PDF",
+  quotation_screenshot: "Screenshot",
   quotation_products: "Products",
   quotation_trade_ins: "Trade-ins",
   quotation_summary: "Summary",
@@ -82,6 +83,22 @@ const en = {
   quotation_trade_in: "Trade-in",
   quotation_remaining: "Remaining",
   quotation_profit: "Profit",
+
+  // Payments
+  payment_history: "Payment history",
+  payment_add: "Add payment",
+  payment_edit: "Edit payment",
+  payment_delete: "Delete payment",
+  payment_amount: "Amount",
+  payment_method: "Method",
+  payment_method_cash: "Cash",
+  payment_method_transfer: "Transfer",
+  payment_note: "Note",
+  payment_date: "Date",
+  payment_confirm_delete: "Delete this payment?",
+  payment_total: "Total paid",
+  payment_balance: "Balance",
+  payment_overpaid_warning: "Overpaid",
 
   // Quotation form
   quotation_new_title: "New quotation",

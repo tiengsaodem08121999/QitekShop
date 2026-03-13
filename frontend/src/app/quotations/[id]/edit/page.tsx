@@ -27,7 +27,6 @@ export default function EditQuotationPage() {
         quotationId={q.id}
         initialCustomer={q.customer}
         initialItems={q.items}
-        initialPaid={q.total_paid}
       />
     </AppLayout>
   );

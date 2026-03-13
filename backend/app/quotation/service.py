@@ -1,11 +1,14 @@
 # backend/app/quotation/service.py
+from datetime import date as date_type
 from decimal import Decimal
 from typing import List, Optional, Tuple
 
+from sqlalchemy import func as sa_func
 from sqlalchemy.orm import Session, joinedload
 
-from app.quotation.models import Customer, Quotation, QuotationItem, QuotationStatus
-from app.quotation.schemas import QuotationCreate, QuotationItemCreate, QuotationUpdate
+from app.finance.models import Transaction, TransactionType
+from app.quotation.models import Customer, Payment, PaymentMethod, Quotation, QuotationItem, QuotationStatus
+from app.quotation.schemas import PaymentCreate, PaymentUpdate, QuotationCreate, QuotationItemCreate, QuotationUpdate
 
 
 def get_customers(db: Session, search: Optional[str] = None, page: int = 1, limit: int = 20):
@@ -42,6 +45,18 @@ def _compute_totals(items: List[QuotationItem]) -> Tuple[Decimal, Decimal]:
     return Decimal(total_amount), Decimal(total_trade_in)
 
 
+def _recalc_total_paid(db: Session, quotation_id: int) -> None:
+    """Recalculate and update the denormalized total_paid on the quotation."""
+    total = (
+        db.query(sa_func.coalesce(sa_func.sum(Payment.amount), 0))
+        .filter(Payment.quotation_id == quotation_id)
+        .scalar()
+    )
+    db.query(Quotation).filter(Quotation.id == quotation_id).update(
+        {"total_paid": total}
+    )
+
+
 def create_quotation(db: Session, data: QuotationCreate, user_id: int) -> Quotation:
     if data.new_customer:
         customer = create_customer(db, **data.new_customer.model_dump())
@@ -72,7 +87,11 @@ def create_quotation(db: Session, data: QuotationCreate, user_id: int) -> Quotat
 def get_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
     return (
         db.query(Quotation)
-        .options(joinedload(Quotation.customer), joinedload(Quotation.items))
+        .options(
+            joinedload(Quotation.customer),
+            joinedload(Quotation.items),
+            joinedload(Quotation.payments),
+        )
         .filter(Quotation.id == quotation_id)
         .first()
     )
@@ -114,9 +133,6 @@ def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> O
     if not quotation or quotation.status == QuotationStatus.confirmed:
         return None
 
-    if data.total_paid is not None:
-        quotation.total_paid = data.total_paid
-
     if data.items is not None:
         # Replace all items
         db.query(QuotationItem).filter(QuotationItem.quotation_id == quotation_id).delete()
@@ -144,18 +160,8 @@ def confirm_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
     return quotation
 
 
-def delete_quotation(db: Session, quotation_id: int) -> bool:
-    quotation = db.query(Quotation).filter(Quotation.id == quotation_id).first()
-    if not quotation or quotation.status != QuotationStatus.draft:
-        return False
-    db.query(QuotationItem).filter(QuotationItem.quotation_id == quotation_id).delete()
-    db.delete(quotation)
-    db.commit()
-    return True
-
-
 def enrich_response(quotation: Quotation) -> dict:
-    """Add computed fields: remaining, total_purchase, profit."""
+    """Add computed fields: remaining, total_purchase, profit, payments."""
     items = quotation.items
     total_purchase = sum(item.purchase_price for item in items if not item.is_trade_in)
     remaining = quotation.total_amount - quotation.total_paid - quotation.total_trade_in
@@ -164,7 +170,132 @@ def enrich_response(quotation: Quotation) -> dict:
         **{c.key: getattr(quotation, c.key) for c in quotation.__table__.columns},
         "customer": quotation.customer,
         "items": quotation.items,
+        "payments": quotation.payments,
         "remaining": remaining,
         "total_purchase": total_purchase,
         "profit": profit,
     }
+
+
+# --- Payments ---
+
+def list_payments(db: Session, quotation_id: int) -> list[Payment]:
+    return (
+        db.query(Payment)
+        .filter(Payment.quotation_id == quotation_id)
+        .order_by(Payment.date.desc(), Payment.id.desc())
+        .all()
+    )
+
+
+def _txn_description(customer_name: str, quotation_id: int) -> str:
+    return f"{customer_name} - Thanh toán báo giá #{quotation_id}"
+
+
+def create_payment(db: Session, quotation_id: int, data: PaymentCreate, user_id: int, customer_name: str = "") -> Payment:
+    payment = Payment(
+        quotation_id=quotation_id,
+        amount=data.amount,
+        method=data.method,
+        date=data.date or date_type.today(),
+        note=data.note,
+        created_by=user_id,
+    )
+    db.add(payment)
+
+    if data.method == PaymentMethod.transfer:
+        txn = Transaction(
+            date=payment.date,
+            description=_txn_description(customer_name, quotation_id),
+            type=TransactionType.thu,
+            amount=data.amount,
+            notes=data.note,
+            created_by=user_id,
+        )
+        db.add(txn)
+        db.flush()
+        payment.transaction_id = txn.id
+
+    db.flush()
+    _recalc_total_paid(db, quotation_id)
+    db.commit()
+    db.refresh(payment)
+    return payment
+
+
+def update_payment(db: Session, payment_id: int, quotation_id: int, data: PaymentUpdate, user_id: int, customer_name: str = "") -> Optional[Payment]:
+    payment = (
+        db.query(Payment)
+        .filter(Payment.id == payment_id, Payment.quotation_id == quotation_id)
+        .first()
+    )
+    if not payment:
+        return None
+
+    old_method = payment.method
+
+    if data.amount is not None:
+        payment.amount = data.amount
+    if data.method is not None:
+        payment.method = data.method
+    if data.date is not None:
+        payment.date = data.date
+    if data.note is not None:
+        payment.note = data.note
+
+    new_method = payment.method
+
+    # Handle finance transaction sync
+    if old_method == PaymentMethod.transfer and new_method == PaymentMethod.cash:
+        if payment.transaction_id:
+            txn = db.query(Transaction).filter(Transaction.id == payment.transaction_id).first()
+            if txn:
+                txn.is_deleted = True
+            payment.transaction_id = None
+
+    elif old_method == PaymentMethod.cash and new_method == PaymentMethod.transfer:
+        txn = Transaction(
+            date=payment.date,
+            description=_txn_description(customer_name, quotation_id),
+            type=TransactionType.thu,
+            amount=payment.amount,
+            notes=payment.note,
+            created_by=user_id,
+        )
+        db.add(txn)
+        db.flush()
+        payment.transaction_id = txn.id
+
+    elif new_method == PaymentMethod.transfer and payment.transaction_id:
+        txn = db.query(Transaction).filter(Transaction.id == payment.transaction_id).first()
+        if txn:
+            txn.amount = payment.amount
+            txn.date = payment.date
+            txn.notes = payment.note
+
+    db.flush()
+    _recalc_total_paid(db, quotation_id)
+    db.commit()
+    db.refresh(payment)
+    return payment
+
+
+def delete_payment(db: Session, payment_id: int, quotation_id: int) -> bool:
+    payment = (
+        db.query(Payment)
+        .filter(Payment.id == payment_id, Payment.quotation_id == quotation_id)
+        .first()
+    )
+    if not payment:
+        return False
+
+    if payment.transaction_id:
+        txn = db.query(Transaction).filter(Transaction.id == payment.transaction_id).first()
+        if txn:
+            txn.is_deleted = True
+
+    db.delete(payment)
+    db.flush()
+    _recalc_total_paid(db, quotation_id)
+    db.commit()
+    return True

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import TransactionModal from "@/components/shared/TransactionModal";
@@ -99,7 +100,15 @@ export default function FinanceMonthPage() {
                 return (
                   <tr key={txn.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-5 py-3 text-gray-500 tabular-nums">{new Date(txn.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{txn.description}</td>
+                    <td className="px-4 py-3 font-medium text-gray-800">
+                      {txn.description.split(/(#\d+)/).map((part, i) => {
+                        const match = part.match(/^#(\d+)$/);
+                        if (match) {
+                          return <Link key={i} href={`/quotations/${match[1]}`} className="text-blue-600 hover:underline">{part}</Link>;
+                        }
+                        return part;
+                      })}
+                    </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${txn.type === "thu" ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-200" : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200"}`}>
                         {txn.type === "thu" ? t.finance_type_income : t.finance_type_expense}

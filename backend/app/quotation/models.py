@@ -51,6 +51,9 @@ class Quotation(Base):
     items: Mapped[List["QuotationItem"]] = relationship(
         back_populates="quotation", cascade="all, delete-orphan"
     )
+    payments: Mapped[List["Payment"]] = relationship(
+        back_populates="quotation", cascade="all, delete-orphan"
+    )
 
 
 class QuotationItem(Base):
@@ -69,3 +72,27 @@ class QuotationItem(Base):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     quotation: Mapped["Quotation"] = relationship(back_populates="items")
+
+
+class PaymentMethod(str, enum.Enum):
+    cash = "cash"
+    transfer = "transfer"
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    quotation_id: Mapped[int] = mapped_column(ForeignKey("quotations.id"))
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 0))
+    method: Mapped[PaymentMethod] = mapped_column(Enum(PaymentMethod))
+    date: Mapped[date] = mapped_column(Date)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    transaction_id: Mapped[Optional[int]] = mapped_column(ForeignKey("transactions.id"), nullable=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+    quotation: Mapped["Quotation"] = relationship(back_populates="payments")

@@ -6,33 +6,24 @@ import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
-import type { PaginatedResponse, QuotationListItem, QuotationStatus } from "@/types";
+import type { PaginatedResponse, QuotationListItem } from "@/types";
 
 export default function QuotationsPage() {
   const router = useRouter();
   const t = useT();
   const [data, setData] = useState<PaginatedResponse<QuotationListItem> | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<QuotationStatus | "">("");
-
-  const STATUS_LABELS: Record<QuotationStatus, { label: string; className: string; dot: string }> = {
-    draft: { label: t.status_draft, className: "bg-amber-50 text-amber-700 border border-amber-200", dot: "bg-amber-400" },
-    confirmed: { label: t.status_confirmed, className: "bg-emerald-50 text-emerald-700 border border-emerald-200", dot: "bg-emerald-400" },
-  };
 
   useEffect(() => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
-    if (statusFilter) params.set("status", statusFilter);
     apiFetch<PaginatedResponse<QuotationListItem>>(`/api/quotations?${params}`).then(setData);
-  }, [search, statusFilter]);
+  }, [search]);
 
   const items = data?.items ?? [];
   const totalAmount = items.reduce((s, q) => s + q.total_amount, 0);
   const totalPaid = items.reduce((s, q) => s + q.total_paid, 0);
   const totalRemaining = items.reduce((s, q) => s + q.remaining, 0);
-  const draftCount = items.filter((q) => q.status === "draft").length;
-  const confirmedCount = items.filter((q) => q.status === "confirmed").length;
 
   return (
     <AppLayout>
@@ -58,10 +49,6 @@ export default function QuotationsPage() {
               <div className="text-xs text-gray-500 uppercase tracking-wide">{t.quotations_total}</div>
               <div className="text-xl font-bold text-gray-800">{items.length}</div>
             </div>
-          </div>
-          <div className="flex gap-3 mt-3 pt-3 border-t border-gray-50">
-            <span className="text-xs text-amber-600">{t.status_draft_count(draftCount)}</span>
-            <span className="text-xs text-emerald-600">{t.status_confirmed_count(confirmedCount)}</span>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
@@ -106,18 +93,11 @@ export default function QuotationsPage() {
             <input placeholder={t.quotations_search} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors" />
           </div>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as QuotationStatus | "")}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors bg-white">
-            <option value="">{t.quotations_all_statuses}</option>
-            <option value="draft">{t.status_draft}</option>
-            <option value="confirmed">{t.status_confirmed}</option>
-          </select>
         </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
               <th className="px-5 py-3 font-medium">{t.quotations_col_customer}</th>
-              <th className="px-4 py-3 font-medium">{t.quotations_col_status}</th>
               <th className="px-4 py-3 font-medium text-right">{t.quotations_col_total}</th>
               <th className="px-4 py-3 font-medium text-right">{t.quotations_col_paid}</th>
               <th className="px-4 py-3 font-medium text-right">{t.quotations_col_outstanding}</th>
@@ -126,24 +106,20 @@ export default function QuotationsPage() {
           </thead>
           <tbody className="divide-y divide-gray-50">
             {items.length === 0 && (
-              <tr><td colSpan={6} className="px-5 py-12 text-center text-gray-400">
+              <tr><td colSpan={5} className="px-5 py-12 text-center text-gray-400">
                 <svg className="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 {t.quotations_empty}
               </td></tr>
             )}
-            {items.map((q) => {
-              const badge = STATUS_LABELS[q.status];
-              return (
-                <tr key={q.id} onClick={() => router.push(`/quotations/${q.id}`)} className="hover:bg-gray-50/70 cursor-pointer transition-colors">
-                  <td className="px-5 py-3.5"><div className="font-medium text-gray-800">{q.customer_name}</div><div className="text-xs text-gray-400 mt-0.5">#{q.id}</div></td>
-                  <td className="px-4 py-3.5"><span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${badge.className}`}><span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}></span>{badge.label}</span></td>
-                  <td className="px-4 py-3.5 text-right font-medium tabular-nums text-gray-700">{q.total_amount.toLocaleString()}</td>
-                  <td className="px-4 py-3.5 text-right tabular-nums text-gray-600">{q.total_paid.toLocaleString()}</td>
-                  <td className={`px-4 py-3.5 text-right font-medium tabular-nums ${q.remaining > 0 ? "text-red-600" : "text-emerald-600"}`}>{q.remaining > 0 ? q.remaining.toLocaleString() : "0"}</td>
-                  <td className="px-4 py-3.5 text-gray-500">{new Date(q.created_at).toLocaleDateString("vi-VN")}</td>
-                </tr>
-              );
-            })}
+            {items.map((q) => (
+              <tr key={q.id} onClick={() => router.push(`/quotations/${q.id}`)} className="hover:bg-gray-50/70 cursor-pointer transition-colors">
+                <td className="px-5 py-3.5"><div className="font-medium text-gray-800">{q.customer_name}</div><div className="text-xs text-gray-400 mt-0.5">#{q.id}</div></td>
+                <td className="px-4 py-3.5 text-right font-medium tabular-nums text-gray-700">{q.total_amount.toLocaleString()}</td>
+                <td className="px-4 py-3.5 text-right tabular-nums text-gray-600">{q.total_paid.toLocaleString()}</td>
+                <td className={`px-4 py-3.5 text-right font-medium tabular-nums ${q.remaining > 0 ? "text-red-600" : "text-emerald-600"}`}>{q.remaining > 0 ? q.remaining.toLocaleString() : "0"}</td>
+                <td className="px-4 py-3.5 text-gray-500">{new Date(q.created_at).toLocaleDateString("vi-VN")}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

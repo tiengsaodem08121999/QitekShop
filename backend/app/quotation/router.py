@@ -13,6 +13,9 @@ from app.quotation.schemas import (
     CustomerCreate,
     CustomerResponse,
     CustomerUpdate,
+    PaymentCreate,
+    PaymentResponse,
+    PaymentUpdate,
     QuotationCreate,
     QuotationListItem,
     QuotationResponse,
@@ -21,13 +24,16 @@ from app.quotation.schemas import (
 from app.quotation.service import (
     confirm_quotation,
     create_customer,
+    create_payment,
     create_quotation,
-    delete_quotation,
+    delete_payment,
     enrich_response,
     get_customers,
     get_quotation,
+    list_payments,
     list_quotations,
     update_customer,
+    update_payment,
     update_quotation,
 )
 
@@ -135,16 +141,6 @@ def confirm_quotation_endpoint(
     return enrich_response(quotation)
 
 
-@router.delete("/quotations/{quotation_id}", status_code=204)
-def delete_quotation_endpoint(
-    quotation_id: int,
-    user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
-    db: Session = Depends(get_db),
-):
-    if not delete_quotation(db, quotation_id):
-        raise HTTPException(status_code=400, detail="Cannot delete (not found or already confirmed)")
-
-
 @router.get("/quotations/{quotation_id}/pdf")
 def export_pdf_endpoint(
     quotation_id: int,
@@ -168,3 +164,55 @@ def export_pdf_endpoint(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=bao-gia-{quotation_id}.pdf"},
     )
+
+
+# --- Payments ---
+
+@router.get("/quotations/{quotation_id}/payments", response_model=list[PaymentResponse])
+def list_payments_endpoint(
+    quotation_id: int,
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return list_payments(db, quotation_id)
+
+
+@router.post("/quotations/{quotation_id}/payments", response_model=PaymentResponse, status_code=201)
+def create_payment_endpoint(
+    quotation_id: int,
+    data: PaymentCreate,
+    user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
+    db: Session = Depends(get_db),
+):
+    quotation = get_quotation(db, quotation_id)
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    return create_payment(db, quotation_id, data, user.id, customer_name=quotation.customer.name)
+
+
+@router.put("/quotations/{quotation_id}/payments/{payment_id}", response_model=PaymentResponse)
+def update_payment_endpoint(
+    quotation_id: int,
+    payment_id: int,
+    data: PaymentUpdate,
+    user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
+    db: Session = Depends(get_db),
+):
+    quotation = get_quotation(db, quotation_id)
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    payment = update_payment(db, payment_id, quotation_id, data, user.id, customer_name=quotation.customer.name)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    return payment
+
+
+@router.delete("/quotations/{quotation_id}/payments/{payment_id}", status_code=204)
+def delete_payment_endpoint(
+    quotation_id: int,
+    payment_id: int,
+    user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
+    db: Session = Depends(get_db),
+):
+    if not delete_payment(db, payment_id, quotation_id):
+        raise HTTPException(status_code=404, detail="Payment not found")
