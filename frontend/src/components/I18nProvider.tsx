@@ -34,8 +34,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   // Expose toggle on window for the language switcher
   useEffect(() => {
-    (window as Record<string, unknown>).__toggleLocale = toggle;
-    (window as Record<string, unknown>).__currentLocale = locale;
+    (window as unknown as Record<string, unknown>).__toggleLocale = toggle;
+    (window as unknown as Record<string, unknown>).__currentLocale = locale;
     window.dispatchEvent(new CustomEvent("localechange", { detail: locale }));
   }, [locale, toggle]);
 
@@ -59,7 +59,7 @@ export function useLocale() {
   }, []);
 
   const toggle = useCallback(() => {
-    const fn = (window as Record<string, unknown>).__toggleLocale as (() => void) | undefined;
+    const fn = (window as unknown as Record<string, unknown>).__toggleLocale as (() => void) | undefined;
     if (fn) fn();
   }, []);
 
