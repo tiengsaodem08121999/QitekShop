@@ -36,7 +36,7 @@ router = APIRouter(prefix="/api", tags=["quotation"])
 
 # --- Customers ---
 
-@router.get("/customers", response_model=list[CustomerResponse])
+@router.get("/customers")
 def list_customers_endpoint(
     search: Optional[str] = None,
     page: int = Query(1, ge=1),
@@ -44,8 +44,8 @@ def list_customers_endpoint(
     _user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    items, _total = get_customers(db, search=search, page=page, limit=limit)
-    return items
+    items, total = get_customers(db, search=search, page=page, limit=limit)
+    return {"items": [CustomerResponse.model_validate(c) for c in items], "total": total, "page": page, "limit": limit}
 
 
 @router.post("/customers", response_model=CustomerResponse, status_code=201)

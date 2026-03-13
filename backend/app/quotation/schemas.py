@@ -13,12 +13,16 @@ from app.quotation.models import QuotationStatus
 class CustomerCreate(BaseModel):
     name: str
     phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
     notes: Optional[str] = None
 
 
 class CustomerUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -26,6 +30,8 @@ class CustomerResponse(BaseModel):
     id: int
     name: str
     phone: Optional[str]
+    email: Optional[str]
+    address: Optional[str]
     notes: Optional[str]
     created_at: datetime
 

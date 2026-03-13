@@ -17,8 +17,8 @@ def get_customers(db: Session, search: Optional[str] = None, page: int = 1, limi
     return items, total
 
 
-def create_customer(db: Session, name: str, phone: Optional[str] = None, notes: Optional[str] = None) -> Customer:
-    customer = Customer(name=name, phone=phone, notes=notes)
+def create_customer(db: Session, name: str, phone: Optional[str] = None, email: Optional[str] = None, address: Optional[str] = None, notes: Optional[str] = None) -> Customer:
+    customer = Customer(name=name, phone=phone, email=email, address=address, notes=notes)
     db.add(customer)
     db.flush()
     return customer

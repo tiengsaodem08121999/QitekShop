@@ -4,22 +4,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { User } from "@/types";
 import { logout } from "@/lib/auth";
-
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: "\u{1F4CA}" },
-  { href: "/quotations", label: "Bao gia", icon: "\u{1F4CB}" },
-  { href: "/finance", label: "Thu chi", icon: "\u{1F4B0}" },
-  { href: "/settings", label: "Cai dat", icon: "\u2699\uFE0F", roles: ["admin"] as string[] },
-];
-
-const ROLE_LABELS: Record<string, string> = {
-  admin: "Admin",
-  sales: "Ban hang",
-  accountant: "Ke toan",
-};
+import { useT } from "@/lib/i18n";
+import { useLocale } from "@/components/I18nProvider";
 
 export default function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
+  const t = useT();
+  const { locale, toggle } = useLocale();
+
+  const NAV_ITEMS = [
+    { href: "/dashboard", label: t.nav_dashboard, icon: "\u{1F4CA}" },
+    { href: "/quotations", label: t.nav_quotations, icon: "\u{1F4CB}" },
+    { href: "/customers", label: t.nav_customers, icon: "\u{1F465}" },
+    { href: "/finance", label: t.nav_finance, icon: "\u{1F4B0}" },
+    { href: "/settings", label: t.nav_settings, icon: "\u2699\uFE0F", roles: ["admin"] as string[] },
+  ];
+
+  const ROLE_LABELS: Record<string, string> = {
+    admin: t.role_admin,
+    sales: t.role_sales,
+    accountant: t.role_accountant,
+  };
 
   return (
     <aside className="w-56 bg-slate-800 text-slate-300 flex flex-col min-h-screen">
@@ -50,12 +55,20 @@ export default function Sidebar({ user }: { user: User }) {
       <div className="border-t border-slate-700 p-4">
         <div className="text-sm text-white">{user.full_name}</div>
         <div className="text-xs text-slate-400">{ROLE_LABELS[user.role]}</div>
-        <button
-          onClick={logout}
-          className="mt-2 text-xs text-slate-400 hover:text-white"
-        >
-          Dang xuat
-        </button>
+        <div className="flex items-center justify-between mt-2">
+          <button
+            onClick={logout}
+            className="text-xs text-slate-400 hover:text-white"
+          >
+            {t.logout}
+          </button>
+          <button
+            onClick={toggle}
+            className="text-xs px-2 py-1 rounded bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white transition-colors"
+          >
+            {locale === "en" ? "VN" : "EN"}
+          </button>
+        </div>
       </div>
     </aside>
   );
