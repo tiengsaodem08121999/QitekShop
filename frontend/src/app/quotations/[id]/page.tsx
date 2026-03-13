@@ -174,7 +174,8 @@ export default function QuotationDetailPage() {
       {/* Products table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
         <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{t.quotation_products}</h3>
+          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider hide-on-screenshot">{t.quotation_products}</h3>
+          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider show-on-screenshot">{q.customer.name}</h3>
         </div>
         <table className="w-full text-sm table-fixed">
           <thead>
@@ -217,9 +218,9 @@ export default function QuotationDetailPage() {
         </table>
       </div>
 
-      {/* Trade-ins — full width */}
+      {/* Trade-ins */}
       {tradeIns.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6 max-w-md">
           <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{t.quotation_trade_ins}</h3>
           </div>

@@ -25,6 +25,14 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.show-on-screenshot {
+  display: none !important;
+}
+
 .screenshot-mode .hide-on-screenshot {
   display: none !important;
+}
+
+.screenshot-mode .show-on-screenshot {
+  display: block !important;
 }

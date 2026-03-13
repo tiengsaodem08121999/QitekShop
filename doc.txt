@@ -8,3 +8,5 @@
 
   # 3. Start everything
   docker compose up -d --build
+  backend: uv run uvicorn app.main:app --reload
+  frontend: npm run dev
