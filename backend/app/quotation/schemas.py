@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, model_validator
 
-from app.quotation.models import PaymentMethod, QuotationStatus
+from app.quotation.models import PaymentMethod, QuotationStatus, ReturnReason
 
 
 # --- Customer ---
@@ -107,8 +107,10 @@ class QuotationResponse(DecimalModel):
     remaining: Decimal
     total_purchase: Decimal
     profit: Decimal
+    total_refund: Decimal
     items: List[QuotationItemResponse]
     payments: List["PaymentResponse"] = []
+    returns: List["ReturnResponse"] = []
     created_by: int
     created_at: _dt.datetime
     updated_at: _dt.datetime
@@ -135,6 +137,42 @@ class PaymentResponse(DecimalModel):
     quotation_id: int
     amount: Decimal
     method: PaymentMethod
+    date: _dt.date
+    note: Optional[str]
+    transaction_id: Optional[int]
+    created_by: int
+    created_at: _dt.datetime
+    updated_at: _dt.datetime
+
+
+# --- Returns ---
+
+class ReturnCreate(BaseModel):
+    item_name: str
+    reason: ReturnReason
+    selling_price: Decimal
+    refund_percent: int = 100
+    date: Optional[_dt.date] = None
+    note: Optional[str] = None
+
+
+class ReturnUpdate(BaseModel):
+    item_name: Optional[str] = None
+    reason: Optional[ReturnReason] = None
+    selling_price: Optional[Decimal] = None
+    refund_percent: Optional[int] = None
+    date: Optional[_dt.date] = None
+    note: Optional[str] = None
+
+
+class ReturnResponse(DecimalModel):
+    id: int
+    quotation_id: int
+    item_name: str
+    reason: ReturnReason
+    selling_price: Decimal
+    refund_percent: int
+    refund_amount: Decimal
     date: _dt.date
     note: Optional[str]
     transaction_id: Optional[int]

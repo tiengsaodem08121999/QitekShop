@@ -55,7 +55,9 @@
       "Bash(cd D:/QitekShop/backend && python -c \"\nfrom app.quotation.schemas import PaymentCreate\np = PaymentCreate\\(amount=100, method='cash', date='2026-03-13', note='test'\\)\nprint\\('Create OK:', p.model_dump\\(\\)\\)\np2 = PaymentCreate\\(amount=100, method='transfer'\\)\nprint\\('Create no date OK:', p2.model_dump\\(\\)\\)\n\" 2>&1)",
       "Bash(cd D:/QitekShop/frontend && npm ls html2canvas 2>&1 | head -5)",
       "Bash(cd D:/QitekShop/frontend && npx next build 2>&1 | tail -10)",
-      "Bash(cd D:/QitekShop/frontend && npm uninstall html2canvas && npm install html2canvas-pro 2>&1 | tail -5)"
+      "Bash(cd D:/QitekShop/frontend && npm uninstall html2canvas && npm install html2canvas-pro 2>&1 | tail -5)",
+      "Bash(cd /d/QitekShop/backend && python -m alembic revision --autogenerate -m \"add_returns_table\")",
+      "Bash(python -m alembic upgrade head)"
     ]
   }
 }

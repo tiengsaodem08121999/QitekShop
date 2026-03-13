@@ -45,6 +45,24 @@ export interface Payment {
   updated_at: string;
 }
 
+export type ReturnReason = "seller_fault" | "customer_fault";
+
+export interface Return {
+  id: number;
+  quotation_id: number;
+  item_name: string;
+  reason: ReturnReason;
+  selling_price: number;
+  refund_percent: number;
+  refund_amount: number;
+  date: string;
+  note: string | null;
+  transaction_id: number | null;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export type QuotationStatus = "draft" | "confirmed";
 
 export interface Quotation {
@@ -56,9 +74,11 @@ export interface Quotation {
   total_trade_in: number;
   remaining: number;
   total_purchase: number;
+  total_refund: number;
   profit: number;
   items: QuotationItem[];
   payments: Payment[];
+  returns: Return[];
   created_by: number;
   created_at: string;
   updated_at: string;

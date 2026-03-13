@@ -20,21 +20,28 @@ from app.quotation.schemas import (
     QuotationListItem,
     QuotationResponse,
     QuotationUpdate,
+    ReturnCreate,
+    ReturnResponse,
+    ReturnUpdate,
 )
 from app.quotation.service import (
     confirm_quotation,
     create_customer,
     create_payment,
     create_quotation,
+    create_return,
     delete_payment,
+    delete_return,
     enrich_response,
     get_customers,
     get_quotation,
     list_payments,
     list_quotations,
+    list_returns,
     update_customer,
     update_payment,
     update_quotation,
+    update_return,
 )
 
 router = APIRouter(prefix="/api", tags=["quotation"])
@@ -216,3 +223,55 @@ def delete_payment_endpoint(
 ):
     if not delete_payment(db, payment_id, quotation_id):
         raise HTTPException(status_code=404, detail="Payment not found")
+
+
+# --- Returns ---
+
+@router.get("/quotations/{quotation_id}/returns", response_model=list[ReturnResponse])
+def list_returns_endpoint(
+    quotation_id: int,
+    _user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return list_returns(db, quotation_id)
+
+
+@router.post("/quotations/{quotation_id}/returns", response_model=ReturnResponse, status_code=201)
+def create_return_endpoint(
+    quotation_id: int,
+    data: ReturnCreate,
+    user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
+    db: Session = Depends(get_db),
+):
+    quotation = get_quotation(db, quotation_id)
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    return create_return(db, quotation_id, data, user.id, customer_name=quotation.customer.name)
+
+
+@router.put("/quotations/{quotation_id}/returns/{return_id}", response_model=ReturnResponse)
+def update_return_endpoint(
+    quotation_id: int,
+    return_id: int,
+    data: ReturnUpdate,
+    user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
+    db: Session = Depends(get_db),
+):
+    quotation = get_quotation(db, quotation_id)
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    ret = update_return(db, return_id, quotation_id, data, user.id, customer_name=quotation.customer.name)
+    if not ret:
+        raise HTTPException(status_code=404, detail="Return not found")
+    return ret
+
+
+@router.delete("/quotations/{quotation_id}/returns/{return_id}", status_code=204)
+def delete_return_endpoint(
+    quotation_id: int,
+    return_id: int,
+    user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
+    db: Session = Depends(get_db),
+):
+    if not delete_return(db, return_id, quotation_id):
+        raise HTTPException(status_code=404, detail="Return not found")

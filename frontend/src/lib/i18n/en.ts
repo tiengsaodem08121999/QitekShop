@@ -100,6 +100,23 @@ const en = {
   payment_balance: "Balance",
   payment_overpaid_warning: "Overpaid",
 
+  // Returns
+  return_history: "Returns",
+  return_add: "Add return",
+  return_edit: "Edit return",
+  return_delete: "Delete return",
+  return_item_name: "Item name",
+  return_reason: "Reason",
+  return_reason_seller: "Shop fault",
+  return_reason_customer: "Customer fault",
+  return_selling_price: "Selling price",
+  return_refund_percent: "Refund %",
+  return_refund_amount: "Refund amount",
+  return_date: "Date",
+  return_note: "Note",
+  return_confirm_delete: "Delete this return?",
+  return_total_refund: "Total refund",
+
   // Quotation form
   quotation_new_title: "New quotation",
   quotation_edit_title: (name: string) => `Edit quotation — ${name}`,

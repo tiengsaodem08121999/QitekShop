@@ -54,6 +54,9 @@ class Quotation(Base):
     payments: Mapped[List["Payment"]] = relationship(
         back_populates="quotation", cascade="all, delete-orphan"
     )
+    returns: Mapped[List["Return"]] = relationship(
+        back_populates="quotation", cascade="all, delete-orphan"
+    )
 
 
 class QuotationItem(Base):
@@ -72,6 +75,11 @@ class QuotationItem(Base):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     quotation: Mapped["Quotation"] = relationship(back_populates="items")
+
+
+class ReturnReason(str, enum.Enum):
+    seller_fault = "seller_fault"
+    customer_fault = "customer_fault"
 
 
 class PaymentMethod(str, enum.Enum):
@@ -96,3 +104,25 @@ class Payment(Base):
     )
 
     quotation: Mapped["Quotation"] = relationship(back_populates="payments")
+
+
+class Return(Base):
+    __tablename__ = "returns"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    quotation_id: Mapped[int] = mapped_column(ForeignKey("quotations.id"))
+    item_name: Mapped[str] = mapped_column(String(200))
+    reason: Mapped[ReturnReason] = mapped_column(Enum(ReturnReason))
+    selling_price: Mapped[Decimal] = mapped_column(Numeric(12, 0))
+    refund_percent: Mapped[int] = mapped_column(default=100)
+    refund_amount: Mapped[Decimal] = mapped_column(Numeric(12, 0))
+    date: Mapped[date] = mapped_column(Date)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    transaction_id: Mapped[Optional[int]] = mapped_column(ForeignKey("transactions.id"), nullable=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+    quotation: Mapped["Quotation"] = relationship(back_populates="returns")

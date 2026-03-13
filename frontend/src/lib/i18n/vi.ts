@@ -102,6 +102,23 @@ const vi: Translations = {
   payment_balance: "Số dư",
   payment_overpaid_warning: "Thanh toán vượt mức",
 
+  // Returns
+  return_history: "Trả hàng",
+  return_add: "Thêm trả hàng",
+  return_edit: "Sửa trả hàng",
+  return_delete: "Xóa trả hàng",
+  return_item_name: "Tên sản phẩm",
+  return_reason: "Lý do",
+  return_reason_seller: "Lỗi cửa hàng",
+  return_reason_customer: "Lỗi khách",
+  return_selling_price: "Giá bán",
+  return_refund_percent: "% Hoàn",
+  return_refund_amount: "Tiền hoàn",
+  return_date: "Ngày",
+  return_note: "Ghi chú",
+  return_confirm_delete: "Xóa trả hàng này?",
+  return_total_refund: "Tổng hoàn",
+
   // Quotation form
   quotation_new_title: "Tạo báo giá mới",
   quotation_edit_title: (name: string) => `Sửa báo giá — ${name}`,

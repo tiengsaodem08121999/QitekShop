@@ -6,7 +6,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
 import { formatNumber, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
-import type { Payment, PaymentMethod, Quotation } from "@/types";
+import type { Payment, PaymentMethod, Quotation, Return, ReturnReason } from "@/types";
 
 export default function QuotationDetailPage() {
   const { id } = useParams();
@@ -20,6 +20,16 @@ export default function QuotationDetailPage() {
   const [paymentForm, setPaymentForm] = useState({
     amount: "",
     method: "cash" as PaymentMethod,
+    date: new Date().toISOString().split("T")[0],
+    note: "",
+  });
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [editingReturn, setEditingReturn] = useState<Return | null>(null);
+  const [returnForm, setReturnForm] = useState({
+    item_name: "",
+    reason: "seller_fault" as ReturnReason,
+    selling_price: "",
+    refund_percent: "100",
     date: new Date().toISOString().split("T")[0],
     note: "",
   });
@@ -109,6 +119,51 @@ export default function QuotationDetailPage() {
   async function handleDeletePayment(paymentId: number) {
     if (!window.confirm(t.payment_confirm_delete)) return;
     await apiFetch(`/api/quotations/${id}/payments/${paymentId}`, { method: "DELETE" });
+    const updated = await apiFetch<Quotation>(`/api/quotations/${id}`);
+    setQ(updated);
+  }
+
+  function openAddReturn() {
+    setEditingReturn(null);
+    setReturnForm({ item_name: "", reason: "seller_fault", selling_price: "", refund_percent: "100", date: new Date().toISOString().split("T")[0], note: "" });
+    setShowReturnModal(true);
+  }
+
+  function openEditReturn(r: Return) {
+    setEditingReturn(r);
+    setReturnForm({
+      item_name: r.item_name,
+      reason: r.reason,
+      selling_price: formatNumber(r.selling_price),
+      refund_percent: String(r.refund_percent),
+      date: r.date,
+      note: r.note || "",
+    });
+    setShowReturnModal(true);
+  }
+
+  async function handleReturnSubmit() {
+    const body = {
+      item_name: returnForm.item_name,
+      reason: returnForm.reason,
+      selling_price: parseNumber(returnForm.selling_price),
+      refund_percent: parseInt(returnForm.refund_percent) || 0,
+      date: returnForm.date,
+      note: returnForm.note || null,
+    };
+    if (editingReturn) {
+      await apiFetch(`/api/quotations/${id}/returns/${editingReturn.id}`, { method: "PUT", body: JSON.stringify(body) });
+    } else {
+      await apiFetch(`/api/quotations/${id}/returns`, { method: "POST", body: JSON.stringify(body) });
+    }
+    setShowReturnModal(false);
+    const updated = await apiFetch<Quotation>(`/api/quotations/${id}`);
+    setQ(updated);
+  }
+
+  async function handleDeleteReturn(returnId: number) {
+    if (!window.confirm(t.return_confirm_delete)) return;
+    await apiFetch(`/api/quotations/${id}/returns/${returnId}`, { method: "DELETE" });
     const updated = await apiFetch<Quotation>(`/api/quotations/${id}`);
     setQ(updated);
   }
@@ -241,6 +296,77 @@ export default function QuotationDetailPage() {
         </div>
       )}
 
+      {/* Returns */}
+      {q.returns.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+          <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{t.return_history}</h3>
+            <button onClick={openAddReturn}
+              className="inline-flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-orange-700 transition-colors shadow-sm">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              {t.return_add}
+            </button>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.return_item_name}</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.return_reason}</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.return_selling_price}</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.return_refund_percent}</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.return_refund_amount}</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.return_date}</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {q.returns.map((r) => (
+                <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-4 py-2.5 font-medium text-gray-800">{r.item_name}</td>
+                  <td className="px-4 py-2.5">
+                    <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
+                      r.reason === "seller_fault" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
+                    }`}>
+                      {r.reason === "seller_fault" ? t.return_reason_seller : t.return_reason_customer}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">{r.selling_price.toLocaleString()}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">{r.refund_percent}%</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums font-medium text-orange-600">{r.refund_amount.toLocaleString()}</td>
+                  <td className="px-4 py-2.5 text-gray-500">{new Date(r.date).toLocaleDateString("vi-VN")}</td>
+                  <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                    <button onClick={() => openEditReturn(r)} className="text-gray-400 hover:text-blue-600 mr-2" title={t.return_edit}>
+                      <svg className="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                    <button onClick={() => handleDeleteReturn(r.id)} className="text-gray-400 hover:text-red-600" title={t.return_delete}>
+                      <svg className="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-gray-50/80 border-t border-gray-100">
+                <td colSpan={4} className="px-4 py-2.5 font-semibold text-gray-700">{t.return_total_refund}</td>
+                <td className="px-4 py-2.5 text-right font-bold tabular-nums text-orange-600">{q.total_refund.toLocaleString()}</td>
+                <td colSpan={2}></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+
+      {/* Add return button when no returns yet */}
+      {q.returns.length === 0 && (
+        <div className="mb-6">
+          <button onClick={openAddReturn}
+            className="inline-flex items-center gap-1.5 border border-dashed border-gray-300 px-3.5 py-2 rounded-lg text-sm text-gray-500 hover:text-orange-600 hover:border-orange-300 transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            {t.return_add}
+          </button>
+        </div>
+      )}
+
       {/* Payment History + Summary — side by side */}
       <div className="grid grid-cols-2 gap-6">
         {/* Payment History */}
@@ -336,6 +462,12 @@ export default function QuotationDetailPage() {
                   <td className="px-5 py-3 text-right tabular-nums text-gray-700">{q.total_trade_in.toLocaleString()}</td>
                 </tr>
               )}
+              {q.total_refund > 0 && (
+                <tr className="border-b border-gray-50">
+                  <td className="px-5 py-3 text-gray-600">{t.return_total_refund}</td>
+                  <td className="px-5 py-3 text-right tabular-nums text-orange-600">{q.total_refund.toLocaleString()}</td>
+                </tr>
+              )}
               <tr className="border-b border-gray-50 bg-red-50/50">
                 <td className="px-5 py-3.5 font-semibold text-gray-800">{t.quotation_remaining}</td>
                 <td className={`px-5 py-3.5 text-right font-bold tabular-nums text-lg ${q.remaining > 0 ? "text-red-600" : "text-emerald-600"}`}>{q.remaining.toLocaleString()}</td>
@@ -402,6 +534,77 @@ export default function QuotationDetailPage() {
                 className="border border-gray-200 px-3.5 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors">{t.cancel}</button>
               <button onClick={handlePaymentSubmit}
                 className="bg-blue-600 text-white px-3.5 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors shadow-sm">{t.save}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Return Modal */}
+      {showReturnModal && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowReturnModal(false)}>
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold mb-4">{editingReturn ? t.return_edit : t.return_add}</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">{t.return_item_name} *</label>
+                <input type="text" value={returnForm.item_name}
+                  onChange={(e) => setReturnForm({ ...returnForm, item_name: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">{t.return_reason} *</label>
+                <select value={returnForm.reason}
+                  onChange={(e) => {
+                    const reason = e.target.value as ReturnReason;
+                    setReturnForm({ ...returnForm, reason, refund_percent: reason === "seller_fault" ? "100" : returnForm.refund_percent });
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                  <option value="seller_fault">{t.return_reason_seller}</option>
+                  <option value="customer_fault">{t.return_reason_customer}</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">{t.return_selling_price} *</label>
+                  <input type="text" inputMode="numeric" value={returnForm.selling_price}
+                    onChange={(e) => setReturnForm({ ...returnForm, selling_price: formatNumber(e.target.value) })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">{t.return_refund_percent}</label>
+                  <div className="relative">
+                    <input type="number" min="0" max="100" value={returnForm.refund_percent}
+                      onChange={(e) => setReturnForm({ ...returnForm, refund_percent: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+                  </div>
+                </div>
+              </div>
+              {parseNumber(returnForm.selling_price) > 0 && (
+                <div className="bg-orange-50 rounded-lg px-3 py-2 text-sm">
+                  <span className="text-gray-600">{t.return_refund_amount}: </span>
+                  <span className="font-bold text-orange-600">
+                    {Math.round(parseNumber(returnForm.selling_price) * (parseInt(returnForm.refund_percent) || 0) / 100).toLocaleString()}
+                  </span>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">{t.return_date}</label>
+                <input type="date" value={returnForm.date}
+                  onChange={(e) => setReturnForm({ ...returnForm, date: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">{t.return_note}</label>
+                <input type="text" value={returnForm.note}
+                  onChange={(e) => setReturnForm({ ...returnForm, note: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => setShowReturnModal(false)}
+                className="border border-gray-200 px-3.5 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors">{t.cancel}</button>
+              <button onClick={handleReturnSubmit}
+                className="bg-orange-600 text-white px-3.5 py-2 rounded-lg text-sm hover:bg-orange-700 transition-colors shadow-sm">{t.save}</button>
             </div>
           </div>
         </div>

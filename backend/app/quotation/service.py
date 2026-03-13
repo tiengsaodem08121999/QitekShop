@@ -7,8 +7,8 @@ from sqlalchemy import func as sa_func
 from sqlalchemy.orm import Session, joinedload
 
 from app.finance.models import Transaction, TransactionType
-from app.quotation.models import Customer, Payment, PaymentMethod, Quotation, QuotationItem, QuotationStatus
-from app.quotation.schemas import PaymentCreate, PaymentUpdate, QuotationCreate, QuotationItemCreate, QuotationUpdate
+from app.quotation.models import Customer, Payment, PaymentMethod, Quotation, QuotationItem, QuotationStatus, Return, ReturnReason
+from app.quotation.schemas import PaymentCreate, PaymentUpdate, ReturnCreate, ReturnUpdate, QuotationCreate, QuotationItemCreate, QuotationUpdate
 
 
 def get_customers(db: Session, search: Optional[str] = None, page: int = 1, limit: int = 20):
@@ -91,6 +91,7 @@ def get_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
             joinedload(Quotation.customer),
             joinedload(Quotation.items),
             joinedload(Quotation.payments),
+            joinedload(Quotation.returns),
         )
         .filter(Quotation.id == quotation_id)
         .first()
@@ -110,10 +111,17 @@ def list_quotations(
     if search:
         query = query.filter(Customer.name.ilike(f"%{search}%"))
     total = query.count()
-    rows = query.order_by(Quotation.created_at.desc()).offset((page - 1) * limit).limit(limit).all()
+    rows = (
+        query.options(joinedload(Quotation.returns))
+        .order_by(Quotation.created_at.desc())
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all()
+    )
     # Build list items with computed remaining
     items = []
     for q in rows:
+        total_refund = sum(r.refund_amount for r in q.returns)
         items.append({
             "id": q.id,
             "customer_name": q.customer.name,
@@ -122,7 +130,7 @@ def list_quotations(
             "total_amount": q.total_amount,
             "total_paid": q.total_paid,
             "total_trade_in": q.total_trade_in,
-            "remaining": q.total_amount - q.total_paid - q.total_trade_in,
+            "remaining": q.total_amount - q.total_paid - q.total_trade_in - total_refund,
             "created_at": q.created_at,
         })
     return items, total
@@ -161,17 +169,20 @@ def confirm_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
 
 
 def enrich_response(quotation: Quotation) -> dict:
-    """Add computed fields: remaining, total_purchase, profit, payments."""
+    """Add computed fields: remaining, total_purchase, profit, payments, returns."""
     items = quotation.items
     total_purchase = sum(item.purchase_price for item in items if not item.is_trade_in)
-    remaining = quotation.total_amount - quotation.total_paid - quotation.total_trade_in
+    total_refund = sum(r.refund_amount for r in quotation.returns)
+    remaining = quotation.total_amount - quotation.total_paid - quotation.total_trade_in - total_refund
     profit = quotation.total_amount - total_purchase
     return {
         **{c.key: getattr(quotation, c.key) for c in quotation.__table__.columns},
         "customer": quotation.customer,
         "items": quotation.items,
         "payments": quotation.payments,
+        "returns": quotation.returns,
         "remaining": remaining,
+        "total_refund": total_refund,
         "total_purchase": total_purchase,
         "profit": profit,
     }
@@ -280,6 +291,10 @@ def update_payment(db: Session, payment_id: int, quotation_id: int, data: Paymen
     return payment
 
 
+def _refund_txn_description(customer_name: str, quotation_id: int) -> str:
+    return f"{customer_name} - Hoàn tiền báo giá #{quotation_id}"
+
+
 def delete_payment(db: Session, payment_id: int, quotation_id: int) -> bool:
     payment = (
         db.query(Payment)
@@ -297,5 +312,128 @@ def delete_payment(db: Session, payment_id: int, quotation_id: int) -> bool:
     db.delete(payment)
     db.flush()
     _recalc_total_paid(db, quotation_id)
+    db.commit()
+    return True
+
+
+# --- Returns ---
+
+def _calc_refund_amount(selling_price: Decimal, refund_percent: int) -> Decimal:
+    return Decimal(int(selling_price * refund_percent / 100))
+
+
+def list_returns(db: Session, quotation_id: int) -> list[Return]:
+    return (
+        db.query(Return)
+        .filter(Return.quotation_id == quotation_id)
+        .order_by(Return.date.desc(), Return.id.desc())
+        .all()
+    )
+
+
+def create_return(db: Session, quotation_id: int, data: ReturnCreate, user_id: int, customer_name: str = "") -> Return:
+    refund_amount = _calc_refund_amount(data.selling_price, data.refund_percent)
+    ret = Return(
+        quotation_id=quotation_id,
+        item_name=data.item_name,
+        reason=data.reason,
+        selling_price=data.selling_price,
+        refund_percent=data.refund_percent,
+        refund_amount=refund_amount,
+        date=data.date or date_type.today(),
+        note=data.note,
+        created_by=user_id,
+    )
+    db.add(ret)
+
+    # Create "chi" transaction for refund if amount > 0
+    if refund_amount > 0:
+        txn = Transaction(
+            date=ret.date,
+            description=_refund_txn_description(customer_name, quotation_id),
+            type=TransactionType.chi,
+            amount=refund_amount,
+            notes=data.note,
+            created_by=user_id,
+        )
+        db.add(txn)
+        db.flush()
+        ret.transaction_id = txn.id
+
+    db.flush()
+    db.commit()
+    db.refresh(ret)
+    return ret
+
+
+def update_return(db: Session, return_id: int, quotation_id: int, data: ReturnUpdate, user_id: int, customer_name: str = "") -> Optional[Return]:
+    ret = (
+        db.query(Return)
+        .filter(Return.id == return_id, Return.quotation_id == quotation_id)
+        .first()
+    )
+    if not ret:
+        return None
+
+    if data.item_name is not None:
+        ret.item_name = data.item_name
+    if data.reason is not None:
+        ret.reason = data.reason
+    if data.selling_price is not None:
+        ret.selling_price = data.selling_price
+    if data.refund_percent is not None:
+        ret.refund_percent = data.refund_percent
+    if data.date is not None:
+        ret.date = data.date
+    if data.note is not None:
+        ret.note = data.note
+
+    ret.refund_amount = _calc_refund_amount(ret.selling_price, ret.refund_percent)
+
+    # Sync finance transaction
+    if ret.transaction_id:
+        txn = db.query(Transaction).filter(Transaction.id == ret.transaction_id).first()
+        if txn:
+            if ret.refund_amount > 0:
+                txn.amount = ret.refund_amount
+                txn.date = ret.date
+                txn.notes = ret.note
+            else:
+                txn.is_deleted = True
+                ret.transaction_id = None
+    elif ret.refund_amount > 0:
+        txn = Transaction(
+            date=ret.date,
+            description=_refund_txn_description(customer_name, quotation_id),
+            type=TransactionType.chi,
+            amount=ret.refund_amount,
+            notes=ret.note,
+            created_by=user_id,
+        )
+        db.add(txn)
+        db.flush()
+        ret.transaction_id = txn.id
+
+    db.flush()
+    db.commit()
+    db.refresh(ret)
+    return ret
+
+
+def delete_return(db: Session, return_id: int, quotation_id: int) -> bool:
+    ret = (
+        db.query(Return)
+        .filter(Return.id == return_id, Return.quotation_id == quotation_id)
+        .first()
+    )
+    if not ret:
+        return False
+
+    if ret.transaction_id:
+        txn = db.query(Transaction).filter(Transaction.id == ret.transaction_id).first()
+        if txn:
+            txn.is_deleted = True
+
+    db.delete(ret)
     db.commit()
     return True
