@@ -45,10 +45,8 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (mode === "create") {
-      apiFetch<PaginatedResponse<Customer>>("/api/customers?limit=100").then((r) => setCustomers(r.items));
-    }
-  }, [mode]);
+    apiFetch<PaginatedResponse<Customer>>("/api/customers?limit=100").then((r) => setCustomers(r.items));
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -69,6 +67,25 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
 
   function updateItem(index: number, field: string, value: string | number) {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
+  }
+
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  function handleTabDown(e: React.KeyboardEvent<HTMLInputElement>, col: string, row: number) {
+    if (e.key === "Tab" && !e.shiftKey) {
+      const next = tableRef.current?.querySelector<HTMLInputElement>(`[data-col="${col}"][data-row="${row + 1}"]`);
+      if (next) {
+        e.preventDefault();
+        next.focus();
+        next.select();
+      }
+    }
+  }
+
+  function copyDown(field: "warranty" | "warranty_start") {
+    const firstValue = items[0]?.[field];
+    if (!firstValue) return;
+    setItems((prev) => prev.map((item, i) => i === 0 ? item : { ...item, [field]: firstValue }));
   }
 
   function updateTradeIn(index: number, field: string, value: string | number) {
@@ -98,9 +115,15 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
         });
         router.push(`/quotations/${res.id}`);
       } else {
+        const payload: Record<string, unknown> = { items: allItems };
+        if (selectedCustomer && selectedCustomer.id !== initialCustomer?.id) {
+          payload.customer_id = selectedCustomer.id;
+        } else {
+          payload.customer_name = customerName || customerSearch;
+        }
         await apiFetch(`/api/quotations/${quotationId}`, {
           method: "PUT",
-          body: JSON.stringify({ items: allItems }),
+          body: JSON.stringify(payload),
         });
         router.push(`/quotations/${quotationId}`);
       }
@@ -113,8 +136,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {mode === "create" && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">{t.form_customer}</h3>
           <div className="relative mb-4" ref={dropdownRef}>
             <label className="block text-sm font-medium text-gray-600 mb-1">{t.form_customer_required}</label>
@@ -158,7 +180,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
             )}
           </div>
 
-          {(selectedCustomer || customerSearch.trim()) && (
+          {mode === "create" && (selectedCustomer || customerSearch.trim()) && (
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">{t.form_phone}</label>
@@ -180,7 +202,6 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
             </div>
           )}
         </div>
-      )}
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="flex justify-between items-center px-5 py-3 border-b border-gray-100 bg-gray-50/50">
@@ -192,15 +213,29 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
           </button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm table-fixed">
+          <table ref={tableRef} className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="w-[24%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_name}</th>
                 <th className="w-[7%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_cond}</th>
                 <th className="w-[13%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_cost}</th>
                 <th className="w-[13%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_price}</th>
-                <th className="w-[7%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_warranty}</th>
-                <th className="w-[14%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_warranty_date}</th>
+                <th className="w-[7%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center gap-1">
+                    {t.form_col_warranty}
+                    <button type="button" onClick={() => copyDown("warranty")} title="Copy dòng 1 xuống" className="p-0.5 rounded hover:bg-blue-50 text-gray-300 hover:text-blue-500 transition-colors">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+                    </button>
+                  </div>
+                </th>
+                <th className="w-[14%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center gap-1">
+                    {t.form_col_warranty_date}
+                    <button type="button" onClick={() => copyDown("warranty_start")} title="Copy dòng 1 xuống" className="p-0.5 rounded hover:bg-blue-50 text-gray-300 hover:text-blue-500 transition-colors">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+                    </button>
+                  </div>
+                </th>
                 <th className="w-[14%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_notes}</th>
                 <th className="w-[3%]"></th>
               </tr>
@@ -208,10 +243,10 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
             <tbody className="divide-y divide-gray-50">
               {items.map((item, i) => (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-2 py-2"><input value={item.name} onChange={(e) => updateItem(i, "name", e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" required /></td>
+                  <td className="px-2 py-2"><input data-col="name" data-row={i} value={item.name} onChange={(e) => updateItem(i, "name", e.target.value)} onKeyDown={(e) => handleTabDown(e, "name", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" required /></td>
                   <td className="px-2 py-2"><select value={item.condition || "2nd"} onChange={(e) => updateItem(i, "condition", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white"><option value="2nd">2nd</option><option value="new">New</option></select></td>
-                  <td className="px-2 py-2"><input type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateItem(i, "purchase_price", parseNumber(e.target.value))} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
-                  <td className="px-2 py-2"><input type="text" inputMode="numeric" value={formatNumber(item.selling_price)} onChange={(e) => updateItem(i, "selling_price", parseNumber(e.target.value))} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
+                  <td className="px-2 py-2"><input data-col="cost" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateItem(i, "purchase_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "cost", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
+                  <td className="px-2 py-2"><input data-col="price" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.selling_price)} onChange={(e) => updateItem(i, "selling_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "price", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input value={item.warranty || ""} onChange={(e) => updateItem(i, "warranty", e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input type="date" value={item.warranty_start || ""} onChange={(e) => updateItem(i, "warranty_start", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input value={item.notes || ""} onChange={(e) => updateItem(i, "notes", e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>

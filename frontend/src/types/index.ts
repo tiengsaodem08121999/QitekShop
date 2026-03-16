@@ -31,12 +31,14 @@ export interface QuotationItem {
 }
 
 export type PaymentMethod = "cash" | "transfer";
+export type PaymentType = "payment" | "refund";
 
 export interface Payment {
   id: number;
   quotation_id: number;
   amount: number;
   method: PaymentMethod;
+  payment_type: PaymentType;
   date: string;
   note: string | null;
   transaction_id: number | null;
@@ -75,6 +77,7 @@ export interface Quotation {
   remaining: number;
   total_purchase: number;
   total_refund: number;
+  total_refund_paid: number;
   profit: number;
   items: QuotationItem[];
   payments: Payment[];

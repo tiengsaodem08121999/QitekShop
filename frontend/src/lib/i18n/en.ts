@@ -99,6 +99,11 @@ const en = {
   payment_total: "Total paid",
   payment_balance: "Balance",
   payment_overpaid_warning: "Overpaid",
+  payment_type: "Payment type",
+  payment_type_payment: "Payment",
+  payment_type_refund: "Refund",
+  payment_total_refund: "Total refunded",
+  payment_refunded: "Refunded",
 
   // Returns
   return_history: "Returns",

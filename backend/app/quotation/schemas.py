@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, model_validator
 
-from app.quotation.models import PaymentMethod, QuotationStatus, ReturnReason
+from app.quotation.models import PaymentMethod, PaymentType, QuotationStatus, ReturnReason
 
 
 # --- Customer ---
@@ -94,6 +94,8 @@ class QuotationCreate(BaseModel):
 
 
 class QuotationUpdate(BaseModel):
+    customer_id: Optional[int] = None
+    customer_name: Optional[str] = None
     items: Optional[List[QuotationItemCreate]] = None
 
 
@@ -108,6 +110,7 @@ class QuotationResponse(DecimalModel):
     total_purchase: Decimal
     profit: Decimal
     total_refund: Decimal
+    total_refund_paid: Decimal
     items: List[QuotationItemResponse]
     payments: List["PaymentResponse"] = []
     returns: List["ReturnResponse"] = []
@@ -121,6 +124,7 @@ class QuotationResponse(DecimalModel):
 class PaymentCreate(BaseModel):
     amount: Decimal
     method: PaymentMethod
+    payment_type: PaymentType = PaymentType.payment
     date: Optional[_dt.date] = None
     note: Optional[str] = None
 
@@ -128,6 +132,7 @@ class PaymentCreate(BaseModel):
 class PaymentUpdate(BaseModel):
     amount: Optional[Decimal] = None
     method: Optional[PaymentMethod] = None
+    payment_type: Optional[PaymentType] = None
     date: Optional[_dt.date] = None
     note: Optional[str] = None
 
@@ -137,6 +142,7 @@ class PaymentResponse(DecimalModel):
     quotation_id: int
     amount: Decimal
     method: PaymentMethod
+    payment_type: PaymentType
     date: _dt.date
     note: Optional[str]
     transaction_id: Optional[int]

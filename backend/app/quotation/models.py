@@ -87,6 +87,11 @@ class PaymentMethod(str, enum.Enum):
     transfer = "transfer"
 
 
+class PaymentType(str, enum.Enum):
+    payment = "payment"
+    refund = "refund"
+
+
 class Payment(Base):
     __tablename__ = "payments"
 
@@ -94,6 +99,7 @@ class Payment(Base):
     quotation_id: Mapped[int] = mapped_column(ForeignKey("quotations.id"))
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 0))
     method: Mapped[PaymentMethod] = mapped_column(Enum(PaymentMethod))
+    payment_type: Mapped[PaymentType] = mapped_column(Enum(PaymentType), default=PaymentType.payment)
     date: Mapped[date] = mapped_column(Date)
     note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     transaction_id: Mapped[Optional[int]] = mapped_column(ForeignKey("transactions.id"), nullable=True)

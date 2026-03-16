@@ -7,7 +7,7 @@ from sqlalchemy import func as sa_func
 from sqlalchemy.orm import Session, joinedload
 
 from app.finance.models import Transaction, TransactionType
-from app.quotation.models import Customer, Payment, PaymentMethod, Quotation, QuotationItem, QuotationStatus, Return, ReturnReason
+from app.quotation.models import Customer, Payment, PaymentMethod, PaymentType, Quotation, QuotationItem, QuotationStatus, Return, ReturnReason
 from app.quotation.schemas import PaymentCreate, PaymentUpdate, ReturnCreate, ReturnUpdate, QuotationCreate, QuotationItemCreate, QuotationUpdate
 
 
@@ -46,10 +46,11 @@ def _compute_totals(items: List[QuotationItem]) -> Tuple[Decimal, Decimal]:
 
 
 def _recalc_total_paid(db: Session, quotation_id: int) -> None:
-    """Recalculate and update the denormalized total_paid on the quotation."""
+    """Recalculate and update the denormalized total_paid on the quotation.
+    Only sums 'payment' type (gross amount customer paid in)."""
     total = (
         db.query(sa_func.coalesce(sa_func.sum(Payment.amount), 0))
-        .filter(Payment.quotation_id == quotation_id)
+        .filter(Payment.quotation_id == quotation_id, Payment.payment_type == PaymentType.payment)
         .scalar()
     )
     db.query(Quotation).filter(Quotation.id == quotation_id).update(
@@ -112,7 +113,7 @@ def list_quotations(
         query = query.filter(Customer.name.ilike(f"%{search}%"))
     total = query.count()
     rows = (
-        query.options(joinedload(Quotation.returns))
+        query.options(joinedload(Quotation.returns), joinedload(Quotation.payments))
         .order_by(Quotation.created_at.desc())
         .offset((page - 1) * limit)
         .limit(limit)
@@ -122,6 +123,7 @@ def list_quotations(
     items = []
     for q in rows:
         total_refund = sum(r.refund_amount for r in q.returns)
+        total_refund_paid = sum(p.amount for p in q.payments if p.payment_type == PaymentType.refund)
         items.append({
             "id": q.id,
             "customer_name": q.customer.name,
@@ -130,7 +132,7 @@ def list_quotations(
             "total_amount": q.total_amount,
             "total_paid": q.total_paid,
             "total_trade_in": q.total_trade_in,
-            "remaining": q.total_amount - q.total_paid - q.total_trade_in - total_refund,
+            "remaining": q.total_amount - q.total_trade_in - total_refund - (q.total_paid - total_refund_paid),
             "created_at": q.created_at,
         })
     return items, total
@@ -140,6 +142,11 @@ def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> O
     quotation = get_quotation(db, quotation_id)
     if not quotation or quotation.status == QuotationStatus.confirmed:
         return None
+
+    if data.customer_id is not None:
+        quotation.customer_id = data.customer_id
+    elif data.customer_name is not None:
+        quotation.customer.name = data.customer_name
 
     if data.items is not None:
         # Replace all items
@@ -173,8 +180,16 @@ def enrich_response(quotation: Quotation) -> dict:
     items = quotation.items
     total_purchase = sum(item.purchase_price for item in items if not item.is_trade_in)
     total_refund = sum(r.refund_amount for r in quotation.returns)
-    remaining = quotation.total_amount - quotation.total_paid - quotation.total_trade_in - total_refund
-    profit = quotation.total_amount - total_purchase
+    total_refund_paid = sum(p.amount for p in quotation.payments if p.payment_type == PaymentType.refund)
+
+    # remaining = (what customer owes) - (what customer paid net)
+    # customer owes: total_amount - trade_in - refund
+    # customer paid net: total_paid - refund_paid
+    remaining = quotation.total_amount - quotation.total_trade_in - total_refund - (quotation.total_paid - total_refund_paid)
+
+    # Profit: selling - purchase - trade_in - refund
+    profit = quotation.total_amount - total_purchase - quotation.total_trade_in - total_refund
+
     return {
         **{c.key: getattr(quotation, c.key) for c in quotation.__table__.columns},
         "customer": quotation.customer,
@@ -183,6 +198,7 @@ def enrich_response(quotation: Quotation) -> dict:
         "returns": quotation.returns,
         "remaining": remaining,
         "total_refund": total_refund,
+        "total_refund_paid": total_refund_paid,
         "total_purchase": total_purchase,
         "profit": profit,
     }
@@ -208,24 +224,26 @@ def create_payment(db: Session, quotation_id: int, data: PaymentCreate, user_id:
         quotation_id=quotation_id,
         amount=data.amount,
         method=data.method,
+        payment_type=data.payment_type,
         date=data.date or date_type.today(),
         note=data.note,
         created_by=user_id,
     )
     db.add(payment)
 
-    if data.method == PaymentMethod.transfer:
-        txn = Transaction(
-            date=payment.date,
-            description=_txn_description(customer_name, quotation_id),
-            type=TransactionType.thu,
-            amount=data.amount,
-            notes=data.note,
-            created_by=user_id,
-        )
-        db.add(txn)
-        db.flush()
-        payment.transaction_id = txn.id
+    # Always create transaction: payment → thu (income), refund → chi (expense)
+    is_refund = data.payment_type == PaymentType.refund
+    txn = Transaction(
+        date=payment.date,
+        description=_refund_txn_description(customer_name, quotation_id) if is_refund else _txn_description(customer_name, quotation_id),
+        type=TransactionType.chi if is_refund else TransactionType.thu,
+        amount=data.amount,
+        notes=data.note,
+        created_by=user_id,
+    )
+    db.add(txn)
+    db.flush()
+    payment.transaction_id = txn.id
 
     db.flush()
     _recalc_total_paid(db, quotation_id)
@@ -243,32 +261,35 @@ def update_payment(db: Session, payment_id: int, quotation_id: int, data: Paymen
     if not payment:
         return None
 
-    old_method = payment.method
-
     if data.amount is not None:
         payment.amount = data.amount
     if data.method is not None:
         payment.method = data.method
+    if data.payment_type is not None:
+        payment.payment_type = data.payment_type
     if data.date is not None:
         payment.date = data.date
     if data.note is not None:
         payment.note = data.note
 
-    new_method = payment.method
+    is_refund = payment.payment_type == PaymentType.refund
+    txn_type = TransactionType.chi if is_refund else TransactionType.thu
+    txn_desc = _refund_txn_description(customer_name, quotation_id) if is_refund else _txn_description(customer_name, quotation_id)
 
-    # Handle finance transaction sync
-    if old_method == PaymentMethod.transfer and new_method == PaymentMethod.cash:
-        if payment.transaction_id:
-            txn = db.query(Transaction).filter(Transaction.id == payment.transaction_id).first()
-            if txn:
-                txn.is_deleted = True
-            payment.transaction_id = None
-
-    elif old_method == PaymentMethod.cash and new_method == PaymentMethod.transfer:
+    # Sync finance transaction
+    if payment.transaction_id:
+        txn = db.query(Transaction).filter(Transaction.id == payment.transaction_id).first()
+        if txn:
+            txn.amount = payment.amount
+            txn.date = payment.date
+            txn.notes = payment.note
+            txn.type = txn_type
+            txn.description = txn_desc
+    else:
         txn = Transaction(
             date=payment.date,
-            description=_txn_description(customer_name, quotation_id),
-            type=TransactionType.thu,
+            description=txn_desc,
+            type=txn_type,
             amount=payment.amount,
             notes=payment.note,
             created_by=user_id,
@@ -276,13 +297,6 @@ def update_payment(db: Session, payment_id: int, quotation_id: int, data: Paymen
         db.add(txn)
         db.flush()
         payment.transaction_id = txn.id
-
-    elif new_method == PaymentMethod.transfer and payment.transaction_id:
-        txn = db.query(Transaction).filter(Transaction.id == payment.transaction_id).first()
-        if txn:
-            txn.amount = payment.amount
-            txn.date = payment.date
-            txn.notes = payment.note
 
     db.flush()
     _recalc_total_paid(db, quotation_id)
@@ -345,21 +359,6 @@ def create_return(db: Session, quotation_id: int, data: ReturnCreate, user_id: i
         created_by=user_id,
     )
     db.add(ret)
-
-    # Create "chi" transaction for refund if amount > 0
-    if refund_amount > 0:
-        txn = Transaction(
-            date=ret.date,
-            description=_refund_txn_description(customer_name, quotation_id),
-            type=TransactionType.chi,
-            amount=refund_amount,
-            notes=data.note,
-            created_by=user_id,
-        )
-        db.add(txn)
-        db.flush()
-        ret.transaction_id = txn.id
-
     db.flush()
     db.commit()
     db.refresh(ret)
@@ -390,30 +389,6 @@ def update_return(db: Session, return_id: int, quotation_id: int, data: ReturnUp
 
     ret.refund_amount = _calc_refund_amount(ret.selling_price, ret.refund_percent)
 
-    # Sync finance transaction
-    if ret.transaction_id:
-        txn = db.query(Transaction).filter(Transaction.id == ret.transaction_id).first()
-        if txn:
-            if ret.refund_amount > 0:
-                txn.amount = ret.refund_amount
-                txn.date = ret.date
-                txn.notes = ret.note
-            else:
-                txn.is_deleted = True
-                ret.transaction_id = None
-    elif ret.refund_amount > 0:
-        txn = Transaction(
-            date=ret.date,
-            description=_refund_txn_description(customer_name, quotation_id),
-            type=TransactionType.chi,
-            amount=ret.refund_amount,
-            notes=ret.note,
-            created_by=user_id,
-        )
-        db.add(txn)
-        db.flush()
-        ret.transaction_id = txn.id
-
     db.flush()
     db.commit()
     db.refresh(ret)
@@ -428,11 +403,6 @@ def delete_return(db: Session, return_id: int, quotation_id: int) -> bool:
     )
     if not ret:
         return False
-
-    if ret.transaction_id:
-        txn = db.query(Transaction).filter(Transaction.id == ret.transaction_id).first()
-        if txn:
-            txn.is_deleted = True
 
     db.delete(ret)
     db.commit()

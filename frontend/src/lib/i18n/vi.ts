@@ -101,6 +101,11 @@ const vi: Translations = {
   payment_total: "Tổng đã thanh toán",
   payment_balance: "Số dư",
   payment_overpaid_warning: "Thanh toán vượt mức",
+  payment_type: "Loại thanh toán",
+  payment_type_payment: "Thanh toán",
+  payment_type_refund: "Hoàn tiền",
+  payment_total_refund: "Tổng hoàn tiền",
+  payment_refunded: "Đã hoàn tiền",
 
   // Returns
   return_history: "Trả hàng",
@@ -109,8 +114,8 @@ const vi: Translations = {
   return_delete: "Xóa trả hàng",
   return_item_name: "Tên sản phẩm",
   return_reason: "Lý do",
-  return_reason_seller: "Lỗi cửa hàng",
-  return_reason_customer: "Lỗi khách",
+  return_reason_seller: "Cửa hàng",
+  return_reason_customer: "Khách hàng",
   return_selling_price: "Giá bán",
   return_refund_percent: "% Hoàn",
   return_refund_amount: "Tiền hoàn",
