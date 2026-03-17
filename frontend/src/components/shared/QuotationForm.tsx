@@ -12,6 +12,7 @@ interface Props {
   quotationId?: number;
   initialCustomer?: Customer;
   initialItems?: QuotationItem[];
+  returnedNames?: Set<string>;
 }
 
 const EMPTY_ITEM: QuotationItem = {
@@ -26,7 +27,7 @@ const EMPTY_TRADE_IN: QuotationItem = {
   warranty_start: null, delivery_date: null, notes: null,
 };
 
-export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems }: Props) {
+export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems, returnedNames }: Props) {
   const router = useRouter();
   const t = useT();
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -96,9 +97,10 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
     e.preventDefault();
     setSaving(true);
 
+    const validTradeIns = tradeIns.filter((i) => i.name.trim() !== "");
     const allItems = [
       ...items.map((i) => ({ ...i, is_trade_in: false })),
-      ...tradeIns.map((i) => ({ ...i, is_trade_in: true, selling_price: 0, condition: null })),
+      ...validTradeIns.map((i) => ({ ...i, is_trade_in: true, selling_price: 0, condition: null })),
     ];
 
     try {
@@ -241,18 +243,21 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {items.map((item, i) => (
+              {items.map((item, i) => {
+                const isReturned = returnedNames?.has(item.name);
+                return (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-2 py-2"><input data-col="name" data-row={i} value={item.name} onChange={(e) => updateItem(i, "name", e.target.value)} onKeyDown={(e) => handleTabDown(e, "name", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" required /></td>
+                  <td className="px-2 py-2"><input data-col="name" data-row={i} value={item.name} onChange={(e) => updateItem(i, "name", e.target.value)} onKeyDown={(e) => handleTabDown(e, "name", i)} className={`border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ${isReturned ? "bg-gray-100 text-gray-500" : ""}`} required disabled={isReturned} title={isReturned ? "Không thể sửa tên sản phẩm đã có trả hàng" : undefined} /></td>
                   <td className="px-2 py-2"><select value={item.condition || "2nd"} onChange={(e) => updateItem(i, "condition", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white"><option value="2nd">2nd</option><option value="new">New</option></select></td>
                   <td className="px-2 py-2"><input data-col="cost" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateItem(i, "purchase_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "cost", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input data-col="price" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.selling_price)} onChange={(e) => updateItem(i, "selling_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "price", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input value={item.warranty || ""} onChange={(e) => updateItem(i, "warranty", e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input type="date" value={item.warranty_start || ""} onChange={(e) => updateItem(i, "warranty_start", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input value={item.notes || ""} onChange={(e) => updateItem(i, "notes", e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
-                  <td className="px-1 py-2 text-center"><button type="button" onClick={() => setItems(items.filter((_, j) => j !== i))} className="p-1 rounded-md hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></td>
+                  <td className="px-1 py-2 text-center">{!isReturned && <button type="button" onClick={() => setItems(items.filter((_, j) => j !== i))} className="p-1 rounded-md hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -268,20 +273,20 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
           </button>
         </div>
         {tradeIns.length > 0 ? (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
-                <th className="px-3 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_price}</th>
-                <th className="w-8"></th>
+                <th className="w-[70%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
+                <th className="w-[27%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_price}</th>
+                <th className="w-[3%]"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {tradeIns.map((item, i) => (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-2 py-2"><input value={item.name} onChange={(e) => updateTradeIn(i, "name", e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
-                  <td className="px-2 py-2"><input type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateTradeIn(i, "purchase_price", parseNumber(e.target.value))} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-32 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
-                  <td className="px-2 py-2"><button type="button" onClick={() => setTradeIns(tradeIns.filter((_, j) => j !== i))} className="p-1 rounded-md hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></td>
+                  <td className="px-2 py-2"><input type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateTradeIn(i, "purchase_price", parseNumber(e.target.value))} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
+                  <td className="px-1 py-2 text-center"><button type="button" onClick={() => setTradeIns(tradeIns.filter((_, j) => j !== i))} className="p-1 rounded-md hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></td>
                 </tr>
               ))}
             </tbody>

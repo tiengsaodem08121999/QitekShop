@@ -33,8 +33,7 @@ def seed():
     finally:
         db.close()
 
-    seed_transactions()
-
+    # seed_transactions()
 
 if __name__ == "__main__":
     seed()

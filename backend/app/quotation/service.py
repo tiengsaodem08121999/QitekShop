@@ -149,6 +149,14 @@ def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> O
         quotation.customer.name = data.customer_name
 
     if data.items is not None:
+        # Check: items with returns cannot have their name changed
+        returned_names = {r.item_name for r in quotation.returns}
+        if returned_names:
+            new_names = {item.name for item in data.items if not item.is_trade_in}
+            missing = returned_names - new_names
+            if missing:
+                raise ValueError(f"Không thể đổi tên sản phẩm đã có trả hàng: {', '.join(missing)}")
+
         # Replace all items
         db.query(QuotationItem).filter(QuotationItem.quotation_id == quotation_id).delete()
         for item_data in data.items:

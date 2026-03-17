@@ -130,7 +130,10 @@ def update_quotation_endpoint(
     user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
     db: Session = Depends(get_db),
 ):
-    quotation = update_quotation(db, quotation_id, data)
+    try:
+        quotation = update_quotation(db, quotation_id, data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     if not quotation:
         raise HTTPException(status_code=404, detail="Quotation not found or already confirmed")
     return enrich_response(quotation)

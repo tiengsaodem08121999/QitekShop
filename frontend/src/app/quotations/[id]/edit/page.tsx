@@ -27,6 +27,7 @@ export default function EditQuotationPage() {
         quotationId={q.id}
         initialCustomer={q.customer}
         initialItems={q.items}
+        returnedNames={new Set(q.returns.map((r) => r.item_name))}
       />
     </AppLayout>
   );
