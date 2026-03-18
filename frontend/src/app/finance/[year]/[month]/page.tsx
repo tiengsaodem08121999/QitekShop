@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import TransactionModal from "@/components/shared/TransactionModal";
 import { apiFetch } from "@/lib/api";
+import { formatDate } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import type { MonthlySummary, PaginatedResponse, Transaction } from "@/types";
 
@@ -99,7 +100,7 @@ export default function FinanceMonthPage() {
                 runningBalance += txn.type === "thu" ? txn.amount : -txn.amount;
                 return (
                   <tr key={txn.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-5 py-3 text-gray-500 tabular-nums">{new Date(txn.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</td>
+                    <td className="px-5 py-3 text-gray-500 tabular-nums">{formatDate(txn.date).slice(0, 5)}</td>
                     <td className="px-4 py-3 font-medium text-gray-800">
                       {txn.description.split(/(#\d+)/).map((part, i) => {
                         const match = part.match(/^#(\d+)$/);

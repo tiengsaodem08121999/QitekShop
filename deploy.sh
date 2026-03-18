@@ -1,9 +1,10 @@
 #!/bin/bash
-set -e
 
 # Load .env
 if [ -f .env ]; then
-  export $(grep -v '^#' .env | xargs)
+  set -a
+  source .env
+  set +a
 fi
 
 APP_PORT=${APP_PORT:-80}
@@ -16,8 +17,22 @@ echo ""
 
 docker compose up --build -d
 
-# Get local IP
-LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || ipconfig 2>/dev/null | grep -m1 "IPv4" | awk '{print $NF}')
+# Get local IP (Windows compatible)
+LOCAL_IP=""
+if command -v powershell.exe &>/dev/null; then
+  LOCAL_IP=$(powershell.exe -NoProfile -Command "
+    (Get-NetIPAddress -AddressFamily IPv4 |
+     Where-Object { \$_.InterfaceAlias -notmatch 'Loopback|vEthernet|Docker|WSL' -and \$_.IPAddress -notmatch '^127\.' } |
+     Select-Object -First 1).IPAddress
+  " 2>/dev/null | tr -d '\r\n')
+fi
+if [ -z "$LOCAL_IP" ]; then
+  LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+fi
+LOCAL_IP=${LOCAL_IP:-localhost}
+
+MYSQL_PORT=${MYSQL_PORT:-3306}
+MYSQL_DATABASE=${MYSQL_DATABASE:-qitekshop}
 
 echo ""
 echo "========================================="
@@ -26,6 +41,13 @@ echo "========================================="
 echo ""
 echo "  Local:     http://localhost:${APP_PORT}"
 echo "  LAN:       http://${LOCAL_IP}:${APP_PORT}"
+echo ""
+echo "  ---- Database Connection ----"
+echo "  Host:      ${LOCAL_IP}"
+echo "  Port:      ${MYSQL_PORT}"
+echo "  Database:  ${MYSQL_DATABASE}"
+echo "  User:      root"
+echo "  Password:  ${MYSQL_ROOT_PASSWORD}"
 echo ""
 echo "  Waiting for tunnel URL..."
 echo ""

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
-import { formatNumber, parseNumber } from "@/lib/format";
+import { formatDate, formatNumber, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import type { Payment, PaymentMethod, PaymentType, Quotation, Return, ReturnReason } from "@/types";
 
@@ -189,7 +189,7 @@ export default function QuotationDetailPage() {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-800">{q.customer.name}</h1>
-            <p className="text-sm text-gray-400 mt-0.5">#{q.id} &middot; {new Date(q.created_at).toLocaleDateString("vi-VN")}</p>
+            <p className="text-sm text-gray-400 mt-0.5">#{q.id} &middot; {formatDate(q.created_at)}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -339,7 +339,7 @@ export default function QuotationDetailPage() {
                   <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">{r.selling_price.toLocaleString()}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">{r.refund_percent}%</td>
                   <td className="px-4 py-2.5 text-right tabular-nums font-medium text-orange-600">{r.refund_amount.toLocaleString()}</td>
-                  <td className="px-4 py-2.5 text-gray-500">{new Date(r.date).toLocaleDateString("vi-VN")}</td>
+                  <td className="px-4 py-2.5 text-gray-500">{formatDate(r.date)}</td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     <button onClick={() => openEditReturn(r)} className="text-gray-400 hover:text-blue-600 mr-2" title={t.return_edit}>
                       <svg className="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
@@ -418,7 +418,7 @@ export default function QuotationDetailPage() {
                         {p.method === "transfer" ? t.payment_method_transfer : t.payment_method_cash}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-gray-500">{new Date(p.date).toLocaleDateString("vi-VN")}</td>
+                    <td className="px-4 py-2.5 text-gray-500">{formatDate(p.date)}</td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       <button onClick={() => openEditPayment(p)} className="text-gray-400 hover:text-blue-600 mr-2" title={t.payment_edit}>
                         <svg className="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>

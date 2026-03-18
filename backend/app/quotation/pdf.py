@@ -21,7 +21,7 @@ def generate_quotation_pdf(quotation, settings_dict: dict) -> bytes:
         shop_phone=settings_dict.get("shop_phone", ""),
         customer_name=quotation.customer.name,
         customer_phone=quotation.customer.phone,
-        date=datetime.now(timezone.utc).strftime("%d/%m/%Y"),
+        date=datetime.now(timezone.utc).strftime("%d-%m-%Y"),
         items=items,
         total_amount=quotation.total_amount,
         total_paid=quotation.total_paid,

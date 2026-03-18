@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
+import { formatDate } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import type { PaginatedResponse, QuotationListItem } from "@/types";
 
@@ -117,7 +118,7 @@ export default function QuotationsPage() {
                 <td className="px-4 py-3.5 text-right font-medium tabular-nums text-gray-700">{q.total_amount.toLocaleString()}</td>
                 <td className="px-4 py-3.5 text-right tabular-nums text-gray-600">{q.total_paid.toLocaleString()}</td>
                 <td className={`px-4 py-3.5 text-right font-medium tabular-nums ${q.remaining > 0 ? "text-red-600" : "text-emerald-600"}`}>{q.remaining > 0 ? q.remaining.toLocaleString() : "0"}</td>
-                <td className="px-4 py-3.5 text-gray-500">{new Date(q.created_at).toLocaleDateString("vi-VN")}</td>
+                <td className="px-4 py-3.5 text-gray-500">{formatDate(q.created_at)}</td>
               </tr>
             ))}
           </tbody>
