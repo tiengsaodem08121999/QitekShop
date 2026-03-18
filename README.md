@@ -1,4 +1,4 @@
-# QitekShop
+# QitekComputer
 
 Hệ thống quản lý cửa hàng — quản lý báo giá, tài chính, cài đặt.
 
@@ -19,7 +19,7 @@ cp .env.example .env
 | Biến | Mô tả | Mặc định |
 |------|--------|----------|
 | `MYSQL_ROOT_PASSWORD` | Mật khẩu root MySQL | — |
-| `MYSQL_DATABASE` | Tên database | `qitekshop` |
+| `MYSQL_DATABASE` | Tên database | `qitekcomputer` |
 | `MYSQL_PORT` | Port MySQL expose ra host | `3306` |
 | `SECRET_KEY` | Secret key cho backend | — |
 | `BACKEND_PORT` | Port backend | `8000` |
@@ -69,7 +69,7 @@ docker compose -f docker-compose.prod.yml down
 ## Cấu trúc project
 
 ```
-QitekShop/
+QitekComputer/
 ├── backend/             # FastAPI + Alembic migrations
 │   ├── app/             # Source code
 │   ├── alembic/         # Database migrations

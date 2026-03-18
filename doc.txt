@@ -10,3 +10,43 @@
   docker compose up -d --build
   backend: uv run uvicorn app.main:app --reload 
   frontend: npm run dev
+
+
+  # ============ MySQL ============
+MYSQL_ROOT_PASSWORD=QitekShop2026!
+MYSQL_DATABASE=qitekshop
+MYSQL_PORT=3306
+
+# ============ Backend ============
+SECRET_KEY=change-this-to-a-random-secret-key
+BACKEND_PORT=8000
+
+# ============ Frontend ============
+# Leave empty to use same-origin (works with nginx reverse proxy)
+# Only set if running frontend without nginx
+NEXT_PUBLIC_API_URL=localhost:8000
+
+# Port for the app (nginx reverse proxy)
+APP_PORT=80
+
+-----------
+env backup
+
+# ===== MYSQL =====
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=QitekShop2026!
+DB_NAME=qitekcomputer
+DB_HOST=db
+
+# ===== BACKUP =====
+BACKUP_PATH=/backup
+CRON_TIME="0 6 * * *" 1 ngay 1 lan vao luc 6h sang
+# CRON_TIME="*/3 * * * *" # 3 phut 1 lan
+
+# ===== EMAIL =====
+EMAIL_FROM=levanquy15052001@gmail.com
+EMAIL_TO=levanquy15052001@gmail.com
+EMAIL_PASSWORD="tdia kqqu uxxy eqtr"
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=465

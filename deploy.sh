@@ -11,7 +11,7 @@ APP_PORT=${APP_PORT:-80}
 
 echo ""
 echo "========================================="
-echo "  Building & starting QitekShop..."
+echo "  Building & starting QitekComputer..."
 echo "========================================="
 echo ""
 
@@ -32,11 +32,11 @@ fi
 LOCAL_IP=${LOCAL_IP:-localhost}
 
 MYSQL_PORT=${MYSQL_PORT:-3306}
-MYSQL_DATABASE=${MYSQL_DATABASE:-qitekshop}
+MYSQL_DATABASE=${MYSQL_DATABASE:-qitekcomputer}
 
 echo ""
 echo "========================================="
-echo "  QitekShop is running!"
+echo "  QitekComputer is running!"
 echo "========================================="
 echo ""
 echo "  Local:     http://localhost:${APP_PORT}"

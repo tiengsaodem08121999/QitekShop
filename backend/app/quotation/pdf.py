@@ -16,7 +16,7 @@ def generate_quotation_pdf(quotation, settings_dict: dict) -> bytes:
     remaining = quotation.total_amount - quotation.total_paid - quotation.total_trade_in
 
     html_content = template.render(
-        shop_name=settings_dict.get("shop_name", "QitekShop"),
+        shop_name=settings_dict.get("shop_name", "QitekComputer"),
         shop_address=settings_dict.get("shop_address", ""),
         shop_phone=settings_dict.get("shop_phone", ""),
         customer_name=quotation.customer.name,
