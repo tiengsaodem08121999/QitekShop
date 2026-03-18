@@ -2,6 +2,7 @@ services:
   db:
     image: mysql:8.0
     restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -51,6 +52,15 @@ services:
     command: tunnel --no-autoupdate --url http://nginx:80
     depends_on:
       - nginx
+
+  mysql-backup:
+    build: ./mysql-backup
+    restart: unless-stopped
+    volumes:
+      - ./backupdata:/backup
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   mysql_data:

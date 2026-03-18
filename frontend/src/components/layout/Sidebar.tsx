@@ -29,7 +29,7 @@ export default function Sidebar({ user }: { user: User }) {
   return (
     <aside className="w-56 bg-slate-800 text-slate-300 flex flex-col min-h-screen">
       <div className="p-5 text-white font-bold text-lg border-b border-slate-700">
-        QitekShop
+        QitekComputer
       </div>
       <nav className="flex-1 py-2">
         {NAV_ITEMS.filter(

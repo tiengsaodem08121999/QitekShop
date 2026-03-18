@@ -34,7 +34,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-sm bg-white rounded-lg shadow p-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">QitekShop</h1>
+          <h1 className="text-2xl font-bold">QitekComputer</h1>
           <button onClick={toggle} className="text-xs px-2.5 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">
             {locale === "en" ? "VN" : "EN"}
           </button>

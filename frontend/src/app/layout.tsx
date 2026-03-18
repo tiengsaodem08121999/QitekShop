@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "QitekShop",
-  description: "QitekShop Management",
+  title: "QitekComputer",
+  description: "QitekComputer Management",
 };
 
 export default function RootLayout({

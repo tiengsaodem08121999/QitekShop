@@ -7,7 +7,7 @@ from app.finance.router import router as finance_router
 from app.settings_router import router as settings_router
 from app.dashboard_router import router as dashboard_router
 
-app = FastAPI(title="QitekShop API")
+app = FastAPI(title="QitekComputer API")
 
 app.add_middleware(
     CORSMiddleware,

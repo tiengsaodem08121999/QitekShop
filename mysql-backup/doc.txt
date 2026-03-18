@@ -1,0 +1,13 @@
+docker build -t mysql-backup
+
+win: docker run -d --name mysql-backup --env-file .env -v D:/mysql-backup:/backup --network qitekshop_default mysql-backup
+linux: docker rm -f mysql-backup
+
+docker run -d \
+--name mysql-backup \
+--env-file .env \
+-v /home/backup/mysql-backup/backup:/backup \
+--network qitekshop_default \
+mysql-backup
+
+chmod -R 777 /home/backup/mysql-backup

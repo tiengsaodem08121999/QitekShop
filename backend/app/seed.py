@@ -12,7 +12,7 @@ def seed():
     try:
         defaults = {
             "initial_balance": "0",
-            "shop_name": "QitekShop",
+            "shop_name": "QitekComputer",
             "shop_address": "",
             "shop_phone": "",
         }

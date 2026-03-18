@@ -11,7 +11,7 @@ $appPort = if ($env:APP_PORT) { $env:APP_PORT } else { "80" }
 
 Write-Host ""
 Write-Host "=========================================" -ForegroundColor Cyan
-Write-Host "  Building & starting QitekShop..." -ForegroundColor Cyan
+Write-Host "  Building & starting QitekComputer..." -ForegroundColor Cyan
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -25,7 +25,7 @@ if (-not $localIP) {
 
 Write-Host ""
 Write-Host "=========================================" -ForegroundColor Green
-Write-Host "  QitekShop is running!" -ForegroundColor Green
+Write-Host "  QitekComputer is running!" -ForegroundColor Green
 Write-Host "=========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Local:     " -NoNewline; Write-Host "http://localhost:$appPort" -ForegroundColor Yellow
