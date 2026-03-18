@@ -57,7 +57,10 @@
       "Bash(cd D:/QitekShop/frontend && npx next build 2>&1 | tail -10)",
       "Bash(cd D:/QitekShop/frontend && npm uninstall html2canvas && npm install html2canvas-pro 2>&1 | tail -5)",
       "Bash(cd /d/QitekShop/backend && python -m alembic revision --autogenerate -m \"add_returns_table\")",
-      "Bash(python -m alembic upgrade head)"
+      "Bash(python -m alembic upgrade head)",
+      "Bash(xxd D:/QitekShop/deploy.sh)",
+      "Bash(xxd D:/QitekShop/.env)",
+      "Bash(docker compose exec db mysql -uroot -pQitekShop2026! qitekshop -e \":*)"
     ]
   }
 }
