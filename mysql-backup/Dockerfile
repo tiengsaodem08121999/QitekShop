@@ -15,7 +15,6 @@ COPY .env /app/
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN chmod +x /app/backup.sh
-RUN chmod +x /app/entrypoint.sh
+RUN sed -i 's/\r$//' /app/*.sh && chmod +x /app/backup.sh /app/entrypoint.sh
 
 CMD ["/app/entrypoint.sh"]
