@@ -46,21 +46,21 @@ services:
       - frontend
       - backend
 
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
   tunnel:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
     command: tunnel --no-autoupdate --url http://nginx:80
     depends_on:
       - nginx
-
-  mysql-backup:
-    build: ./mysql-backup
-    restart: unless-stopped
-    volumes:
-      - ./backupdata:/backup
-    depends_on:
-      db:
-        condition: service_healthy
 
 volumes:
   mysql_data:
