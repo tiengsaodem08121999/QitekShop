@@ -310,7 +310,7 @@ export default function QuotationDetailPage() {
           <tfoot className="hide-on-screenshot">
             <tr className="bg-gray-50/80 border-t border-gray-200">
               <td></td>
-              <td className="px-4 py-3 font-semibold text-gray-700" colSpan={2}>{t.quotation_total || "Tổng tiền"}</td>
+              <td className="px-4 py-3 font-semibold text-gray-700" colSpan={2}>{t.quotations_total}</td>
               <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-600">
                 {showCost
                   ? products.filter((_, i) => checkedItems.has(i)).reduce((sum, item) => sum + item.purchase_price, 0).toLocaleString()
