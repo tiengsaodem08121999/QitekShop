@@ -39,7 +39,8 @@ export default function FinanceMonthPage() {
 
   return (
     <AppLayout>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex justify-between items-center mb-6 shrink-0">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push("/finance")}
             className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-white hover:border-gray-300 transition-colors text-gray-500">
@@ -57,7 +58,7 @@ export default function FinanceMonthPage() {
       </div>
 
       {summary && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 shrink-0">
           <div className="bg-white rounded-xl border border-green-200 p-4">
             <p className="text-xs font-medium text-green-500 uppercase tracking-wide">{t.finance_income}</p>
             <p className="text-lg font-bold text-green-600 mt-1">+{summary.total_income.toLocaleString()}</p>
@@ -77,12 +78,12 @@ export default function FinanceMonthPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+      <div className="bg-white rounded-xl border border-gray-200 flex flex-col min-h-0 flex-1 mb-5">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50/50 shrink-0">
           <span className="text-sm font-semibold text-gray-700">{t.finance_txn_list}</span>
           <span className="text-xs text-gray-400">{t.finance_txn_count(txns.length)}</span>
         </div>
-        <div className="overflow-auto max-h-[calc(100vh-380px)]">
+        <div className="overflow-auto flex-1" style={{ paddingBottom: 20 }}>
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-white z-10">
               <tr className="border-b border-gray-100">
@@ -143,6 +144,7 @@ export default function FinanceMonthPage() {
         </div>
       </div>
 
+      </div>
       {showModal && (
         <TransactionModal initial={editTxn} onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); load(); }} />
       )}

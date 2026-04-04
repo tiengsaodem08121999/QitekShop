@@ -31,9 +31,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar user={user} />
-      <main className="flex-1 p-6">{children}</main>
+      <main className="flex-1 p-6 overflow-auto flex flex-col">{children}</main>
     </div>
   );
 }

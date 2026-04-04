@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User, UserRole
 from app.database import get_db
-from app.quotation.models import QuotationStatus
+from app.quotation.models import Quotation, QuotationItem, QuotationStatus
 from app.quotation.schemas import (
     CustomerCreate,
     CustomerResponse,
@@ -58,7 +58,25 @@ def list_customers_endpoint(
     db: Session = Depends(get_db),
 ):
     items, total = get_customers(db, search=search, page=page, limit=limit)
-    return {"items": [CustomerResponse.model_validate(c) for c in items], "total": total, "page": page, "limit": limit}
+    customer_ids = [c.id for c in items]
+    # Calculate total purchased (selling_price of non-trade-in items) per customer
+    from sqlalchemy import func as sa_func
+    totals = {}
+    if customer_ids:
+        rows = (
+            db.query(Quotation.customer_id, sa_func.coalesce(sa_func.sum(QuotationItem.selling_price), 0))
+            .join(QuotationItem, QuotationItem.quotation_id == Quotation.id)
+            .filter(Quotation.customer_id.in_(customer_ids), QuotationItem.is_trade_in == False)
+            .group_by(Quotation.customer_id)
+            .all()
+        )
+        totals = {row[0]: int(row[1]) for row in rows}
+    result = []
+    for c in items:
+        data = CustomerResponse.model_validate(c).model_dump()
+        data["total_purchased"] = totals.get(c.id, 0)
+        result.append(data)
+    return {"items": result, "total": total, "page": page, "limit": limit}
 
 
 @router.post("/customers", response_model=CustomerResponse, status_code=201)

@@ -31,7 +31,8 @@ export default function FinancePage() {
 
   return (
     <AppLayout>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex justify-between items-center mb-6 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">{t.finance_title}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{t.finance_subtitle}</p>
@@ -42,7 +43,7 @@ export default function FinancePage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6 shrink-0">
         <div className="bg-white rounded-xl border border-green-200 p-4">
           <p className="text-xs font-medium text-green-500 uppercase tracking-wide">{t.finance_total_income(year)}</p>
           <p className="text-lg font-bold text-green-600 mt-1">+{totalIncome.toLocaleString()}</p>
@@ -57,8 +58,8 @@ export default function FinancePage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+      <div className="bg-white rounded-xl border border-gray-200 flex flex-col min-h-0 flex-1 mb-5">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50/50 shrink-0">
           <div className="flex items-center gap-2">
             <button onClick={() => setYear(year - 1)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-white hover:border-gray-300 transition-colors text-gray-500">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -70,8 +71,9 @@ export default function FinancePage() {
           </div>
           <span className="text-xs text-gray-400">{t.finance_months_with_txn(months.length)}</span>
         </div>
+        <div className="overflow-auto flex-1" style={{ paddingBottom: 20 }}>
         <table className="w-full text-sm">
-          <thead>
+          <thead className="sticky top-0 bg-white z-10">
             <tr className="border-b border-gray-100">
               <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t.finance_col_month}</th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">{t.finance_col_income}</th>
@@ -97,6 +99,8 @@ export default function FinancePage() {
             )}
           </tbody>
         </table>
+        </div>
+      </div>
       </div>
       {showModal && (
         <TransactionModal onClose={() => setShowModal(false)}

@@ -6,12 +6,14 @@ import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
 import { formatDate, formatNumber, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { useToast } from "@/components/Toast";
 import type { Payment, PaymentMethod, PaymentType, Quotation, Return, ReturnReason } from "@/types";
 
 export default function QuotationDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const t = useT();
+  const toast = useToast();
   const contentRef = useRef<HTMLDivElement>(null);
   const [q, setQ] = useState<Quotation | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -24,6 +26,7 @@ export default function QuotationDetailPage() {
     date: new Date().toISOString().split("T")[0],
     note: "",
   });
+  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [editingReturn, setEditingReturn] = useState<Return | null>(null);
   const [returnForm, setReturnForm] = useState({
@@ -116,6 +119,7 @@ export default function QuotationDetailPage() {
       });
     }
     setShowPaymentModal(false);
+    toast(editingPayment ? "Cập nhật thanh toán thành công" : "Thêm thanh toán thành công");
     const updated = await apiFetch<Quotation>(`/api/quotations/${id}`);
     setQ(updated);
   }
@@ -123,6 +127,7 @@ export default function QuotationDetailPage() {
   async function handleDeletePayment(paymentId: number) {
     if (!window.confirm(t.payment_confirm_delete)) return;
     await apiFetch(`/api/quotations/${id}/payments/${paymentId}`, { method: "DELETE" });
+    toast("Xóa thanh toán thành công");
     const updated = await apiFetch<Quotation>(`/api/quotations/${id}`);
     setQ(updated);
   }
@@ -161,6 +166,7 @@ export default function QuotationDetailPage() {
       await apiFetch(`/api/quotations/${id}/returns`, { method: "POST", body: JSON.stringify(body) });
     }
     setShowReturnModal(false);
+    toast(editingReturn ? "Cập nhật trả hàng thành công" : "Thêm trả hàng thành công");
     const updated = await apiFetch<Quotation>(`/api/quotations/${id}`);
     setQ(updated);
   }
@@ -168,6 +174,7 @@ export default function QuotationDetailPage() {
   async function handleDeleteReturn(returnId: number) {
     if (!window.confirm(t.return_confirm_delete)) return;
     await apiFetch(`/api/quotations/${id}/returns/${returnId}`, { method: "DELETE" });
+    toast("Xóa trả hàng thành công");
     const updated = await apiFetch<Quotation>(`/api/quotations/${id}`);
     setQ(updated);
   }
@@ -238,6 +245,19 @@ export default function QuotationDetailPage() {
         <table className="w-full text-sm table-fixed">
           <thead>
             <tr className="border-b border-gray-100">
+              <th className="w-[4%] px-2 py-3 text-center hide-on-screenshot">
+                <input type="checkbox"
+                  checked={products.length > 0 && checkedItems.size === products.length}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setCheckedItems(new Set(products.map((_, i) => i)));
+                    } else {
+                      setCheckedItems(new Set());
+                    }
+                  }}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
+              </th>
               <th className="w-[22%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
               <th className="w-[6%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_cond}</th>
               <th className="w-[14%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hide-on-screenshot">
@@ -261,6 +281,17 @@ export default function QuotationDetailPage() {
               const isReturned = returnedNames.has(item.name);
               return (
               <tr key={i} className={`hover:bg-gray-50/50 transition-colors ${isReturned ? "line-through opacity-50" : ""}`}>
+                <td className="px-2 py-3 text-center hide-on-screenshot">
+                  <input type="checkbox"
+                    checked={checkedItems.has(i)}
+                    onChange={(e) => {
+                      const next = new Set(checkedItems);
+                      if (e.target.checked) next.add(i); else next.delete(i);
+                      setCheckedItems(next);
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </td>
                 <td className="px-4 py-3 font-medium text-gray-800">{item.name}</td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
@@ -276,6 +307,21 @@ export default function QuotationDetailPage() {
               );
             })}
           </tbody>
+          <tfoot className="hide-on-screenshot">
+            <tr className="bg-gray-50/80 border-t border-gray-200">
+              <td></td>
+              <td className="px-4 py-3 font-semibold text-gray-700" colSpan={2}>{t.quotation_total || "Tổng tiền"}</td>
+              <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-600">
+                {showCost
+                  ? products.filter((_, i) => checkedItems.has(i)).reduce((sum, item) => sum + item.purchase_price, 0).toLocaleString()
+                  : "•••"}
+              </td>
+              <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-800">
+                {products.filter((_, i) => checkedItems.has(i)).reduce((sum, item) => sum + item.selling_price, 0).toLocaleString()}
+              </td>
+              <td colSpan={3}></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 

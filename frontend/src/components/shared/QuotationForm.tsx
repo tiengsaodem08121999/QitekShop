@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { formatNumber, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { useToast } from "@/components/Toast";
 import type { Customer, PaginatedResponse, QuotationItem } from "@/types";
 
 interface Props {
@@ -30,6 +31,7 @@ const EMPTY_TRADE_IN: QuotationItem = {
 export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems, returnedNames }: Props) {
   const router = useRouter();
   const t = useT();
+  const toast = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerSearch, setCustomerSearch] = useState(initialCustomer?.name || "");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(initialCustomer || null);
@@ -99,7 +101,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
 
     const validTradeIns = tradeIns.filter((i) => i.name.trim() !== "");
     const allItems = [
-      ...items.map((i) => ({ ...i, is_trade_in: false })),
+      ...items.map((i) => ({ ...i, is_trade_in: false, warranty_start: i.warranty_start || null })),
       ...validTradeIns.map((i) => ({ ...i, is_trade_in: true, selling_price: 0, condition: null })),
     ];
 
@@ -115,6 +117,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
           method: "POST",
           body: JSON.stringify(payload),
         });
+        toast(t.toast_create_success || "Tạo báo giá thành công");
         router.push(`/quotations/${res.id}`);
       } else {
         const payload: Record<string, unknown> = { items: allItems };
@@ -127,10 +130,11 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
           method: "PUT",
           body: JSON.stringify(payload),
         });
+        toast(t.toast_update_success || "Cập nhật báo giá thành công");
         router.push(`/quotations/${quotationId}`);
       }
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : t.error);
+      toast(err instanceof Error ? err.message : t.error, "error");
     } finally {
       setSaving(false);
     }

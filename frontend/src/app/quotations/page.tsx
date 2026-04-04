@@ -7,7 +7,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { useT } from "@/lib/i18n";
-import type { PaginatedResponse, QuotationListItem } from "@/types";
+import type { PaginatedResponse, Quotation, QuotationListItem } from "@/types";
 
 export default function QuotationsPage() {
   const router = useRouter();
@@ -21,6 +21,15 @@ export default function QuotationsPage() {
     apiFetch<PaginatedResponse<QuotationListItem>>(`/api/quotations?${params}`).then(setData);
   }, [search]);
 
+  async function handleCopy(quotationId: number) {
+    const q = await apiFetch<Quotation>(`/api/quotations/${quotationId}`);
+    sessionStorage.setItem("quotation_copy", JSON.stringify({
+      customer: q.customer,
+      items: q.items,
+    }));
+    router.push("/quotations/new?copy=1");
+  }
+
   const items = data?.items ?? [];
   const totalAmount = items.reduce((s, q) => s + q.total_amount, 0);
   const totalPaid = items.reduce((s, q) => s + q.total_paid, 0);
@@ -28,7 +37,8 @@ export default function QuotationsPage() {
 
   return (
     <AppLayout>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex justify-between items-center mb-6 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">{t.quotations_title}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{t.quotations_subtitle}</p>
@@ -40,7 +50,7 @@ export default function QuotationsPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-4 gap-4 mb-6 shrink-0">
         <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
@@ -87,27 +97,29 @@ export default function QuotationsPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm mb-6">
-        <div className="flex gap-3 p-4 border-b border-gray-50">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col min-h-0 flex-1">
+        <div className="flex gap-3 p-4 border-b border-gray-50 shrink-0">
           <div className="relative flex-1 max-w-xs">
             <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             <input placeholder={t.quotations_search} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors" />
           </div>
         </div>
+        <div className="overflow-auto flex-1" style={{ paddingTop: 20, paddingBottom: 20 }}>
         <table className="w-full text-sm">
-          <thead>
+          <thead className="sticky top-0 bg-white z-10">
             <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
               <th className="px-5 py-3 font-medium">{t.quotations_col_customer}</th>
               <th className="px-4 py-3 font-medium text-right">{t.quotations_col_total}</th>
               <th className="px-4 py-3 font-medium text-right">{t.quotations_col_paid}</th>
               <th className="px-4 py-3 font-medium text-right">{t.quotations_col_outstanding}</th>
               <th className="px-4 py-3 font-medium">{t.quotations_col_created}</th>
+              <th className="px-2 py-3 w-10"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {items.length === 0 && (
-              <tr><td colSpan={5} className="px-5 py-12 text-center text-gray-400">
+              <tr><td colSpan={6} className="px-5 py-12 text-center text-gray-400">
                 <svg className="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 {t.quotations_empty}
               </td></tr>
@@ -119,10 +131,21 @@ export default function QuotationsPage() {
                 <td className="px-4 py-3.5 text-right tabular-nums text-gray-600">{q.total_paid.toLocaleString()}</td>
                 <td className={`px-4 py-3.5 text-right font-medium tabular-nums ${q.remaining > 0 ? "text-red-600" : "text-emerald-600"}`}>{q.remaining > 0 ? q.remaining.toLocaleString() : "0"}</td>
                 <td className="px-4 py-3.5 text-gray-500">{formatDate(q.created_at)}</td>
+                <td className="px-2 py-3.5 text-center">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleCopy(q.id); }}
+                    title={t.quotation_copy || "Sao chép"}
+                    className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
+      </div>
       </div>
     </AppLayout>
   );
