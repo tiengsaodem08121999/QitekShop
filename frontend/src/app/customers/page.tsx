@@ -53,7 +53,7 @@ export default function CustomersPage() {
             <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">
               <th className="px-5 py-3 font-medium">{t.customers_col_name}</th>
               <th className="px-4 py-3 font-medium">{t.customers_col_phone}</th>
-              <th className="px-4 py-3 font-medium text-right">{t.customers_col_total_purchased || "Tổng mua"}</th>
+              <th className="px-4 py-3 font-medium text-right">{t.customers_col_total_purchased}</th>
               <th className="px-4 py-3 font-medium">{t.customers_col_email}</th>
               <th className="px-4 py-3 font-medium">{t.customers_col_address}</th>
               <th className="px-4 py-3 font-medium">{t.customers_col_notes}</th>

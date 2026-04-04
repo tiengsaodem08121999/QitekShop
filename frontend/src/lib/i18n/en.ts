@@ -162,6 +162,7 @@ const en = {
   customers_col_phone: "Phone",
   customers_col_email: "Email",
   customers_col_address: "Address",
+  customers_col_total_purchased: "Total Purchased",
   customers_col_notes: "Notes",
   customers_modal_add: "Add customer",
   customers_modal_edit: "Edit customer",

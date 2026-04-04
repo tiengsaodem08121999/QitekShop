@@ -164,6 +164,7 @@ const vi: Translations = {
   customers_col_phone: "Điện thoại",
   customers_col_email: "Email",
   customers_col_address: "Địa chỉ",
+  customers_col_total_purchased: "Tổng mua",
   customers_col_notes: "Ghi chú",
   customers_modal_add: "Thêm khách hàng",
   customers_modal_edit: "Sửa khách hàng",
