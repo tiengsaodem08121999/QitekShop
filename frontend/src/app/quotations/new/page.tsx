@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import QuotationForm from "@/components/shared/QuotationForm";
 import { useT } from "@/lib/i18n";
 import type { Customer, QuotationItem } from "@/types";
 
-export default function NewQuotationPage() {
+function NewQuotationContent() {
   const t = useT();
   const searchParams = useSearchParams();
   const isCopy = searchParams.get("copy") === "1";
@@ -36,5 +36,14 @@ export default function NewQuotationPage() {
         initialItems={copyData?.items}
       />
     </AppLayout>
+  );
+}
+
+export default function NewQuotationPage() {
+  const t = useT();
+  return (
+    <Suspense fallback={<AppLayout><p>{t.loading}</p></AppLayout>}>
+      <NewQuotationContent />
+    </Suspense>
   );
 }
