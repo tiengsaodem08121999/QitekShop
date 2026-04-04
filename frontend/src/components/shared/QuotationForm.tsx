@@ -117,7 +117,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
           method: "POST",
           body: JSON.stringify(payload),
         });
-        toast(t.toast_create_success || "Tạo báo giá thành công");
+        toast(t.toast_create_success);
         router.push(`/quotations/${res.id}`);
       } else {
         const payload: Record<string, unknown> = { items: allItems };
@@ -130,7 +130,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
           method: "PUT",
           body: JSON.stringify(payload),
         });
-        toast(t.toast_update_success || "Cập nhật báo giá thành công");
+        toast(t.toast_update_success);
         router.push(`/quotations/${quotationId}`);
       }
     } catch (err: unknown) {

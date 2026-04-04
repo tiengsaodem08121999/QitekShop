@@ -222,6 +222,10 @@ const en = {
   settings_save: "Save settings",
   settings_saved: "Saved!",
 
+  // Toast
+  toast_create_success: "Quotation created successfully",
+  toast_update_success: "Quotation updated successfully",
+
   // Months
   months: [
     "", "January", "February", "March", "April", "May", "June",

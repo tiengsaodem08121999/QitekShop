@@ -224,6 +224,10 @@ const vi: Translations = {
   settings_save: "Lưu cài đặt",
   settings_saved: "Đã lưu!",
 
+  // Toast
+  toast_create_success: "Tạo báo giá thành công",
+  toast_update_success: "Cập nhật báo giá thành công",
+
   // Months
   months: [
     "", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
