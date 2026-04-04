@@ -76,6 +76,7 @@ const en = {
   quotation_col_warranty: "Warranty",
   quotation_col_warranty_date: "Warranty date",
   quotation_col_notes: "Notes",
+  quotation_copy: "Copy",
   quotation_total_trade_in: "Total trade-in",
   quotation_total_cost: "Total cost",
   quotation_total_selling: "Total selling",
