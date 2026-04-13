@@ -58,7 +58,7 @@ services:
   tunnel:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
-    command: tunnel --no-autoupdate --url http://nginx:80
+    command: tunnel --no-autoupdate --protocol http2 --url http://nginx:80
     depends_on:
       - nginx
 
