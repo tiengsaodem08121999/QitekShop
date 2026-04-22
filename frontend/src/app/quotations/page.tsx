@@ -105,7 +105,7 @@ export default function QuotationsPage() {
               className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors" />
           </div>
         </div>
-        <div className="overflow-auto flex-1" style={{ paddingTop: 20, paddingBottom: 20 }}>
+        <div className="overflow-auto flex-1" style={{ paddingBottom: 20 }}>
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-white z-10">
             <tr className="text-left text-xs text-gray-500 uppercase tracking-wider">

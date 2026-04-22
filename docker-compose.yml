@@ -45,12 +45,18 @@ services:
     depends_on:
       - frontend
       - backend
+      - phpmyadmin
 
-  adminer:
-    image: adminer:latest
+  phpmyadmin:
+    image: phpmyadmin:latest
     restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 100M
+      PMA_ABSOLUTE_URI: /phpmyadmin/
     ports:
-      - "${ADMINER_PORT:-8080}:8080"
+      - "${PMA_PORT:-8080}:80"
     depends_on:
       db:
         condition: service_healthy

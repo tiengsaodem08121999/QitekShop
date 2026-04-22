@@ -147,6 +147,7 @@ const vi: Translations = {
   form_col_warranty: "BH",
   form_col_warranty_date: "Ngày BH",
   form_col_notes: "Ghi chú",
+  form_total: "Tổng",
   form_trade_ins: "Thu cũ",
   form_add_trade_in: "Thêm thu cũ",
   form_trade_in_price: "Giá thu",
@@ -186,7 +187,8 @@ const vi: Translations = {
   finance_no_txn: (year: number) => `Chưa có giao dịch nào trong năm ${year}`,
 
   // Finance month
-  finance_month_subtitle: "Chi tiết thu chi trong tháng",
+  finance_prev_month: "Tháng trước",
+  finance_next_month: "Tháng sau",
   finance_income: "Tổng thu",
   finance_expense: "Tổng chi",
   finance_profit: "Lợi nhuận",

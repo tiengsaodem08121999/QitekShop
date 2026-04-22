@@ -224,7 +224,6 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
               <tr className="border-b border-gray-100">
                 <th className="w-[24%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_name}</th>
                 <th className="w-[7%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_cond}</th>
-                <th className="w-[13%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_cost}</th>
                 <th className="w-[13%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_price}</th>
                 <th className="w-[7%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <div className="flex items-center gap-1">
@@ -234,6 +233,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                     </button>
                   </div>
                 </th>
+                <th className="w-[13%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_cost}</th>
                 <th className="w-[14%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <div className="flex items-center gap-1">
                     {t.form_col_warranty_date}
@@ -253,9 +253,9 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-2 py-2"><input data-col="name" data-row={i} value={item.name} onChange={(e) => updateItem(i, "name", e.target.value)} onKeyDown={(e) => handleTabDown(e, "name", i)} className={`border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ${isReturned ? "bg-gray-100 text-gray-500" : ""}`} required disabled={isReturned} title={isReturned ? "Không thể sửa tên sản phẩm đã có trả hàng" : undefined} /></td>
                   <td className="px-2 py-2"><select value={item.condition || "2nd"} onChange={(e) => updateItem(i, "condition", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white"><option value="2nd">2nd</option><option value="new">New</option></select></td>
-                  <td className="px-2 py-2"><input data-col="cost" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateItem(i, "purchase_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "cost", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input data-col="price" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.selling_price)} onChange={(e) => updateItem(i, "selling_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "price", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input value={item.warranty || ""} onChange={(e) => updateItem(i, "warranty", e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
+                  <td className="px-2 py-2"><input data-col="cost" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateItem(i, "purchase_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "cost", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input type="date" value={item.warranty_start || ""} onChange={(e) => updateItem(i, "warranty_start", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input value={item.notes || ""} onChange={(e) => updateItem(i, "notes", e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-1 py-2 text-center">{!isReturned && <button type="button" onClick={() => setItems(items.filter((_, j) => j !== i))} className="p-1 rounded-md hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>}</td>
@@ -263,6 +263,15 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                 );
               })}
             </tbody>
+            <tfoot>
+              <tr className="border-t border-gray-200 bg-gray-50/50">
+                <td colSpan={2} className="px-2 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{t.form_total}</td>
+                <td className="px-2 py-2.5 text-right text-sm font-semibold text-gray-800 tabular-nums pr-5">{formatNumber(items.reduce((s, i) => s + (i.selling_price || 0), 0))}</td>
+                <td></td>
+                <td className="px-2 py-2.5 text-right text-sm font-semibold text-gray-800 tabular-nums pr-5">{formatNumber(items.reduce((s, i) => s + (i.purchase_price || 0), 0))}</td>
+                <td colSpan={3}></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>

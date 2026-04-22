@@ -42,14 +42,25 @@ export default function FinanceMonthPage() {
       <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center mb-6 shrink-0">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/finance")}
+          <button onClick={() => {
+            const py = month === 1 ? year - 1 : year;
+            const pm = month === 1 ? 12 : month - 1;
+            router.push(`/finance/${py}/${pm}`);
+          }}
+            title={t.finance_prev_month}
             className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-white hover:border-gray-300 transition-colors text-gray-500">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">{String(month).padStart(2, "0")} / {year}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{t.finance_month_subtitle}</p>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-800">{String(month).padStart(2, "0")} / {year}</h1>
+          <button onClick={() => {
+            const ny = month === 12 ? year + 1 : year;
+            const nm = month === 12 ? 1 : month + 1;
+            router.push(`/finance/${ny}/${nm}`);
+          }}
+            title={t.finance_next_month}
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-white hover:border-gray-300 transition-colors text-gray-500">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </button>
         </div>
         <button onClick={() => { setEditTxn(undefined); setShowModal(true); }}
           className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">

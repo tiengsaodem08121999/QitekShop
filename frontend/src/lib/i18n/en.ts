@@ -145,6 +145,7 @@ const en = {
   form_col_warranty: "Warranty",
   form_col_warranty_date: "Warranty date",
   form_col_notes: "Notes",
+  form_total: "Total",
   form_trade_ins: "Trade-ins",
   form_add_trade_in: "Add trade-in",
   form_trade_in_price: "Trade-in price",
@@ -184,7 +185,8 @@ const en = {
   finance_no_txn: (year: number) => `No transactions in ${year}`,
 
   // Finance month
-  finance_month_subtitle: "Monthly income & expense details",
+  finance_prev_month: "Previous month",
+  finance_next_month: "Next month",
   finance_income: "Income",
   finance_expense: "Expense",
   finance_profit: "Profit",

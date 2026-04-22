@@ -260,6 +260,8 @@ export default function QuotationDetailPage() {
               </th>
               <th className="w-[22%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
               <th className="w-[6%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_cond}</th>
+              <th className="w-[14%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_price}</th>
+              <th className="w-[5%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_warranty}</th>
               <th className="w-[14%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hide-on-screenshot">
                 <button onClick={() => setShowCost(!showCost)} className="inline-flex items-center gap-1 hover:text-gray-700 transition-colors" title={t.quotation_col_cost}>
                   {t.quotation_col_cost}
@@ -270,10 +272,8 @@ export default function QuotationDetailPage() {
                   )}
                 </button>
               </th>
-              <th className="w-[14%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_price}</th>
-              <th className="w-[8%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_warranty}</th>
               <th className="w-[14%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_warranty_date}</th>
-              <th className="w-[14%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_notes}</th>
+              <th className="w-[17%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_notes}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -298,9 +298,9 @@ export default function QuotationDetailPage() {
                     item.condition === "new" ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-600"
                   }`}>{item.condition}</span>
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums text-gray-600 hide-on-screenshot">{showCost ? item.purchase_price.toLocaleString() : "•••"}</td>
                 <td className="px-4 py-3 text-right tabular-nums font-medium text-gray-800">{item.selling_price.toLocaleString()}</td>
                 <td className="px-4 py-3 text-gray-500">{item.warranty}</td>
+                <td className="px-4 py-3 text-right tabular-nums text-gray-600 hide-on-screenshot">{showCost ? item.purchase_price.toLocaleString() : "•••"}</td>
                 <td className="px-4 py-3 text-gray-500">{item.warranty_start || t.dash}</td>
                 <td className="px-4 py-3 text-gray-400">{item.notes || t.dash}</td>
               </tr>
@@ -311,15 +311,16 @@ export default function QuotationDetailPage() {
             <tr className="bg-gray-50/80 border-t border-gray-200">
               <td></td>
               <td className="px-4 py-3 font-semibold text-gray-700" colSpan={2}>{t.quotations_total}</td>
+              <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-800">
+                {products.filter((_, i) => checkedItems.has(i)).reduce((sum, item) => sum + item.selling_price, 0).toLocaleString()}
+              </td>
+              <td></td>
               <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-600">
                 {showCost
                   ? products.filter((_, i) => checkedItems.has(i)).reduce((sum, item) => sum + item.purchase_price, 0).toLocaleString()
                   : "•••"}
               </td>
-              <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-800">
-                {products.filter((_, i) => checkedItems.has(i)).reduce((sum, item) => sum + item.selling_price, 0).toLocaleString()}
-              </td>
-              <td colSpan={3}></td>
+              <td colSpan={2}></td>
             </tr>
           </tfoot>
         </table>
@@ -368,7 +369,7 @@ export default function QuotationDetailPage() {
                 <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.return_refund_percent}</th>
                 <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.return_refund_amount}</th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.return_date}</th>
-                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hide-on-screenshot"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -386,7 +387,7 @@ export default function QuotationDetailPage() {
                   <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">{r.refund_percent}%</td>
                   <td className="px-4 py-2.5 text-right tabular-nums font-medium text-orange-600">{r.refund_amount.toLocaleString()}</td>
                   <td className="px-4 py-2.5 text-gray-500">{formatDate(r.date)}</td>
-                  <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                  <td className="px-4 py-2.5 text-right whitespace-nowrap hide-on-screenshot">
                     <button onClick={() => openEditReturn(r)} className="text-gray-400 hover:text-blue-600 mr-2" title={t.return_edit}>
                       <svg className="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     </button>
@@ -441,7 +442,7 @@ export default function QuotationDetailPage() {
                   <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.payment_amount}</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.payment_method}</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.payment_date}</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                  <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hide-on-screenshot"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -465,7 +466,7 @@ export default function QuotationDetailPage() {
                       </span>
                     </td>
                     <td className="px-4 py-2.5 text-gray-500">{formatDate(p.date)}</td>
-                    <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                    <td className="px-4 py-2.5 text-right whitespace-nowrap hide-on-screenshot">
                       <button onClick={() => openEditPayment(p)} className="text-gray-400 hover:text-blue-600 mr-2" title={t.payment_edit}>
                         <svg className="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                       </button>
