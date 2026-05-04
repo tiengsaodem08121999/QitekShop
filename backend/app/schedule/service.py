@@ -43,3 +43,98 @@ def delete_tag(db: Session, tag_id: int) -> bool:
     db.delete(tag)
     db.commit()
     return True
+
+
+# ---------- Events ----------
+
+def _resolve_tags(db: Session, tag_ids: list[int]) -> list[ScheduleTag]:
+    if not tag_ids:
+        return []
+    tags = db.query(ScheduleTag).filter(ScheduleTag.id.in_(tag_ids)).all()
+    if len(tags) != len(set(tag_ids)):
+        raise ValueError("One or more tag_ids do not exist")
+    return tags
+
+
+def get_event(db: Session, event_id: int) -> Optional[ScheduleEvent]:
+    return (
+        db.query(ScheduleEvent)
+        .filter(ScheduleEvent.id == event_id, ScheduleEvent.is_deleted == False)
+        .first()
+    )
+
+
+def list_events(
+    db: Session,
+    start_date: DateType,
+    end_date: DateType,
+    status: Optional[EventStatus] = None,
+    tag_id: Optional[int] = None,
+) -> list[ScheduleEvent]:
+    query = (
+        db.query(ScheduleEvent)
+        .filter(
+            ScheduleEvent.is_deleted == False,
+            ScheduleEvent.date >= start_date,
+            ScheduleEvent.date <= end_date,
+        )
+    )
+    if status is not None:
+        query = query.filter(ScheduleEvent.status == status)
+    if tag_id is not None:
+        query = query.filter(ScheduleEvent.tags.any(ScheduleTag.id == tag_id))
+    return query.order_by(ScheduleEvent.date, ScheduleEvent.start_time, ScheduleEvent.id).all()
+
+
+def create_event(db: Session, data: EventCreate, user_id: int) -> ScheduleEvent:
+    tags = _resolve_tags(db, data.tag_ids)
+    event = ScheduleEvent(
+        title=data.title,
+        date=data.date,
+        start_time=data.start_time,
+        end_time=data.end_time,
+        status=data.status,
+        description=data.description,
+        created_by=user_id,
+        tags=tags,
+    )
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+def update_event(db: Session, event_id: int, data: EventCreate) -> Optional[ScheduleEvent]:
+    event = get_event(db, event_id)
+    if not event:
+        return None
+    tags = _resolve_tags(db, data.tag_ids)
+    event.title = data.title
+    event.date = data.date
+    event.start_time = data.start_time
+    event.end_time = data.end_time
+    event.status = data.status
+    event.description = data.description
+    event.tags = tags
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+def update_event_status(db: Session, event_id: int, status: EventStatus) -> Optional[ScheduleEvent]:
+    event = get_event(db, event_id)
+    if not event:
+        return None
+    event.status = status
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+def delete_event(db: Session, event_id: int) -> bool:
+    event = get_event(db, event_id)
+    if not event:
+        return False
+    event.is_deleted = True
+    db.commit()
+    return True
