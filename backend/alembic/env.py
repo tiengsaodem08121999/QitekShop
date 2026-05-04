@@ -15,6 +15,7 @@ from app.models import Setting  # noqa: F401
 from app.auth.models import User  # noqa: F401
 from app.quotation.models import Customer, Quotation, QuotationItem  # noqa: F401
 from app.finance.models import Transaction  # noqa: F401
+from app.schedule.models import ScheduleEvent, ScheduleTag  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
