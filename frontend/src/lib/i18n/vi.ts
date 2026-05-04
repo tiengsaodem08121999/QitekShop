@@ -17,6 +17,7 @@ const vi: Translations = {
   nav_quotations: "Báo giá",
   nav_customers: "Khách hàng",
   nav_finance: "Thu chi",
+  nav_schedule: "Lịch",
   nav_settings: "Cài đặt",
 
   // Roles
@@ -235,6 +236,45 @@ const vi: Translations = {
     "", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
     "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",
   ],
+
+  // Schedule
+  schedule_title: "Lịch công việc",
+  schedule_subtitle: "Việc cần làm trong shop",
+  schedule_view_day: "Ngày",
+  schedule_view_week: "Tuần",
+  schedule_view_month: "Tháng",
+  schedule_today: "Hôm nay",
+  schedule_add_event: "Thêm việc",
+  schedule_no_events: "Chưa có việc nào",
+  schedule_more_count: (n: number) => `+${n} nữa`,
+
+  schedule_status_all: "Tất cả",
+  schedule_status_pending: "Chưa làm",
+  schedule_status_in_progress: "Đang làm",
+  schedule_status_done: "Đã xong",
+  schedule_status_cancelled: "Đã hủy",
+
+  schedule_field_title: "Tiêu đề",
+  schedule_field_date: "Ngày",
+  schedule_field_start: "Bắt đầu",
+  schedule_field_end: "Kết thúc",
+  schedule_field_status: "Trạng thái",
+  schedule_field_description: "Mô tả",
+  schedule_field_tags: "Thẻ",
+
+  schedule_modal_add: "Thêm việc",
+  schedule_modal_edit: "Sửa việc",
+  schedule_delete_confirm: "Xóa việc này?",
+  schedule_created_by: (name: string) => `Tạo bởi ${name}`,
+
+  schedule_tag_section: "Thẻ của Lịch",
+  schedule_tag_manage: "Quản lý thẻ",
+  schedule_tag_name: "Tên",
+  schedule_tag_color: "Màu",
+  schedule_tag_create: "Thêm thẻ",
+  schedule_tag_edit: "Sửa thẻ",
+  schedule_tag_delete_confirm: (name: string) => `Xóa thẻ "${name}"?`,
+  schedule_tag_empty: "Chưa có thẻ nào",
 };
 
 export default vi;

@@ -15,6 +15,7 @@ const en = {
   nav_quotations: "Quotations",
   nav_customers: "Customers",
   nav_finance: "Finance",
+  nav_schedule: "Schedule",
   nav_settings: "Settings",
 
   // Roles
@@ -233,6 +234,45 @@ const en = {
     "", "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
   ],
+
+  // Schedule
+  schedule_title: "Schedule",
+  schedule_subtitle: "Tasks and reminders for the shop",
+  schedule_view_day: "Day",
+  schedule_view_week: "Week",
+  schedule_view_month: "Month",
+  schedule_today: "Today",
+  schedule_add_event: "Add event",
+  schedule_no_events: "No events",
+  schedule_more_count: (n: number) => `+${n} more`,
+
+  schedule_status_all: "All",
+  schedule_status_pending: "Pending",
+  schedule_status_in_progress: "In progress",
+  schedule_status_done: "Done",
+  schedule_status_cancelled: "Cancelled",
+
+  schedule_field_title: "Title",
+  schedule_field_date: "Date",
+  schedule_field_start: "Start",
+  schedule_field_end: "End",
+  schedule_field_status: "Status",
+  schedule_field_description: "Description",
+  schedule_field_tags: "Tags",
+
+  schedule_modal_add: "New event",
+  schedule_modal_edit: "Edit event",
+  schedule_delete_confirm: "Delete this event?",
+  schedule_created_by: (name: string) => `Created by ${name}`,
+
+  schedule_tag_section: "Schedule tags",
+  schedule_tag_manage: "Manage tags",
+  schedule_tag_name: "Name",
+  schedule_tag_color: "Color",
+  schedule_tag_create: "Add tag",
+  schedule_tag_edit: "Edit tag",
+  schedule_tag_delete_confirm: (name: string) => `Delete tag "${name}"?`,
+  schedule_tag_empty: "No tags yet",
 };
 
 export type Translations = {
