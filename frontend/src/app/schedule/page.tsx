@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
-import DayView from "@/components/schedule/DayView";
 import EventModal from "@/components/schedule/EventModal";
 import FilterBar from "@/components/schedule/FilterBar";
 import MonthView from "@/components/schedule/MonthView";
@@ -10,11 +9,11 @@ import WeekView from "@/components/schedule/WeekView";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import {
-  addDays, addMonths, getDayRange, getMonthGridRange, getWeekRange, toIsoDate,
+  addDays, addMonths, getMonthGridRange, getWeekRange, toIsoDate,
 } from "@/lib/schedule";
 import type { EventStatus, ScheduleEvent, ScheduleTag } from "@/types";
 
-type View = "day" | "week" | "month";
+type View = "week" | "month";
 
 interface ModalState {
   initial: ScheduleEvent | null;
@@ -33,7 +32,6 @@ export default function SchedulePage() {
   const [modal, setModal] = useState<ModalState | null>(null);
 
   const range = useMemo(() => {
-    if (view === "day") return getDayRange(anchor);
     if (view === "week") return getWeekRange(anchor);
     return getMonthGridRange(anchor);
   }, [view, anchor]);
@@ -59,9 +57,6 @@ export default function SchedulePage() {
   }), [events, statusFilter, tagFilter]);
 
   const headerLabel = useMemo(() => {
-    if (view === "day") {
-      return anchor.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-    }
     if (view === "week") {
       const ws = getWeekRange(anchor);
       return `${toIsoDate(ws.start)} – ${toIsoDate(ws.end)}`;
@@ -70,14 +65,12 @@ export default function SchedulePage() {
   }, [view, anchor]);
 
   function navPrev() {
-    if (view === "day") setAnchor(addDays(anchor, -1));
-    else if (view === "week") setAnchor(addDays(anchor, -7));
+    if (view === "week") setAnchor(addDays(anchor, -7));
     else setAnchor(addMonths(anchor, -1));
   }
 
   function navNext() {
-    if (view === "day") setAnchor(addDays(anchor, 1));
-    else if (view === "week") setAnchor(addDays(anchor, 7));
+    if (view === "week") setAnchor(addDays(anchor, 7));
     else setAnchor(addMonths(anchor, 1));
   }
 
@@ -118,7 +111,7 @@ export default function SchedulePage() {
 
         <div className="flex items-center justify-between mb-3 shrink-0">
           <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden">
-            {(["day", "week", "month"] as View[]).map((v) => (
+            {(["week", "month"] as View[]).map((v) => (
               <button key={v} onClick={() => setView(v)}
                 className={`px-4 py-1.5 text-sm ${view === v ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}>
                 {t[`schedule_view_${v}` as keyof typeof t] as string}
@@ -154,11 +147,6 @@ export default function SchedulePage() {
         />
 
         <div className="flex-1 min-h-0 mt-3 mb-5 flex flex-col">
-          {view === "day" && (
-            <DayView date={anchor} events={filteredEvents}
-              onEventClick={openEdit}
-              onEmptyClick={(d, h) => openCreate(d, h)} />
-          )}
           {view === "week" && (
             <WeekView anchorDate={anchor} events={filteredEvents}
               onEventClick={openEdit}
@@ -167,7 +155,7 @@ export default function SchedulePage() {
           {view === "month" && (
             <MonthView anchorDate={anchor} events={filteredEvents}
               onEventClick={openEdit}
-              onDayClick={(d) => { setAnchor(d); setView("day"); }} />
+              onDayClick={(d) => { setAnchor(d); setView("week"); }} />
           )}
         </div>
 

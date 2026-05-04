@@ -238,7 +238,6 @@ const en = {
   // Schedule
   schedule_title: "Schedule",
   schedule_subtitle: "Tasks and reminders for the shop",
-  schedule_view_day: "Day",
   schedule_view_week: "Week",
   schedule_view_month: "Month",
   schedule_today: "Today",

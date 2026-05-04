@@ -240,7 +240,6 @@ const vi: Translations = {
   // Schedule
   schedule_title: "Lịch công việc",
   schedule_subtitle: "Việc cần làm trong shop",
-  schedule_view_day: "Ngày",
   schedule_view_week: "Tuần",
   schedule_view_month: "Tháng",
   schedule_today: "Hôm nay",

@@ -48,10 +48,6 @@ export interface DateRange {
   end: Date;
 }
 
-export function getDayRange(d: Date): DateRange {
-  return { start: d, end: d };
-}
-
 export function getWeekRange(d: Date): DateRange {
   return { start: startOfWeek(d), end: endOfWeek(d) };
 }

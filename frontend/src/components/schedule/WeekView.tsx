@@ -6,7 +6,7 @@ import { addDays, isSameDay, startOfWeek, timeToHours, toIsoDate } from "@/lib/s
 import type { ScheduleEvent } from "@/types";
 
 const HOUR_START = 6;
-const HOUR_END = 22;
+const HOUR_END = 24;
 const HOURS = HOUR_END - HOUR_START;
 const HOUR_HEIGHT = 56;
 const DAY_LABELS_VI = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];

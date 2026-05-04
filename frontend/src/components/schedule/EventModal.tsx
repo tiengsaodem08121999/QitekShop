@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useToast } from "@/components/Toast";
@@ -22,22 +22,97 @@ const STATUSES: EventStatus[] = ["pending", "in_progress", "done", "cancelled"];
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
 
+function addOneHour(time: string): string {
+  const [h, m] = time.split(":");
+  return `${String(Math.min(23, Number(h) + 1)).padStart(2, "0")}:${m}`;
+}
+
+function NumberPicker({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: {
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+  ariaLabel: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !listRef.current) return;
+    const el = listRef.current.querySelector<HTMLLIElement>(`[data-value="${value}"]`);
+    el?.scrollIntoView({ block: "center" });
+  }, [open, value]);
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        onClick={() => setOpen((o) => !o)}
+        className="w-9 py-1 text-sm font-medium text-gray-800 text-center rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+      >
+        {value}
+      </button>
+      {open && (
+        <ul
+          ref={listRef}
+          className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-10 w-14 max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg py-1"
+        >
+          {options.map((opt) => {
+            const active = opt === value;
+            return (
+              <li
+                key={opt}
+                data-value={opt}
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+                className={`px-3 py-1 text-sm text-center cursor-pointer transition-colors ${
+                  active ? "bg-blue-600 text-white font-medium" : "text-gray-700 hover:bg-blue-50"
+                }`}
+              >
+                {opt}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function TimeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [h, m] = value.split(":");
-  const cellCls =
-    "appearance-none bg-transparent border-0 text-sm font-medium text-gray-800 cursor-pointer focus:outline-none text-center w-9 py-1";
   return (
     <div className="inline-flex items-center gap-1.5 border border-gray-300 rounded-md pl-3 pr-2 py-1.5 bg-white focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500 transition-colors">
       <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
-      <select value={h} onChange={(e) => onChange(`${e.target.value}:${m}`)} className={cellCls} aria-label="hour">
-        {HOURS.map((hh) => <option key={hh} value={hh}>{hh}</option>)}
-      </select>
+      <NumberPicker value={h} options={HOURS} onChange={(v) => onChange(`${v}:${m}`)} ariaLabel="hour" />
       <span className="text-gray-400 select-none">:</span>
-      <select value={m} onChange={(e) => onChange(`${h}:${e.target.value}`)} className={cellCls} aria-label="minute">
-        {MINUTES.map((mm) => <option key={mm} value={mm}>{mm}</option>)}
-      </select>
+      <NumberPicker value={m} options={MINUTES} onChange={(v) => onChange(`${h}:${v}`)} ariaLabel="minute" />
     </div>
   );
 }
@@ -54,10 +129,13 @@ export default function EventModal({
     initial ? trimSeconds(initial.start_time) : defaultStart ?? "09:00"
   );
   const [endTime, setEndTime] = useState(
-    initial ? trimSeconds(initial.end_time) : defaultStart
-      ? `${String(Math.min(23, Number(defaultStart.slice(0, 2)) + 1)).padStart(2, "0")}:${defaultStart.slice(3)}`
-      : "10:00"
+    initial ? trimSeconds(initial.end_time) : addOneHour(defaultStart ?? "09:00")
   );
+
+  function handleStartChange(v: string) {
+    setStartTime(v);
+    setEndTime(addOneHour(v));
+  }
   const [status, setStatus] = useState<EventStatus>(initial?.status ?? "pending");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [tagIds, setTagIds] = useState<number[]>(initial?.tags.map((tag) => tag.id) ?? []);
@@ -134,7 +212,7 @@ export default function EventModal({
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">{t.schedule_field_start}</label>
-              <TimeSelect value={startTime} onChange={setStartTime} />
+              <TimeSelect value={startTime} onChange={handleStartChange} />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">{t.schedule_field_end}</label>
