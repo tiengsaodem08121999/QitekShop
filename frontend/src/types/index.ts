@@ -139,3 +139,25 @@ export interface DashboardData {
   month: number;
   year: number;
 }
+
+export type EventStatus = "pending" | "in_progress" | "done" | "cancelled";
+
+export interface ScheduleTag {
+  id: number;
+  name: string;
+  color: string;
+}
+
+export interface ScheduleEvent {
+  id: number;
+  title: string;
+  date: string;            // YYYY-MM-DD
+  start_time: string;      // HH:MM:SS
+  end_time: string;        // HH:MM:SS
+  status: EventStatus;
+  description: string | null;
+  tags: ScheduleTag[];
+  created_by: number;
+  created_by_name: string;
+  created_at: string;
+}
