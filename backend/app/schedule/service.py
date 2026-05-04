@@ -56,6 +56,25 @@ def _resolve_tags(db: Session, tag_ids: list[int]) -> list[ScheduleTag]:
     return tags
 
 
+def _check_overlap(db: Session, data: EventCreate, exclude_id: Optional[int] = None) -> None:
+    """Reject if another non-deleted, non-cancelled event on the same date overlaps the given range."""
+    query = db.query(ScheduleEvent).filter(
+        ScheduleEvent.is_deleted == False,
+        ScheduleEvent.status != EventStatus.cancelled,
+        ScheduleEvent.date == data.date,
+        ScheduleEvent.start_time < data.end_time,
+        ScheduleEvent.end_time > data.start_time,
+    )
+    if exclude_id is not None:
+        query = query.filter(ScheduleEvent.id != exclude_id)
+    conflict = query.first()
+    if conflict:
+        raise ValueError(
+            f"Time conflict with \"{conflict.title}\" "
+            f"({conflict.start_time.strftime('%H:%M')}-{conflict.end_time.strftime('%H:%M')})"
+        )
+
+
 def get_event(db: Session, event_id: int) -> Optional[ScheduleEvent]:
     return (
         db.query(ScheduleEvent)
@@ -87,6 +106,7 @@ def list_events(
 
 
 def create_event(db: Session, data: EventCreate, user_id: int) -> ScheduleEvent:
+    _check_overlap(db, data)
     tags = _resolve_tags(db, data.tag_ids)
     event = ScheduleEvent(
         title=data.title,
@@ -108,6 +128,7 @@ def update_event(db: Session, event_id: int, data: EventCreate) -> Optional[Sche
     event = get_event(db, event_id)
     if not event:
         return None
+    _check_overlap(db, data, exclude_id=event_id)
     tags = _resolve_tags(db, data.tag_ids)
     event.title = data.title
     event.date = data.date
