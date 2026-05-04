@@ -24,7 +24,7 @@ interface ModalState {
 
 export default function SchedulePage() {
   const t = useT();
-  const [view, setView] = useState<View>("day");
+  const [view, setView] = useState<View>("week");
   const [anchor, setAnchor] = useState<Date>(new Date());
   const [tags, setTags] = useState<ScheduleTag[]>([]);
   const [events, setEvents] = useState<ScheduleEvent[]>([]);

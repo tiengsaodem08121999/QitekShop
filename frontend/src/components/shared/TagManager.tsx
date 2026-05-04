@@ -3,12 +3,16 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useToast } from "@/components/Toast";
+import { useConfirm } from "@/components/Confirm";
 import type { ScheduleTag } from "@/types";
 
 const DEFAULT_COLOR = "#3B82F6";
 
 export default function TagManager() {
   const t = useT();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [tags, setTags] = useState<ScheduleTag[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ScheduleTag | null>(null);
@@ -57,19 +61,19 @@ export default function TagManager() {
       cancel();
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : t.error);
+      toast(err instanceof Error ? err.message : t.error, "error");
     } finally {
       setSaving(false);
     }
   }
 
   async function remove(tag: ScheduleTag) {
-    if (!confirm(t.schedule_tag_delete_confirm(tag.name))) return;
+    if (!(await confirm(t.schedule_tag_delete_confirm(tag.name)))) return;
     try {
       await apiFetch(`/api/schedule/tags/${tag.id}`, { method: "DELETE" });
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : t.error);
+      toast(err instanceof Error ? err.message : t.error, "error");
     }
   }
 
