@@ -19,7 +19,7 @@ interface Props {
 const EMPTY_ITEM: QuotationItem = {
   is_trade_in: false, name: "", condition: "2nd",
   purchase_price: 0, selling_price: 0,
-  warranty_count: null, warranty_unit: null,
+  warranty_count: 1, warranty_unit: "week",
   warranty_start: null, delivery_date: null, notes: null,
 };
 
@@ -237,7 +237,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                 <th className="w-[24%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_name}</th>
                 <th className="w-[7%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_cond}</th>
                 <th className="w-[13%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_price}</th>
-                <th className="w-[7%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[12%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <div className="flex items-center gap-1">
                     {t.form_col_warranty}
                     <button type="button" onClick={() => copyDown("warranty")} title="Copy dòng 1 xuống" className="p-0.5 rounded hover:bg-blue-50 text-gray-300 hover:text-blue-500 transition-colors">
@@ -246,7 +246,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                   </div>
                 </th>
                 <th className="w-[13%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_cost}</th>
-                <th className="w-[14%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[9%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <div className="flex items-center gap-1">
                     {t.form_col_warranty_date}
                     <button type="button" onClick={() => copyDown("warranty_start")} title="Copy dòng 1 xuống" className="p-0.5 rounded hover:bg-blue-50 text-gray-300 hover:text-blue-500 transition-colors">
@@ -272,7 +272,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                         type="number" min={1} max={99}
                         value={item.warranty_count ?? ""}
                         onChange={(e) => updateItem(i, "warranty_count", e.target.value === "" ? null : Number(e.target.value))}
-                        className="border border-gray-200 rounded-lg px-1.5 py-1.5 w-12 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                        className="border border-gray-200 rounded-lg px-1.5 py-1.5 w-14 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                       />
                       <select
                         value={item.warranty_unit ?? ""}
