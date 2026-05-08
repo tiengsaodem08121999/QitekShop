@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import List, Optional
 
 from sqlalchemy import (
-    Boolean, Date, DateTime, Enum, ForeignKey, Numeric, String, Text, func,
+    Boolean, Date, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -14,6 +14,11 @@ from app.database import Base
 class QuotationStatus(str, enum.Enum):
     draft = "draft"
     confirmed = "confirmed"
+
+
+class WarrantyUnit(str, enum.Enum):
+    week = "week"
+    month = "month"
 
 
 class Customer(Base):
@@ -69,7 +74,10 @@ class QuotationItem(Base):
     condition: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     purchase_price: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0)
     selling_price: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0)
-    warranty: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    warranty_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    warranty_unit: Mapped[Optional[WarrantyUnit]] = mapped_column(
+        Enum(WarrantyUnit), nullable=True
+    )
     warranty_start: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     delivery_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

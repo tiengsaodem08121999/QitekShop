@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, model_validator
 
-from app.quotation.models import PaymentMethod, PaymentType, QuotationStatus, ReturnReason
+from app.quotation.models import PaymentMethod, PaymentType, QuotationStatus, ReturnReason, WarrantyUnit
 
 
 # --- Customer ---
@@ -51,7 +51,8 @@ class QuotationItemCreate(DecimalModel):
     condition: Optional[str] = None
     purchase_price: Decimal = 0
     selling_price: Decimal = 0
-    warranty: Optional[str] = None
+    warranty_count: Optional[int] = None
+    warranty_unit: Optional[WarrantyUnit] = None
     warranty_start: Optional[_dt.date] = None
     delivery_date: Optional[_dt.date] = None
     notes: Optional[str] = None
@@ -63,6 +64,14 @@ class QuotationItemCreate(DecimalModel):
             self.condition = None
         return self
 
+    @model_validator(mode="after")
+    def validate_warranty(self):
+        if (self.warranty_count is None) != (self.warranty_unit is None):
+            raise ValueError("warranty_count and warranty_unit must both be set or both be null")
+        if self.warranty_count is not None and not (1 <= self.warranty_count <= 99):
+            raise ValueError("warranty_count must be between 1 and 99")
+        return self
+
 
 class QuotationItemResponse(DecimalModel):
     id: int
@@ -71,7 +80,8 @@ class QuotationItemResponse(DecimalModel):
     condition: Optional[str]
     purchase_price: Decimal
     selling_price: Decimal
-    warranty: Optional[str]
+    warranty_count: Optional[int]
+    warranty_unit: Optional[WarrantyUnit]
     warranty_start: Optional[_dt.date]
     delivery_date: Optional[_dt.date]
     notes: Optional[str]
