@@ -18,6 +18,8 @@ export interface Customer {
   created_at: string;
 }
 
+export type WarrantyUnit = "week" | "month";
+
 export interface QuotationItem {
   id?: number;
   is_trade_in: boolean;
@@ -25,7 +27,8 @@ export interface QuotationItem {
   condition: string | null;
   purchase_price: number;
   selling_price: number;
-  warranty: string | null;
+  warranty_count: number | null;
+  warranty_unit: WarrantyUnit | null;
   warranty_start: string | null;
   delivery_date: string | null;
   notes: string | null;

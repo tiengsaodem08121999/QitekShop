@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
-import { formatDate, formatNumber, parseNumber } from "@/lib/format";
+import { formatDate, formatNumber, formatWarranty, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { useToast } from "@/components/Toast";
 import type { Payment, PaymentMethod, PaymentType, Quotation, Return, ReturnReason } from "@/types";
@@ -299,7 +299,7 @@ export default function QuotationDetailPage() {
                   }`}>{item.condition}</span>
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums font-medium text-gray-800">{item.selling_price.toLocaleString()}</td>
-                <td className="px-4 py-3 text-gray-500">{item.warranty}</td>
+                <td className="px-4 py-3 text-gray-500">{formatWarranty(item.warranty_count, item.warranty_unit, t, t.dash)}</td>
                 <td className="px-4 py-3 text-right tabular-nums text-gray-600 hide-on-screenshot">{showCost ? item.purchase_price.toLocaleString() : "•••"}</td>
                 <td className="px-4 py-3 text-gray-500">{item.warranty_start || t.dash}</td>
                 <td className="px-4 py-3 text-gray-400">{item.notes || t.dash}</td>

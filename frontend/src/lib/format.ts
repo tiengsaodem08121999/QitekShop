@@ -14,3 +14,16 @@ export function formatDate(value: string | Date): string {
   const yyyy = d.getFullYear();
   return `${dd}-${mm}-${yyyy}`;
 }
+
+import type { WarrantyUnit } from "@/types";
+
+export function formatWarranty(
+  count: number | null,
+  unit: WarrantyUnit | null,
+  t: { warranty_unit_month: string; warranty_unit_week: string },
+  fallback = "—",
+): string {
+  if (count == null || unit == null) return fallback;
+  const label = unit === "month" ? t.warranty_unit_month : t.warranty_unit_week;
+  return `${count} ${label.toLowerCase()}`;
+}
