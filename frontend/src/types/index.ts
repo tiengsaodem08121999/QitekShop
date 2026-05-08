@@ -100,6 +100,8 @@ export interface QuotationListItem {
   total_paid: number;
   total_trade_in: number;
   remaining: number;
+  warranty_active: number;
+  warranty_total: number;
   created_at: string;
 }
 

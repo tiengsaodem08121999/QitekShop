@@ -82,6 +82,7 @@ const vi: Translations = {
   warranty_unit_week: "Tuần",
   quotation_col_warranty_status: "BH còn",
   form_col_warranty_status: "BH còn",
+  quotations_col_active: "BH còn",
   quotation_col_notes: "Ghi chú",
   quotation_copy: "Sao chép",
   quotation_total_trade_in: "Tổng thu cũ",

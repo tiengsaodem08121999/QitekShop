@@ -80,6 +80,7 @@ const en = {
   warranty_unit_week: "Week",
   quotation_col_warranty_status: "Active",
   form_col_warranty_status: "Active",
+  quotations_col_active: "Active",
   quotation_col_notes: "Notes",
   quotation_copy: "Copy",
   quotation_total_trade_in: "Total trade-in",

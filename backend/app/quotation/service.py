@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.finance.models import Transaction, TransactionType
 from app.quotation.models import Customer, Payment, PaymentMethod, PaymentType, Quotation, QuotationItem, QuotationStatus, Return, ReturnReason
 from app.quotation.schemas import PaymentCreate, PaymentUpdate, ReturnCreate, ReturnUpdate, QuotationCreate, QuotationItemCreate, QuotationUpdate
+from app.quotation.warranty_status import count_warranty_status
 
 
 def get_customers(db: Session, search: Optional[str] = None, page: int = 1, limit: int = 20):
@@ -113,17 +114,25 @@ def list_quotations(
         query = query.filter(Customer.name.ilike(f"%{search}%"))
     total = query.count()
     rows = (
-        query.options(joinedload(Quotation.returns), joinedload(Quotation.payments))
+        query.options(
+            joinedload(Quotation.returns),
+            joinedload(Quotation.payments),
+            joinedload(Quotation.items),
+        )
         .order_by(Quotation.created_at.desc())
         .offset((page - 1) * limit)
         .limit(limit)
         .all()
     )
+    today = date_type.today()
     # Build list items with computed remaining
     items = []
     for q in rows:
         total_refund = sum(r.refund_amount for r in q.returns)
         total_refund_paid = sum(p.amount for p in q.payments if p.payment_type == PaymentType.refund)
+        warranty_active, warranty_total = count_warranty_status(
+            (i for i in q.items if not i.is_trade_in), today
+        )
         items.append({
             "id": q.id,
             "customer_name": q.customer.name,
@@ -133,6 +142,8 @@ def list_quotations(
             "total_paid": q.total_paid,
             "total_trade_in": q.total_trade_in,
             "remaining": q.total_amount - q.total_trade_in - total_refund - (q.total_paid - total_refund_paid),
+            "warranty_active": warranty_active,
+            "warranty_total": warranty_total,
             "created_at": q.created_at,
         })
     return items, total

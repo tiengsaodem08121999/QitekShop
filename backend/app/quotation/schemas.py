@@ -206,6 +206,8 @@ class QuotationListItem(DecimalModel):
     total_paid: Decimal
     total_trade_in: Decimal
     remaining: Decimal
+    warranty_active: int = 0
+    warranty_total: int = 0
     created_at: _dt.datetime
 
 
