@@ -6,7 +6,7 @@ import { apiFetch } from "@/lib/api";
 import { formatNumber, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { useToast } from "@/components/Toast";
-import type { Customer, PaginatedResponse, QuotationItem } from "@/types";
+import type { Customer, PaginatedResponse, QuotationItem, WarrantyUnit } from "@/types";
 
 interface Props {
   mode: "create" | "edit";
@@ -18,13 +18,15 @@ interface Props {
 
 const EMPTY_ITEM: QuotationItem = {
   is_trade_in: false, name: "", condition: "2nd",
-  purchase_price: 0, selling_price: 0, warranty: "3th",
+  purchase_price: 0, selling_price: 0,
+  warranty_count: null, warranty_unit: null,
   warranty_start: null, delivery_date: null, notes: null,
 };
 
 const EMPTY_TRADE_IN: QuotationItem = {
   is_trade_in: true, name: "", condition: null,
-  purchase_price: 0, selling_price: 0, warranty: null,
+  purchase_price: 0, selling_price: 0,
+  warranty_count: null, warranty_unit: null,
   warranty_start: null, delivery_date: null, notes: null,
 };
 
@@ -68,7 +70,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
 
   const isNewCustomer = !selectedCustomer && customerSearch.trim().length > 0;
 
-  function updateItem(index: number, field: string, value: string | number) {
+  function updateItem(index: number, field: string, value: string | number | null) {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   }
 
@@ -86,6 +88,16 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
   }
 
   function copyDown(field: "warranty" | "warranty_start") {
+    if (field === "warranty") {
+      const first = items[0];
+      if (!first) return;
+      const { warranty_count, warranty_unit } = first;
+      if (warranty_count == null && warranty_unit == null) return;
+      setItems((prev) => prev.map((item, i) =>
+        i === 0 ? item : { ...item, warranty_count, warranty_unit }
+      ));
+      return;
+    }
     const firstValue = items[0]?.[field];
     if (!firstValue) return;
     setItems((prev) => prev.map((item, i) => i === 0 ? item : { ...item, [field]: firstValue }));
@@ -254,7 +266,25 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                   <td className="px-2 py-2"><input data-col="name" data-row={i} value={item.name} onChange={(e) => updateItem(i, "name", e.target.value)} onKeyDown={(e) => handleTabDown(e, "name", i)} className={`border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ${isReturned ? "bg-gray-100 text-gray-500" : ""}`} required disabled={isReturned} title={isReturned ? "Không thể sửa tên sản phẩm đã có trả hàng" : undefined} /></td>
                   <td className="px-2 py-2"><select value={item.condition || "2nd"} onChange={(e) => updateItem(i, "condition", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white"><option value="2nd">2nd</option><option value="new">New</option></select></td>
                   <td className="px-2 py-2"><input data-col="price" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.selling_price)} onChange={(e) => updateItem(i, "selling_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "price", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
-                  <td className="px-2 py-2"><input value={item.warranty || ""} onChange={(e) => updateItem(i, "warranty", e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
+                  <td className="px-2 py-2">
+                    <div className="flex gap-1">
+                      <input
+                        type="number" min={1} max={99}
+                        value={item.warranty_count ?? ""}
+                        onChange={(e) => updateItem(i, "warranty_count", e.target.value === "" ? null : Number(e.target.value))}
+                        className="border border-gray-200 rounded-lg px-1.5 py-1.5 w-12 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                      />
+                      <select
+                        value={item.warranty_unit ?? ""}
+                        onChange={(e) => updateItem(i, "warranty_unit", e.target.value === "" ? null : (e.target.value as WarrantyUnit))}
+                        className="border border-gray-200 rounded-lg px-1.5 py-1.5 flex-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white"
+                      >
+                        <option value="">—</option>
+                        <option value="month">{t.warranty_unit_month}</option>
+                        <option value="week">{t.warranty_unit_week}</option>
+                      </select>
+                    </div>
+                  </td>
                   <td className="px-2 py-2"><input data-col="cost" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateItem(i, "purchase_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "cost", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input type="date" value={item.warranty_start || ""} onChange={(e) => updateItem(i, "warranty_start", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input value={item.notes || ""} onChange={(e) => updateItem(i, "notes", e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
