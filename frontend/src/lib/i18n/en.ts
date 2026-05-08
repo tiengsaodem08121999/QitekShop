@@ -78,6 +78,8 @@ const en = {
   quotation_col_warranty_date: "Warranty date",
   warranty_unit_month: "Month",
   warranty_unit_week: "Week",
+  quotation_col_warranty_status: "Active",
+  form_col_warranty_status: "Active",
   quotation_col_notes: "Notes",
   quotation_copy: "Copy",
   quotation_total_trade_in: "Total trade-in",

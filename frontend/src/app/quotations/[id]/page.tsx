@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
-import { formatDate, formatNumber, formatWarranty, parseNumber } from "@/lib/format";
+import { formatDate, formatNumber, formatWarranty, isWarrantyActive, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { useToast } from "@/components/Toast";
 import type { Payment, PaymentMethod, PaymentType, Quotation, Return, ReturnReason } from "@/types";
@@ -273,7 +273,8 @@ export default function QuotationDetailPage() {
                 </button>
               </th>
               <th className="w-[14%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_warranty_date}</th>
-              <th className="w-[17%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_notes}</th>
+              <th className="w-[5%] px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_warranty_status}</th>
+              <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_notes}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -302,6 +303,17 @@ export default function QuotationDetailPage() {
                 <td className="px-4 py-3 text-gray-500">{formatWarranty(item.warranty_count, item.warranty_unit, t, t.dash)}</td>
                 <td className="px-4 py-3 text-right tabular-nums text-gray-600 hide-on-screenshot">{showCost ? item.purchase_price.toLocaleString() : "•••"}</td>
                 <td className="px-4 py-3 text-gray-500">{item.warranty_start || t.dash}</td>
+                <td className="px-4 py-3 text-center">
+                  {(() => {
+                    const active = isWarrantyActive(item.warranty_start, item.warranty_count, item.warranty_unit);
+                    if (active === null) return <span className="text-gray-300">{t.dash}</span>;
+                    return active ? (
+                      <svg className="w-4 h-4 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                    ) : (
+                      <svg className="w-4 h-4 text-red-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                    );
+                  })()}
+                </td>
                 <td className="px-4 py-3 text-gray-400">{item.notes || t.dash}</td>
               </tr>
               );

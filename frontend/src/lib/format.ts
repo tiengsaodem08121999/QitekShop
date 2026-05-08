@@ -27,3 +27,21 @@ export function formatWarranty(
   const label = unit === "month" ? t.warranty_unit_month : t.warranty_unit_week;
   return `${count} ${label.toLowerCase()}`;
 }
+
+export function isWarrantyActive(
+  warrantyStart: string | null,
+  count: number | null,
+  unit: WarrantyUnit | null,
+  today: Date = new Date(),
+): boolean | null {
+  if (!warrantyStart || count == null || unit == null) return null;
+  const start = new Date(warrantyStart);
+  if (Number.isNaN(start.getTime())) return null;
+  const end = new Date(start);
+  if (unit === "month") {
+    end.setMonth(end.getMonth() + count);
+  } else {
+    end.setDate(end.getDate() + count * 7);
+  }
+  return end.getTime() > today.getTime();
+}

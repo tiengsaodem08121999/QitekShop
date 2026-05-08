@@ -6,6 +6,7 @@ import { apiFetch } from "@/lib/api";
 import { formatNumber, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { useToast } from "@/components/Toast";
+import { isWarrantyActive } from "@/lib/format";
 import type { Customer, PaginatedResponse, QuotationItem, WarrantyUnit } from "@/types";
 
 interface Props {
@@ -254,7 +255,8 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                     </button>
                   </div>
                 </th>
-                <th className="w-[14%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_notes}</th>
+                <th className="w-[5%] px-2 py-2.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_warranty_status}</th>
+                <th className="w-[9%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_notes}</th>
                 <th className="w-[3%]"></th>
               </tr>
             </thead>
@@ -287,6 +289,17 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                   </td>
                   <td className="px-2 py-2"><input data-col="cost" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateItem(i, "purchase_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "cost", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input type="date" value={item.warranty_start || ""} onChange={(e) => updateItem(i, "warranty_start", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
+                  <td className="px-2 py-2 text-center">
+                    {(() => {
+                      const active = isWarrantyActive(item.warranty_start, item.warranty_count, item.warranty_unit);
+                      if (active === null) return <span className="text-gray-300 text-sm">—</span>;
+                      return active ? (
+                        <svg className="w-4 h-4 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                      ) : (
+                        <svg className="w-4 h-4 text-red-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                      );
+                    })()}
+                  </td>
                   <td className="px-2 py-2"><input value={item.notes || ""} onChange={(e) => updateItem(i, "notes", e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-1 py-2 text-center">{!isReturned && <button type="button" onClick={() => setItems(items.filter((_, j) => j !== i))} className="p-1 rounded-md hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>}</td>
                 </tr>
