@@ -194,6 +194,39 @@ def confirm_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
     return quotation
 
 
+def update_item_resale(
+    db: Session,
+    quotation_id: int,
+    item_id: int,
+    resale_price: Decimal,
+) -> Optional[Quotation]:
+    """Set `resale_price` on a single trade-in item.
+
+    Allowed regardless of quotation status (draft or confirmed). This is a
+    deliberate narrow exception to the "confirmed quotations are immutable"
+    rule, because resale of a trade-in happens after the original quotation
+    closes. Only the `resale_price` field can be changed; nothing else.
+
+    Returns the updated quotation (with relationships loaded), or None if the
+    item is not on the quotation. Raises ValueError if the item is not a
+    trade-in.
+    """
+    item = (
+        db.query(QuotationItem)
+        .filter(QuotationItem.id == item_id, QuotationItem.quotation_id == quotation_id)
+        .first()
+    )
+    if not item:
+        return None
+    if not item.is_trade_in:
+        raise ValueError("resale_price can only be set on trade-in items")
+
+    item.resale_price = resale_price
+    db.flush()
+    db.commit()
+    return get_quotation(db, quotation_id)
+
+
 def enrich_response(quotation: Quotation) -> dict:
     """Add computed fields: remaining, total_purchase, total_trade_in_resale, profit, payments, returns."""
     items = quotation.items

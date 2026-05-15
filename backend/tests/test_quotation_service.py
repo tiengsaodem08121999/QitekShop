@@ -3,8 +3,8 @@ from decimal import Decimal
 
 import pytest
 
-from app.quotation.models import Customer, Quotation, QuotationItem
-from app.quotation.service import enrich_response
+from app.quotation.models import Customer, Quotation, QuotationItem, QuotationStatus
+from app.quotation.service import enrich_response, update_item_resale
 
 
 def _seed_quotation(db_session, *, user_id: int = 1, items: list[dict] | None = None):
@@ -89,3 +89,57 @@ def test_enrich_response_profit_unchanged_when_resale_zero(db_session, admin_use
     # 1,000,000 - 800,000 - 600,000 + 0 - 0 = -400,000
     assert data["profit"] == Decimal(-400_000)
     assert data["total_trade_in_resale"] == Decimal(0)
+
+
+def test_update_item_resale_sets_price(db_session, admin_user):
+    q = _seed_quotation(
+        db_session,
+        user_id=admin_user.id,
+        items=[{"is_trade_in": True, "name": "Ram 8gb", "purchase_price": 600_000}],
+    )
+    item_id = q.items[0].id
+
+    updated = update_item_resale(db_session, q.id, item_id, Decimal(800_000))
+    assert updated is not None
+    assert updated.items[0].resale_price == Decimal(800_000)
+
+
+def test_update_item_resale_works_on_confirmed_quotation(db_session, admin_user):
+    """Trade-in resale recording must work after the quotation is confirmed."""
+    q = _seed_quotation(
+        db_session,
+        user_id=admin_user.id,
+        items=[{"is_trade_in": True, "name": "Ram 8gb", "purchase_price": 600_000}],
+    )
+    q.status = QuotationStatus.confirmed
+    db_session.flush()
+    item_id = q.items[0].id
+
+    updated = update_item_resale(db_session, q.id, item_id, Decimal(800_000))
+    assert updated is not None
+    assert updated.items[0].resale_price == Decimal(800_000)
+    assert updated.status == QuotationStatus.confirmed
+
+
+def test_update_item_resale_rejects_non_trade_in(db_session, admin_user):
+    """resale_price only makes sense on trade-in items."""
+    q = _seed_quotation(
+        db_session,
+        user_id=admin_user.id,
+        items=[{"is_trade_in": False, "name": "Ram 16gb", "selling_price": 1_000_000}],
+    )
+    item_id = q.items[0].id
+
+    with pytest.raises(ValueError, match="trade-in"):
+        update_item_resale(db_session, q.id, item_id, Decimal(800_000))
+
+
+def test_update_item_resale_returns_none_for_unknown_item(db_session, admin_user):
+    q = _seed_quotation(
+        db_session,
+        user_id=admin_user.id,
+        items=[{"is_trade_in": True, "name": "Ram 8gb", "purchase_price": 600_000}],
+    )
+
+    result = update_item_resale(db_session, q.id, 9999, Decimal(800_000))
+    assert result is None
