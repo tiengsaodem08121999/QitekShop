@@ -27,6 +27,8 @@ export default function QuotationDetailPage() {
     note: "",
   });
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
+  const [editingResaleId, setEditingResaleId] = useState<number | null>(null);
+  const [resaleDraft, setResaleDraft] = useState("");
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [editingReturn, setEditingReturn] = useState<Return | null>(null);
   const [returnForm, setReturnForm] = useState({
@@ -73,6 +75,31 @@ export default function QuotationDetailPage() {
     a.href = url;
     a.download = `quotation-${id}.png`;
     a.click();
+  }
+
+  async function saveResale(itemId: number) {
+    const parsed = parseNumber(resaleDraft);
+    if (parsed < 0) {
+      toast(t.error, "error");
+      setEditingResaleId(null);
+      return;
+    }
+    try {
+      const updated = await apiFetch<Quotation>(
+        `/api/quotations/${id}/items/${itemId}/resale`,
+        { method: "PATCH", body: JSON.stringify({ resale_price: parsed }) },
+      );
+      setQ(updated);
+      setEditingResaleId(null);
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : t.error, "error");
+    }
+  }
+
+  function startEditingResale(item: { id?: number; resale_price: number }) {
+    if (!item.id) return;
+    setEditingResaleId(item.id);
+    setResaleDraft(formatNumber(item.resale_price));
   }
 
   function openAddPayment() {
@@ -340,21 +367,55 @@ export default function QuotationDetailPage() {
 
       {/* Trade-ins */}
       {tradeIns.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6 max-w-md">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6 max-w-2xl">
           <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{t.quotation_trade_ins}</h3>
           </div>
           <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_price}</th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hide-on-screenshot">{t.quotation_resale_price}</th>
+              </tr>
+            </thead>
             <tbody className="divide-y divide-gray-50">
               {tradeIns.map((item, i) => (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-4 py-3 font-medium text-gray-800">{item.name}</td>
-                  <td className="px-5 py-3 text-right tabular-nums text-gray-700">{item.purchase_price.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-gray-700">{item.purchase_price.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-gray-700 hide-on-screenshot">
+                    {editingResaleId === item.id ? (
+                      <input
+                        autoFocus
+                        type="text"
+                        inputMode="numeric"
+                        value={resaleDraft}
+                        onChange={(e) => setResaleDraft(e.target.value)}
+                        onBlur={() => saveResale(item.id!)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); saveResale(item.id!); }
+                          if (e.key === "Escape") { e.preventDefault(); setEditingResaleId(null); }
+                        }}
+                        className="border border-blue-300 rounded px-2 py-1 w-32 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => startEditingResale(item)}
+                        className="hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                        title={t.quotation_resale_price}
+                      >
+                        {item.resale_price.toLocaleString()}
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
               <tr className="bg-gray-50/80">
                 <td className="px-5 py-3 font-semibold text-gray-700">{t.quotation_total_trade_in}</td>
                 <td className="px-5 py-3 text-right font-bold tabular-nums text-gray-800">{q.total_trade_in.toLocaleString()}</td>
+                <td className="px-5 py-3 text-right font-bold tabular-nums text-gray-800 hide-on-screenshot">{q.total_trade_in_resale.toLocaleString()}</td>
               </tr>
             </tbody>
           </table>
@@ -530,6 +591,12 @@ export default function QuotationDetailPage() {
                 <tr className="border-b border-gray-50">
                   <td className="px-5 py-3 text-gray-600">{t.quotation_trade_in}</td>
                   <td className="px-5 py-3 text-right tabular-nums text-gray-700">{q.total_trade_in.toLocaleString()}</td>
+                </tr>
+              )}
+              {q.total_trade_in_resale > 0 && (
+                <tr className="border-b border-gray-50 hide-on-screenshot">
+                  <td className="px-5 py-3 text-gray-600">{t.quotation_total_trade_in_resold}</td>
+                  <td className="px-5 py-3 text-right tabular-nums text-emerald-600">+{q.total_trade_in_resale.toLocaleString()}</td>
                 </tr>
               )}
               {q.total_refund > 0 && (
