@@ -20,6 +20,7 @@ from app.quotation.schemas import (
     QuotationListItem,
     QuotationResponse,
     QuotationUpdate,
+    ResaleUpdate,
     ReturnCreate,
     ReturnResponse,
     ReturnUpdate,
@@ -39,6 +40,7 @@ from app.quotation.service import (
     list_quotations,
     list_returns,
     update_customer,
+    update_item_resale,
     update_payment,
     update_quotation,
     update_return,
@@ -166,6 +168,32 @@ def confirm_quotation_endpoint(
     quotation = confirm_quotation(db, quotation_id)
     if not quotation:
         raise HTTPException(status_code=400, detail="Cannot confirm quotation")
+    return enrich_response(quotation)
+
+
+@router.patch(
+    "/quotations/{quotation_id}/items/{item_id}/resale",
+    response_model=QuotationResponse,
+)
+def update_item_resale_endpoint(
+    quotation_id: int,
+    item_id: int,
+    data: ResaleUpdate,
+    _user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
+    db: Session = Depends(get_db),
+):
+    """Set resale_price on a trade-in item. Works on confirmed quotations.
+
+    Narrow, deliberate exception to the rule that confirmed quotations are
+    immutable: resale of a trade-in happens after the original sale closes,
+    and only this one field can be edited via this endpoint.
+    """
+    try:
+        quotation = update_item_resale(db, quotation_id, item_id, data.resale_price)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Trade-in item not found")
     return enrich_response(quotation)
 
 
