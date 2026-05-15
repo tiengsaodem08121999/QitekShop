@@ -19,14 +19,14 @@ interface Props {
 
 const EMPTY_ITEM: QuotationItem = {
   is_trade_in: false, name: "", condition: "2nd",
-  purchase_price: 0, selling_price: 0,
+  purchase_price: 0, selling_price: 0, resale_price: 0,
   warranty_count: 1, warranty_unit: "week",
   warranty_start: null, delivery_date: null, notes: null,
 };
 
 const EMPTY_TRADE_IN: QuotationItem = {
   is_trade_in: true, name: "", condition: null,
-  purchase_price: 0, selling_price: 0,
+  purchase_price: 0, selling_price: 0, resale_price: 0,
   warranty_count: null, warranty_unit: null,
   warranty_start: null, delivery_date: null, notes: null,
 };
@@ -114,7 +114,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
 
     const validTradeIns = tradeIns.filter((i) => i.name.trim() !== "");
     const allItems = [
-      ...items.map((i) => ({ ...i, is_trade_in: false, warranty_start: i.warranty_start || null })),
+      ...items.map((i) => ({ ...i, is_trade_in: false, resale_price: 0, warranty_start: i.warranty_start || null })),
       ...validTradeIns.map((i) => ({ ...i, is_trade_in: true, selling_price: 0, condition: null })),
     ];
 
@@ -332,9 +332,10 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
           <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="w-[70%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
-                <th className="w-[27%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_price}</th>
-                <th className="w-[3%]"></th>
+                <th className="w-[50%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
+                <th className="w-[23%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_price}</th>
+                <th className="w-[23%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_resale_price}</th>
+                <th className="w-[4%]"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -342,6 +343,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-2 py-2"><input value={item.name} onChange={(e) => updateTradeIn(i, "name", e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateTradeIn(i, "purchase_price", parseNumber(e.target.value))} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
+                  <td className="px-2 py-2"><input type="text" inputMode="numeric" value={formatNumber(item.resale_price)} onChange={(e) => updateTradeIn(i, "resale_price", parseNumber(e.target.value))} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-1 py-2 text-center"><button type="button" onClick={() => setTradeIns(tradeIns.filter((_, j) => j !== i))} className="p-1 rounded-md hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></td>
                 </tr>
               ))}
