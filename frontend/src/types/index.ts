@@ -27,6 +27,7 @@ export interface QuotationItem {
   condition: string | null;
   purchase_price: number;
   selling_price: number;
+  resale_price: number;
   warranty_count: number | null;
   warranty_unit: WarrantyUnit | null;
   warranty_start: string | null;
@@ -78,6 +79,7 @@ export interface Quotation {
   total_amount: number;
   total_paid: number;
   total_trade_in: number;
+  total_trade_in_resale: number;
   remaining: number;
   total_purchase: number;
   total_refund: number;
