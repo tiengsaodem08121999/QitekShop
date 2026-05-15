@@ -74,6 +74,7 @@ class QuotationItem(Base):
     condition: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     purchase_price: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0)
     selling_price: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0)
+    resale_price: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0, server_default="0")
     warranty_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     warranty_unit: Mapped[Optional[WarrantyUnit]] = mapped_column(
         Enum(WarrantyUnit), nullable=True
