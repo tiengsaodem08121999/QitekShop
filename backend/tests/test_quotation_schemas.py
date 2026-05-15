@@ -50,3 +50,18 @@ def test_trade_in_with_null_warranty_ok():
     item = QuotationItemCreate(**_base(is_trade_in=True))
     assert item.warranty_count is None
     assert item.warranty_unit is None
+
+
+def test_resale_price_defaults_to_zero():
+    item = QuotationItemCreate(**_base(is_trade_in=True))
+    assert item.resale_price == 0
+
+
+def test_resale_price_accepts_positive():
+    item = QuotationItemCreate(**_base(is_trade_in=True, resale_price=800_000))
+    assert item.resale_price == 800_000
+
+
+def test_resale_price_rejects_negative():
+    with pytest.raises(ValidationError):
+        QuotationItemCreate(**_base(is_trade_in=True, resale_price=-1))

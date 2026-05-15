@@ -51,6 +51,7 @@ class QuotationItemCreate(DecimalModel):
     condition: Optional[str] = None
     purchase_price: Decimal = 0
     selling_price: Decimal = 0
+    resale_price: Decimal = 0
     warranty_count: Optional[int] = None
     warranty_unit: Optional[WarrantyUnit] = None
     warranty_start: Optional[_dt.date] = None
@@ -72,6 +73,12 @@ class QuotationItemCreate(DecimalModel):
             raise ValueError("warranty_count must be between 1 and 99")
         return self
 
+    @model_validator(mode="after")
+    def validate_resale_price(self):
+        if self.resale_price < 0:
+            raise ValueError("resale_price must be >= 0")
+        return self
+
 
 class QuotationItemResponse(DecimalModel):
     id: int
@@ -80,6 +87,7 @@ class QuotationItemResponse(DecimalModel):
     condition: Optional[str]
     purchase_price: Decimal
     selling_price: Decimal
+    resale_price: Decimal
     warranty_count: Optional[int]
     warranty_unit: Optional[WarrantyUnit]
     warranty_start: Optional[_dt.date]
@@ -87,6 +95,22 @@ class QuotationItemResponse(DecimalModel):
     notes: Optional[str]
 
     model_config = {"from_attributes": True}
+
+
+class ResaleUpdate(BaseModel):
+    """Body for PATCH /quotations/{id}/items/{item_id}/resale.
+
+    Mutates only `resale_price` on a trade-in item. Allowed even when the
+    quotation is `confirmed`, because resale recording happens after the
+    sale closes.
+    """
+    resale_price: Decimal
+
+    @model_validator(mode="after")
+    def validate_non_negative(self):
+        if self.resale_price < 0:
+            raise ValueError("resale_price must be >= 0")
+        return self
 
 
 # --- Quotation ---
@@ -116,6 +140,7 @@ class QuotationResponse(DecimalModel):
     total_amount: Decimal
     total_paid: Decimal
     total_trade_in: Decimal
+    total_trade_in_resale: Decimal
     remaining: Decimal
     total_purchase: Decimal
     profit: Decimal
