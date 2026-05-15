@@ -195,19 +195,22 @@ def confirm_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
 
 
 def enrich_response(quotation: Quotation) -> dict:
-    """Add computed fields: remaining, total_purchase, profit, payments, returns."""
+    """Add computed fields: remaining, total_purchase, total_trade_in_resale, profit, payments, returns."""
     items = quotation.items
     total_purchase = sum(item.purchase_price for item in items if not item.is_trade_in)
+    total_trade_in_resale = sum(item.resale_price for item in items if item.is_trade_in)
     total_refund = sum(r.refund_amount for r in quotation.returns)
     total_refund_paid = sum(p.amount for p in quotation.payments if p.payment_type == PaymentType.refund)
 
     # remaining = (what customer owes) - (what customer paid net)
     # customer owes: total_amount - trade_in - refund
     # customer paid net: total_paid - refund_paid
+    # Note: resale_price does NOT reduce what the customer owes — it represents
+    # a separate downstream sale of the trade-in inventory.
     remaining = quotation.total_amount - quotation.total_trade_in - total_refund - (quotation.total_paid - total_refund_paid)
 
-    # Profit: selling - purchase - trade_in - refund
-    profit = quotation.total_amount - total_purchase - quotation.total_trade_in - total_refund
+    # Profit: selling - purchase - trade_in + trade_in_resale - refund
+    profit = quotation.total_amount - total_purchase - quotation.total_trade_in + total_trade_in_resale - total_refund
 
     return {
         **{c.key: getattr(quotation, c.key) for c in quotation.__table__.columns},
@@ -219,6 +222,7 @@ def enrich_response(quotation: Quotation) -> dict:
         "total_refund": total_refund,
         "total_refund_paid": total_refund_paid,
         "total_purchase": total_purchase,
+        "total_trade_in_resale": total_trade_in_resale,
         "profit": profit,
     }
 
