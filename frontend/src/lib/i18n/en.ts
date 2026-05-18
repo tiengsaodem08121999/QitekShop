@@ -46,6 +46,7 @@ const en = {
   quotations_total_selling: "Total selling",
   quotations_paid: "Paid",
   quotations_outstanding: "Outstanding",
+  quotations_overpaid: "Overpaid",
   quotations_all_statuses: "All statuses",
   quotations_search: "Search customers...",
   quotations_empty: "No quotations yet",
@@ -54,6 +55,7 @@ const en = {
   quotations_col_total: "Total selling",
   quotations_col_paid: "Paid",
   quotations_col_outstanding: "Outstanding",
+  quotations_col_overpaid: "Overpaid",
   quotations_col_created: "Created",
 
   // Quotation status
@@ -82,6 +84,7 @@ const en = {
   form_col_warranty_status: "Active",
   quotations_col_active: "Active",
   quotation_col_notes: "Notes",
+  quotation_col_serial: "S/N",
   quotation_copy: "Copy",
   quotation_total_trade_in: "Total trade-in",
   quotation_total_trade_in_resold: "Trade-in resold",
@@ -91,6 +94,7 @@ const en = {
   quotation_trade_in: "Trade-in",
   quotation_resale_price: "Resale price",
   quotation_remaining: "Remaining",
+  quotation_overpaid: "Overpaid",
   quotation_profit: "Profit",
   quotation_cashflow: "Cash flow",
 
@@ -154,6 +158,7 @@ const en = {
   form_col_warranty: "Warranty",
   form_col_warranty_date: "Warranty date",
   form_col_notes: "Notes",
+  form_col_serial: "S/N",
   form_total: "Total",
   form_trade_ins: "Trade-ins",
   form_add_trade_in: "Add trade-in",

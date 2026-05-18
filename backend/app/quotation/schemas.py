@@ -52,6 +52,7 @@ class QuotationItemCreate(DecimalModel):
     purchase_price: Decimal = 0
     selling_price: Decimal = 0
     resale_price: Decimal = 0
+    serial_number: Optional[str] = None
     warranty_count: Optional[int] = None
     warranty_unit: Optional[WarrantyUnit] = None
     warranty_start: Optional[_dt.date] = None
@@ -88,6 +89,7 @@ class QuotationItemResponse(DecimalModel):
     purchase_price: Decimal
     selling_price: Decimal
     resale_price: Decimal
+    serial_number: Optional[str]
     warranty_count: Optional[int]
     warranty_unit: Optional[WarrantyUnit]
     warranty_start: Optional[_dt.date]

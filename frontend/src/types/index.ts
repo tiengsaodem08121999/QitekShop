@@ -28,6 +28,7 @@ export interface QuotationItem {
   purchase_price: number;
   selling_price: number;
   resale_price: number;
+  serial_number: string | null;
   warranty_count: number | null;
   warranty_unit: WarrantyUnit | null;
   warranty_start: string | null;

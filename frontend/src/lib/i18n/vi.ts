@@ -48,6 +48,7 @@ const vi: Translations = {
   quotations_total_selling: "Tổng giá bán",
   quotations_paid: "Đã thanh toán",
   quotations_outstanding: "Còn nợ",
+  quotations_overpaid: "Trả dư",
   quotations_all_statuses: "Tất cả trạng thái",
   quotations_search: "Tìm khách hàng...",
   quotations_empty: "Chưa có báo giá nào",
@@ -56,6 +57,7 @@ const vi: Translations = {
   quotations_col_total: "Tổng giá bán",
   quotations_col_paid: "Đã thanh toán",
   quotations_col_outstanding: "Còn nợ",
+  quotations_col_overpaid: "Trả dư",
   quotations_col_created: "Ngày tạo",
 
   // Quotation status
@@ -84,6 +86,7 @@ const vi: Translations = {
   form_col_warranty_status: "BH còn",
   quotations_col_active: "BH còn",
   quotation_col_notes: "Ghi chú",
+  quotation_col_serial: "S/N",
   quotation_copy: "Sao chép",
   quotation_total_trade_in: "Tổng thu cũ",
   quotation_total_trade_in_resold: "Trade-in đã bán",
@@ -93,6 +96,7 @@ const vi: Translations = {
   quotation_trade_in: "Thu cũ",
   quotation_resale_price: "Giá bán",
   quotation_remaining: "Còn lại",
+  quotation_overpaid: "Trả dư",
   quotation_profit: "Lợi nhuận",
   quotation_cashflow: "Dòng tiền",
 
@@ -156,6 +160,7 @@ const vi: Translations = {
   form_col_warranty: "BH",
   form_col_warranty_date: "Ngày BH",
   form_col_notes: "Ghi chú",
+  form_col_serial: "S/N",
   form_total: "Tổng",
   form_trade_ins: "Thu cũ",
   form_add_trade_in: "Thêm thu cũ",

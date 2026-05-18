@@ -44,7 +44,6 @@ class Quotation(Base):
         Enum(QuotationStatus), default=QuotationStatus.draft
     )
     total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0)
-    total_paid: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0)
     total_trade_in: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -75,6 +74,7 @@ class QuotationItem(Base):
     purchase_price: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0)
     selling_price: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0)
     resale_price: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0, server_default="0")
+    serial_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     warranty_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     warranty_unit: Mapped[Optional[WarrantyUnit]] = mapped_column(
         Enum(WarrantyUnit), nullable=True

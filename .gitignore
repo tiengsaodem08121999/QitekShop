@@ -8,3 +8,4 @@ node_modules/
 docs/superpowers/
 backupdata/
 backend/migration_logs/*.log
+backups/

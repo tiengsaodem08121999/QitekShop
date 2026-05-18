@@ -20,6 +20,7 @@ interface Props {
 const EMPTY_ITEM: QuotationItem = {
   is_trade_in: false, name: "", condition: "2nd",
   purchase_price: 0, selling_price: 0, resale_price: 0,
+  serial_number: null,
   warranty_count: 1, warranty_unit: "week",
   warranty_start: null, delivery_date: null, notes: null,
 };
@@ -27,6 +28,7 @@ const EMPTY_ITEM: QuotationItem = {
 const EMPTY_TRADE_IN: QuotationItem = {
   is_trade_in: true, name: "", condition: null,
   purchase_price: 0, selling_price: 0, resale_price: 0,
+  serial_number: null,
   warranty_count: null, warranty_unit: null,
   warranty_start: null, delivery_date: null, notes: null,
 };
@@ -233,7 +235,8 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
           <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="w-[24%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_name}</th>
+                <th className="w-[17%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_name}</th>
+                <th className="w-[9%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_serial}</th>
                 <th className="w-[7%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_cond}</th>
                 <th className="w-[13%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_price}</th>
                 <th className="w-[12%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -264,6 +267,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                 return (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-2 py-2"><input data-col="name" data-row={i} value={item.name} onChange={(e) => updateItem(i, "name", e.target.value)} onKeyDown={(e) => handleTabDown(e, "name", i)} className={`border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ${isReturned ? "bg-gray-100 text-gray-500" : ""}`} required disabled={isReturned} title={isReturned ? "Không thể sửa tên sản phẩm đã có trả hàng" : undefined} /></td>
+                  <td className="px-2 py-2"><input data-col="serial" data-row={i} value={item.serial_number || ""} onChange={(e) => updateItem(i, "serial_number", e.target.value || null)} onKeyDown={(e) => handleTabDown(e, "serial", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><select value={item.condition || "2nd"} onChange={(e) => updateItem(i, "condition", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white"><option value="2nd">2nd</option><option value="new">New</option></select></td>
                   <td className="px-2 py-2"><input data-col="price" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.selling_price)} onChange={(e) => updateItem(i, "selling_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "price", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2">
@@ -306,11 +310,11 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
             </tbody>
             <tfoot>
               <tr className="border-t border-gray-200 bg-gray-50/50">
-                <td colSpan={2} className="px-2 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{t.form_total}</td>
+                <td colSpan={3} className="px-2 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{t.form_total}</td>
                 <td className="px-2 py-2.5 text-right text-sm font-semibold text-gray-800 tabular-nums pr-5">{formatNumber(items.reduce((s, i) => s + (i.selling_price || 0), 0))}</td>
                 <td></td>
                 <td className="px-2 py-2.5 text-right text-sm font-semibold text-gray-800 tabular-nums pr-5">{formatNumber(items.reduce((s, i) => s + (i.purchase_price || 0), 0))}</td>
-                <td colSpan={3}></td>
+                <td colSpan={4}></td>
               </tr>
             </tfoot>
           </table>

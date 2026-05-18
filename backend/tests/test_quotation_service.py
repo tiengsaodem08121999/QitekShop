@@ -3,7 +3,17 @@ from decimal import Decimal
 
 import pytest
 
-from app.quotation.models import Customer, Quotation, QuotationItem, QuotationStatus
+from datetime import date as _date
+
+from app.quotation.models import (
+    Customer,
+    Payment,
+    PaymentMethod,
+    PaymentType,
+    Quotation,
+    QuotationItem,
+    QuotationStatus,
+)
 from app.quotation.service import enrich_response, update_item_resale
 
 
@@ -91,6 +101,40 @@ def test_enrich_response_cashflow_formula(db_session, admin_user):
     data = enrich_response(q)
     assert data["remaining"] == Decimal(400_000)
     assert data["cashflow"] == Decimal(0)
+
+
+def test_enrich_response_total_paid_computed_from_payments(db_session, admin_user):
+    """total_paid is no longer denormalized — it must be summed live from
+    payments (type='payment'), excluding refunds. Verifies the compute-on-read
+    path after dropping the quotations.total_paid column.
+    """
+    q = _seed_quotation(
+        db_session,
+        user_id=admin_user.id,
+        items=[
+            {"is_trade_in": False, "name": "Ram 16gb", "purchase_price": 800_000, "selling_price": 1_000_000},
+        ],
+    )
+    q.total_amount = Decimal(1_000_000)
+    db_session.flush()
+
+    db_session.add_all([
+        Payment(quotation_id=q.id, amount=Decimal(300_000), method=PaymentMethod.cash,
+                payment_type=PaymentType.payment, date=_date(2026, 5, 1), created_by=admin_user.id),
+        Payment(quotation_id=q.id, amount=Decimal(200_000), method=PaymentMethod.transfer,
+                payment_type=PaymentType.payment, date=_date(2026, 5, 2), created_by=admin_user.id),
+        Payment(quotation_id=q.id, amount=Decimal(50_000), method=PaymentMethod.cash,
+                payment_type=PaymentType.refund, date=_date(2026, 5, 3), created_by=admin_user.id),
+    ])
+    db_session.flush()
+    db_session.refresh(q)
+
+    data = enrich_response(q)
+    # Only payment-type rows count toward total_paid; refunds tracked separately
+    assert data["total_paid"] == Decimal(500_000)
+    assert data["total_refund_paid"] == Decimal(50_000)
+    # remaining = 1M - 0 - 0 - (500K - 50K) = 550K
+    assert data["remaining"] == Decimal(550_000)
 
 
 def test_update_item_resale_sets_price(db_session, admin_user):

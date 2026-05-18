@@ -3,7 +3,6 @@ from datetime import date as date_type
 from decimal import Decimal
 from typing import List, Optional, Tuple
 
-from sqlalchemy import func as sa_func
 from sqlalchemy.orm import Session, joinedload
 
 from app.finance.models import Transaction, TransactionType
@@ -45,19 +44,6 @@ def _compute_totals(items: List[QuotationItem]) -> Tuple[Decimal, Decimal]:
     total_amount = sum(item.selling_price for item in items if not item.is_trade_in)
     total_trade_in = sum(item.purchase_price for item in items if item.is_trade_in)
     return Decimal(total_amount), Decimal(total_trade_in)
-
-
-def _recalc_total_paid(db: Session, quotation_id: int) -> None:
-    """Recalculate and update the denormalized total_paid on the quotation.
-    Only sums 'payment' type (gross amount customer paid in)."""
-    total = (
-        db.query(sa_func.coalesce(sa_func.sum(Payment.amount), 0))
-        .filter(Payment.quotation_id == quotation_id, Payment.payment_type == PaymentType.payment)
-        .scalar()
-    )
-    db.query(Quotation).filter(Quotation.id == quotation_id).update(
-        {"total_paid": total}
-    )
 
 
 def create_quotation(db: Session, data: QuotationCreate, user_id: int) -> Quotation:
@@ -129,6 +115,7 @@ def list_quotations(
     # Build list items with computed remaining
     items = []
     for q in rows:
+        total_paid = sum(p.amount for p in q.payments if p.payment_type == PaymentType.payment)
         total_refund = sum(r.refund_amount for r in q.returns)
         total_refund_paid = sum(p.amount for p in q.payments if p.payment_type == PaymentType.refund)
         warranty_active, warranty_total = count_warranty_status(
@@ -140,9 +127,9 @@ def list_quotations(
             "customer_id": q.customer_id,
             "status": q.status,
             "total_amount": q.total_amount,
-            "total_paid": q.total_paid,
+            "total_paid": total_paid,
             "total_trade_in": q.total_trade_in,
-            "remaining": q.total_amount - q.total_trade_in - total_refund - (q.total_paid - total_refund_paid),
+            "remaining": q.total_amount - q.total_trade_in - total_refund - (total_paid - total_refund_paid),
             "warranty_active": warranty_active,
             "warranty_total": warranty_total,
             "created_at": q.created_at,
@@ -234,6 +221,9 @@ def enrich_response(quotation: Quotation) -> dict:
     total_purchase = sum(item.purchase_price for item in items if not item.is_trade_in)
     total_trade_in_resale = sum(item.resale_price for item in items if item.is_trade_in)
     total_refund = sum(r.refund_amount for r in quotation.returns)
+    # total_paid is derived from payments (no denormalized column) — single source of truth
+    # avoids race conditions on concurrent payment writes.
+    total_paid = sum(p.amount for p in quotation.payments if p.payment_type == PaymentType.payment)
     total_refund_paid = sum(p.amount for p in quotation.payments if p.payment_type == PaymentType.refund)
 
     # remaining = (what customer owes) - (what customer paid net)
@@ -241,7 +231,7 @@ def enrich_response(quotation: Quotation) -> dict:
     # customer paid net: total_paid - refund_paid
     # Note: resale_price does NOT reduce what the customer owes — it represents
     # a separate downstream sale of the trade-in inventory.
-    remaining = quotation.total_amount - quotation.total_trade_in - total_refund - (quotation.total_paid - total_refund_paid)
+    remaining = quotation.total_amount - quotation.total_trade_in - total_refund - (total_paid - total_refund_paid)
 
     # Profit: simple product margin (selling - purchase). Trade-in and resale
     # are tracked separately in cashflow rather than folded in.
@@ -257,6 +247,7 @@ def enrich_response(quotation: Quotation) -> dict:
         "items": quotation.items,
         "payments": quotation.payments,
         "returns": quotation.returns,
+        "total_paid": total_paid,
         "remaining": remaining,
         "total_refund": total_refund,
         "total_refund_paid": total_refund_paid,
@@ -309,7 +300,6 @@ def create_payment(db: Session, quotation_id: int, data: PaymentCreate, user_id:
     payment.transaction_id = txn.id
 
     db.flush()
-    _recalc_total_paid(db, quotation_id)
     db.commit()
     db.refresh(payment)
     return payment
@@ -362,7 +352,6 @@ def update_payment(db: Session, payment_id: int, quotation_id: int, data: Paymen
         payment.transaction_id = txn.id
 
     db.flush()
-    _recalc_total_paid(db, quotation_id)
     db.commit()
     db.refresh(payment)
     return payment
@@ -388,7 +377,6 @@ def delete_payment(db: Session, payment_id: int, quotation_id: int) -> bool:
 
     db.delete(payment)
     db.flush()
-    _recalc_total_paid(db, quotation_id)
     db.commit()
     return True
 

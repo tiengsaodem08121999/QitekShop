@@ -252,8 +252,8 @@ export default function QuotationDetailPage() {
           <p className="text-xl font-bold text-emerald-600 mt-1">{q.total_paid.toLocaleString()}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-          <p className="text-xs text-gray-500 uppercase tracking-wide">{t.quotation_remaining}</p>
-          <p className={`text-xl font-bold mt-1 ${q.remaining > 0 ? "text-red-600" : "text-emerald-600"}`}>{q.remaining.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">{q.remaining < 0 ? t.quotation_overpaid : t.quotation_remaining}</p>
+          <p className={`text-xl font-bold mt-1 ${q.remaining > 0 ? "text-red-600" : q.remaining < 0 ? "text-amber-600" : "text-emerald-600"}`}>{Math.abs(q.remaining).toLocaleString()}</p>
         </div>
         {showCost && (
           <>
@@ -292,7 +292,8 @@ export default function QuotationDetailPage() {
                   className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                 />
               </th>
-              <th className="w-[22%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
+              <th className="w-[16%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
+              <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_serial}</th>
               <th className="w-[6%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_cond}</th>
               <th className="w-[14%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_price}</th>
               <th className="w-[8%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_warranty}</th>
@@ -328,6 +329,7 @@ export default function QuotationDetailPage() {
                   />
                 </td>
                 <td className="px-4 py-3 font-medium text-gray-800">{item.name}</td>
+                <td className="px-4 py-3 font-mono text-xs text-gray-600">{item.serial_number || t.dash}</td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
                     item.condition === "new" ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-600"
@@ -356,7 +358,7 @@ export default function QuotationDetailPage() {
           <tfoot className="hide-on-screenshot">
             <tr className="bg-gray-50/80 border-t border-gray-200">
               <td></td>
-              <td className="px-4 py-3 font-semibold text-gray-700" colSpan={2}>{t.quotations_total}</td>
+              <td className="px-4 py-3 font-semibold text-gray-700" colSpan={3}>{t.quotations_total}</td>
               <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-800">
                 {products.filter((_, i) => checkedItems.has(i)).reduce((sum, item) => sum + item.selling_price, 0).toLocaleString()}
               </td>
@@ -366,7 +368,7 @@ export default function QuotationDetailPage() {
                   ? products.filter((_, i) => checkedItems.has(i)).reduce((sum, item) => sum + item.purchase_price, 0).toLocaleString()
                   : "•••"}
               </td>
-              <td colSpan={2}></td>
+              <td colSpan={3}></td>
             </tr>
           </tfoot>
         </table>
@@ -618,9 +620,9 @@ export default function QuotationDetailPage() {
                   <td className="px-5 py-3 text-right tabular-nums text-orange-600">-{q.total_refund_paid.toLocaleString()}</td>
                 </tr>
               )}
-              <tr className="border-b border-gray-50 bg-red-50/50">
-                <td className="px-5 py-3.5 font-semibold text-gray-800">{t.quotation_remaining}</td>
-                <td className={`px-5 py-3.5 text-right font-bold tabular-nums text-lg ${q.remaining > 0 ? "text-red-600" : "text-emerald-600"}`}>{q.remaining.toLocaleString()}</td>
+              <tr className={`border-b border-gray-50 ${q.remaining < 0 ? "bg-amber-50/50" : "bg-red-50/50"}`}>
+                <td className="px-5 py-3.5 font-semibold text-gray-800">{q.remaining < 0 ? t.quotation_overpaid : t.quotation_remaining}</td>
+                <td className={`px-5 py-3.5 text-right font-bold tabular-nums text-lg ${q.remaining > 0 ? "text-red-600" : q.remaining < 0 ? "text-amber-600" : "text-emerald-600"}`}>{Math.abs(q.remaining).toLocaleString()}</td>
               </tr>
               <tr className="hide-on-screenshot">
                 <td className="px-5 py-3 text-gray-600">{t.quotation_profit}</td>
