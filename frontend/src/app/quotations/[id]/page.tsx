@@ -65,7 +65,7 @@ export default function QuotationDetailPage() {
   }
 
   async function handleScreenshot() {
-    if (!contentRef.current) return;
+    if (!contentRef.current || !q) return;
     contentRef.current.classList.add("screenshot-mode");
     const { default: html2canvas } = await import("html2canvas-pro");
     const canvas = await html2canvas(contentRef.current, { backgroundColor: "#f3f4f6", scale: 2 });
@@ -73,7 +73,8 @@ export default function QuotationDetailPage() {
     const url = canvas.toDataURL("image/png");
     const a = document.createElement("a");
     a.href = url;
-    a.download = `quotation-${id}.png`;
+    const safeName = q.customer.name.replace(/[\\/:*?"<>|]/g, "").trim() || `quotation-${id}`;
+    a.download = `${safeName}.png`;
     a.click();
   }
 
@@ -241,7 +242,7 @@ export default function QuotationDetailPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className={`grid gap-4 mb-6 ${showCost ? "grid-cols-5" : "grid-cols-3"}`}>
         <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
           <p className="text-xs text-gray-500 uppercase tracking-wide">{t.quotation_total_selling}</p>
           <p className="text-xl font-bold text-gray-800 mt-1">{q.total_amount.toLocaleString()}</p>
@@ -255,10 +256,16 @@ export default function QuotationDetailPage() {
           <p className={`text-xl font-bold mt-1 ${q.remaining > 0 ? "text-red-600" : "text-emerald-600"}`}>{q.remaining.toLocaleString()}</p>
         </div>
         {showCost && (
-          <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-            <p className="text-xs text-gray-500 uppercase tracking-wide">{t.quotation_profit}</p>
-            <p className={`text-xl font-bold mt-1 ${q.profit >= 0 ? "text-emerald-600" : "text-red-600"}`}>{q.profit.toLocaleString()}</p>
-          </div>
+          <>
+            <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">{t.quotation_profit}</p>
+              <p className={`text-xl font-bold mt-1 ${q.profit >= 0 ? "text-emerald-600" : "text-red-600"}`}>{q.profit.toLocaleString()}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">{t.quotation_cashflow}</p>
+              <p className={`text-xl font-bold mt-1 ${q.cashflow >= 0 ? "text-emerald-600" : "text-red-600"}`}>{q.cashflow.toLocaleString()}</p>
+            </div>
+          </>
         )}
       </div>
 
@@ -391,7 +398,7 @@ export default function QuotationDetailPage() {
                         type="text"
                         inputMode="numeric"
                         value={resaleDraft}
-                        onChange={(e) => setResaleDraft(e.target.value)}
+                        onChange={(e) => setResaleDraft(formatNumber(e.target.value))}
                         onBlur={() => saveResale(item.id!)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") { e.preventDefault(); saveResale(item.id!); }
@@ -618,6 +625,10 @@ export default function QuotationDetailPage() {
               <tr className="hide-on-screenshot">
                 <td className="px-5 py-3 text-gray-600">{t.quotation_profit}</td>
                 <td className={`px-5 py-3 text-right font-semibold tabular-nums ${q.profit >= 0 ? "text-emerald-600" : "text-red-600"}`}>{showCost ? q.profit.toLocaleString() : "•••"}</td>
+              </tr>
+              <tr className="hide-on-screenshot">
+                <td className="px-5 py-3 text-gray-600">{t.quotation_cashflow}</td>
+                <td className={`px-5 py-3 text-right font-semibold tabular-nums ${q.cashflow >= 0 ? "text-emerald-600" : "text-red-600"}`}>{showCost ? q.cashflow.toLocaleString() : "•••"}</td>
               </tr>
             </tbody>
           </table>

@@ -42,8 +42,10 @@ def test_patch_resale_sets_price(client, sales_user):
     updated_item = next(i for i in body["items"] if i["id"] == trade_in["id"])
     assert updated_item["resale_price"] == 800_000
     assert body["total_trade_in_resale"] == 800_000
-    # Profit should now be +400,000 (was -400,000 before resale)
-    assert body["profit"] == 400_000
+    # Profit doesn't depend on resale (just selling - purchase = 200,000).
+    # Cashflow does: 1M - (800K + 600K) + 800K - 400K(remaining) = 0.
+    assert body["profit"] == 200_000
+    assert body["cashflow"] == 0
 
 
 def test_patch_resale_works_on_confirmed_quotation(client, sales_user):

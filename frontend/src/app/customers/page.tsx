@@ -17,6 +17,7 @@ export default function CustomersPage() {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     params.set("limit", "100");
+    params.set("sort", "created_desc");
     apiFetch<PaginatedResponse<Customer>>(`/api/customers?${params}`).then(setData);
   }
 

@@ -49,11 +49,9 @@ def test_enrich_response_includes_total_trade_in_resale(db_session, admin_user):
     assert data["total_trade_in_resale"] == Decimal(800_000)
 
 
-def test_enrich_response_profit_includes_resale(db_session, admin_user):
-    """Profit = total_amount - total_purchase - total_trade_in + total_trade_in_resale - total_refund
-
-    Concrete: sold 16gb for 1,000,000 (cost 800,000), accepted 8gb trade-in
-    for 600,000, later resold 8gb for 800,000. Profit should be 400,000.
+def test_enrich_response_profit_is_total_amount_minus_purchase(db_session, admin_user):
+    """Profit = total_amount - total_purchase. Trade-in and resale are tracked
+    separately in cashflow and do not affect profit.
     """
     q = _seed_quotation(
         db_session,
@@ -68,17 +66,22 @@ def test_enrich_response_profit_includes_resale(db_session, admin_user):
     db_session.flush()
 
     data = enrich_response(q)
-    assert data["profit"] == Decimal(400_000)
+    assert data["profit"] == Decimal(200_000)
 
 
-def test_enrich_response_profit_unchanged_when_resale_zero(db_session, admin_user):
-    """resale_price=0 yields the same profit as before this feature."""
+def test_enrich_response_cashflow_formula(db_session, admin_user):
+    """Cashflow = total_amount - (total_purchase + total_trade_in) + total_trade_in_resale - remaining.
+
+    With selling=1M, cost=800K, trade-in=600K, resale=800K, no payments:
+      remaining = 1M - 600K = 400K
+      cashflow = 1M - (800K + 600K) + 800K - 400K = 0
+    """
     q = _seed_quotation(
         db_session,
         user_id=admin_user.id,
         items=[
             {"is_trade_in": False, "name": "Ram 16gb", "purchase_price": 800_000, "selling_price": 1_000_000},
-            {"is_trade_in": True, "name": "Ram 8gb", "purchase_price": 600_000, "resale_price": 0},
+            {"is_trade_in": True, "name": "Ram 8gb", "purchase_price": 600_000, "resale_price": 800_000},
         ],
     )
     q.total_amount = Decimal(1_000_000)
@@ -86,9 +89,8 @@ def test_enrich_response_profit_unchanged_when_resale_zero(db_session, admin_use
     db_session.flush()
 
     data = enrich_response(q)
-    # 1,000,000 - 800,000 - 600,000 + 0 - 0 = -400,000
-    assert data["profit"] == Decimal(-400_000)
-    assert data["total_trade_in_resale"] == Decimal(0)
+    assert data["remaining"] == Decimal(400_000)
+    assert data["cashflow"] == Decimal(0)
 
 
 def test_update_item_resale_sets_price(db_session, admin_user):

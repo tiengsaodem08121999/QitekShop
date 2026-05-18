@@ -94,6 +94,7 @@ const vi: Translations = {
   quotation_resale_price: "Giá bán",
   quotation_remaining: "Còn lại",
   quotation_profit: "Lợi nhuận",
+  quotation_cashflow: "Dòng tiền",
 
   // Payments
   payment_history: "Lịch sử thanh toán",

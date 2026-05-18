@@ -144,6 +144,7 @@ class QuotationResponse(DecimalModel):
     remaining: Decimal
     total_purchase: Decimal
     profit: Decimal
+    cashflow: Decimal
     total_refund: Decimal
     total_refund_paid: Decimal
     items: List[QuotationItemResponse]

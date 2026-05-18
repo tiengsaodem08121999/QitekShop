@@ -12,12 +12,13 @@ from app.quotation.schemas import PaymentCreate, PaymentUpdate, ReturnCreate, Re
 from app.quotation.warranty_status import count_warranty_status
 
 
-def get_customers(db: Session, search: Optional[str] = None, page: int = 1, limit: int = 20):
+def get_customers(db: Session, search: Optional[str] = None, page: int = 1, limit: int = 20, sort: Optional[str] = None):
     query = db.query(Customer)
     if search:
         query = query.filter(Customer.name.ilike(f"%{search}%"))
     total = query.count()
-    items = query.order_by(Customer.name).offset((page - 1) * limit).limit(limit).all()
+    order = Customer.created_at.desc() if sort == "created_desc" else Customer.name
+    items = query.order_by(order).offset((page - 1) * limit).limit(limit).all()
     return items, total
 
 
@@ -242,8 +243,13 @@ def enrich_response(quotation: Quotation) -> dict:
     # a separate downstream sale of the trade-in inventory.
     remaining = quotation.total_amount - quotation.total_trade_in - total_refund - (quotation.total_paid - total_refund_paid)
 
-    # Profit: selling - purchase - trade_in + trade_in_resale - refund
-    profit = quotation.total_amount - total_purchase - quotation.total_trade_in + total_trade_in_resale - total_refund
+    # Profit: simple product margin (selling - purchase). Trade-in and resale
+    # are tracked separately in cashflow rather than folded in.
+    profit = quotation.total_amount - total_purchase
+
+    # Cashflow: net cash position considering everything in/out plus what the
+    # customer still owes. Formula: selling - (purchase + trade-in) + resale - remaining.
+    cashflow = quotation.total_amount - (total_purchase + quotation.total_trade_in) + total_trade_in_resale - remaining
 
     return {
         **{c.key: getattr(quotation, c.key) for c in quotation.__table__.columns},
@@ -257,6 +263,7 @@ def enrich_response(quotation: Quotation) -> dict:
         "total_purchase": total_purchase,
         "total_trade_in_resale": total_trade_in_resale,
         "profit": profit,
+        "cashflow": cashflow,
     }
 
 

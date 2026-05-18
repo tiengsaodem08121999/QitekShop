@@ -56,10 +56,11 @@ def list_customers_endpoint(
     search: Optional[str] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
+    sort: Optional[str] = None,
     _user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    items, total = get_customers(db, search=search, page=page, limit=limit)
+    items, total = get_customers(db, search=search, page=page, limit=limit, sort=sort)
     customer_ids = [c.id for c in items]
     # Calculate total purchased (selling_price of non-trade-in items) per customer
     from sqlalchemy import func as sa_func

@@ -85,6 +85,7 @@ export interface Quotation {
   total_refund: number;
   total_refund_paid: number;
   profit: number;
+  cashflow: number;
   items: QuotationItem[];
   payments: Payment[];
   returns: Return[];

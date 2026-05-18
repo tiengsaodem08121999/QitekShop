@@ -92,6 +92,7 @@ const en = {
   quotation_resale_price: "Resale price",
   quotation_remaining: "Remaining",
   quotation_profit: "Profit",
+  quotation_cashflow: "Cash flow",
 
   // Payments
   payment_history: "Payment history",
