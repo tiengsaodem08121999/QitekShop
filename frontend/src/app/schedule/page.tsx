@@ -9,6 +9,7 @@ import WeekView from "@/components/schedule/WeekView";
 import { apiFetch } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { useToast } from "@/components/Toast";
 import {
   addDays, addMonths, getMonthGridRange, getWeekRange, toIsoDate,
 } from "@/lib/schedule";
@@ -24,6 +25,7 @@ interface ModalState {
 
 export default function SchedulePage() {
   const t = useT();
+  const toast = useToast();
   const [view, setView] = useState<View>("week");
   const [anchor, setAnchor] = useState<Date>(new Date());
   const [tags, setTags] = useState<ScheduleTag[]>([]);
@@ -42,12 +44,16 @@ export default function SchedulePage() {
       start_date: toIsoDate(range.start),
       end_date: toIsoDate(range.end),
     });
-    apiFetch<ScheduleEvent[]>(`/api/schedule/events?${qs.toString()}`).then(setEvents);
-  }, [range.start, range.end]);
+    apiFetch<ScheduleEvent[]>(`/api/schedule/events?${qs.toString()}`)
+      .then(setEvents)
+      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+  }, [range.start, range.end, toast, t.error]);
 
   useEffect(() => {
-    apiFetch<ScheduleTag[]>("/api/schedule/tags").then(setTags);
-  }, []);
+    apiFetch<ScheduleTag[]>("/api/schedule/tags")
+      .then(setTags)
+      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+  }, [toast, t.error]);
 
   useEffect(loadEvents, [loadEvents]);
 

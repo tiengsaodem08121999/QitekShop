@@ -7,27 +7,35 @@ import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { useToast } from "@/components/Toast";
 import type { PaginatedResponse, Quotation, QuotationListItem } from "@/types";
 
 export default function QuotationsPage() {
   const router = useRouter();
   const t = useT();
+  const toast = useToast();
   const [data, setData] = useState<PaginatedResponse<QuotationListItem> | null>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
-    apiFetch<PaginatedResponse<QuotationListItem>>(`/api/quotations?${params}`).then(setData);
-  }, [search]);
+    apiFetch<PaginatedResponse<QuotationListItem>>(`/api/quotations?${params}`)
+      .then(setData)
+      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+  }, [search, toast, t.error]);
 
   async function handleCopy(quotationId: number) {
-    const q = await apiFetch<Quotation>(`/api/quotations/${quotationId}`);
-    sessionStorage.setItem("quotation_copy", JSON.stringify({
-      customer: q.customer,
-      items: q.items,
-    }));
-    router.push("/quotations/new?copy=1");
+    try {
+      const q = await apiFetch<Quotation>(`/api/quotations/${quotationId}`);
+      sessionStorage.setItem("quotation_copy", JSON.stringify({
+        customer: q.customer,
+        items: q.items,
+      }));
+      router.push("/quotations/new?copy=1");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : t.error, "error");
+    }
   }
 
   const items = data?.items ?? [];

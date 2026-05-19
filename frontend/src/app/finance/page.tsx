@@ -6,11 +6,13 @@ import AppLayout from "@/components/layout/AppLayout";
 import TransactionModal from "@/components/shared/TransactionModal";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useToast } from "@/components/Toast";
 import type { MonthlySummary, Transaction } from "@/types";
 
 export default function FinancePage() {
   const router = useRouter();
   const t = useT();
+  const toast = useToast();
   const [year, setYear] = useState(new Date().getFullYear());
   const [months, setMonths] = useState<MonthlySummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,8 +22,9 @@ export default function FinancePage() {
     setLoading(true);
     apiFetch<MonthlySummary[]>(`/api/finance/yearly-summary?year=${year}`)
       .then(setMonths)
+      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"))
       .finally(() => setLoading(false));
-  }, [year]);
+  }, [year, toast, t.error]);
 
   useEffect(() => { load(); }, [load]);
 

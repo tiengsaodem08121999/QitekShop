@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useToast } from "@/components/Toast";
 import type { Customer, PaginatedResponse } from "@/types";
 
 export default function CustomersPage() {
   const t = useT();
+  const toast = useToast();
   const [data, setData] = useState<PaginatedResponse<Customer> | null>(null);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -18,7 +20,9 @@ export default function CustomersPage() {
     if (search) params.set("search", search);
     params.set("limit", "100");
     params.set("sort", "created_desc");
-    apiFetch<PaginatedResponse<Customer>>(`/api/customers?${params}`).then(setData);
+    apiFetch<PaginatedResponse<Customer>>(`/api/customers?${params}`)
+      .then(setData)
+      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
   }
 
   useEffect(() => { load(); }, [search]);

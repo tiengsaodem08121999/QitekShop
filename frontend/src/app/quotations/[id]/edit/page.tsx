@@ -6,16 +6,20 @@ import AppLayout from "@/components/layout/AppLayout";
 import QuotationForm from "@/components/shared/QuotationForm";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useToast } from "@/components/Toast";
 import type { Quotation } from "@/types";
 
 export default function EditQuotationPage() {
   const { id } = useParams();
   const t = useT();
+  const toast = useToast();
   const [q, setQ] = useState<Quotation | null>(null);
 
   useEffect(() => {
-    apiFetch<Quotation>(`/api/quotations/${id}`).then(setQ);
-  }, [id]);
+    apiFetch<Quotation>(`/api/quotations/${id}`)
+      .then(setQ)
+      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+  }, [id, toast, t.error]);
 
   if (!q) return <AppLayout><p>{t.loading}</p></AppLayout>;
 

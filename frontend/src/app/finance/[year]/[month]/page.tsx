@@ -8,12 +8,14 @@ import TransactionModal from "@/components/shared/TransactionModal";
 import { apiFetch } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { useToast } from "@/components/Toast";
 import type { MonthlySummary, PaginatedResponse, Transaction } from "@/types";
 
 export default function FinanceMonthPage() {
   const params = useParams();
   const router = useRouter();
   const t = useT();
+  const toast = useToast();
   const year = Number(params.year);
   const month = Number(params.month);
 
@@ -23,16 +25,25 @@ export default function FinanceMonthPage() {
   const [editTxn, setEditTxn] = useState<Transaction | undefined>();
 
   const load = useCallback(() => {
-    apiFetch<PaginatedResponse<Transaction>>(`/api/finance/transactions?year=${year}&month=${month}&limit=200`).then((r) => setTxns(r.items));
-    apiFetch<MonthlySummary>(`/api/finance/summary?year=${year}&month=${month}`).then(setSummary);
-  }, [year, month]);
+    const showError = (err: unknown) => toast(err instanceof Error ? err.message : t.error, "error");
+    apiFetch<PaginatedResponse<Transaction>>(`/api/finance/transactions?year=${year}&month=${month}&limit=200`)
+      .then((r) => setTxns(r.items))
+      .catch(showError);
+    apiFetch<MonthlySummary>(`/api/finance/summary?year=${year}&month=${month}`)
+      .then(setSummary)
+      .catch(showError);
+  }, [year, month, toast, t.error]);
 
   useEffect(() => { load(); }, [load]);
 
   async function handleDelete(id: number) {
     if (!window.confirm(t.finance_delete_txn)) return;
-    await apiFetch(`/api/finance/transactions/${id}`, { method: "DELETE" });
-    load();
+    try {
+      await apiFetch(`/api/finance/transactions/${id}`, { method: "DELETE" });
+      load();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : t.error, "error");
+    }
   }
 
   let runningBalance = 0;

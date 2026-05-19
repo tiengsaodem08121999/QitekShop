@@ -5,16 +5,20 @@ import AppLayout from "@/components/layout/AppLayout";
 import TagManager from "@/components/shared/TagManager";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useToast } from "@/components/Toast";
 
 export default function SettingsPage() {
   const t = useT();
+  const toast = useToast();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    apiFetch<Record<string, string>>("/api/settings").then(setSettings);
-  }, []);
+    apiFetch<Record<string, string>>("/api/settings")
+      .then(setSettings)
+      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+  }, [toast, t.error]);
 
   function update(key: string, value: string) {
     setSettings((prev) => ({ ...prev, [key]: value }));

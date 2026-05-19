@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useToast } from "@/components/Toast";
@@ -21,14 +21,15 @@ export default function TagManager() {
   const [color, setColor] = useState(DEFAULT_COLOR);
   const [saving, setSaving] = useState(false);
 
-  function load() {
+  const load = useCallback(() => {
     setLoading(true);
     apiFetch<ScheduleTag[]>("/api/schedule/tags")
       .then(setTags)
+      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"))
       .finally(() => setLoading(false));
-  }
+  }, [toast, t.error]);
 
-  useEffect(load, []);
+  useEffect(() => { load(); }, [load]);
 
   function startAdd() {
     setEditing(null);

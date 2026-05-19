@@ -54,8 +54,10 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    apiFetch<PaginatedResponse<Customer>>("/api/customers?limit=100").then((r) => setCustomers(r.items));
-  }, []);
+    apiFetch<PaginatedResponse<Customer>>("/api/customers?limit=100")
+      .then((r) => setCustomers(r.items))
+      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+  }, [toast, t.error]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
