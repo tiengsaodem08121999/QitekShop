@@ -80,11 +80,11 @@ def test_enrich_response_profit_is_total_amount_minus_purchase(db_session, admin
 
 
 def test_enrich_response_cashflow_formula(db_session, admin_user):
-    """Cashflow = total_amount - (total_purchase + total_trade_in) + total_trade_in_resale - remaining.
+    """Cashflow = cash NET đã thực chảy = (paid − refund_paid) + resale − purchase.
 
-    With selling=1M, cost=800K, trade-in=600K, resale=800K, no payments:
-      remaining = 1M - 600K = 400K
-      cashflow = 1M - (800K + 600K) + 800K - 400K = 0
+    With cost=800K, trade-in=600K, resale=800K, no payments:
+      cashflow = 0 − 0 + 800K − 800K = 0
+      remaining = 1M − 600K = 400K (khách còn nợ, chưa chảy)
     """
     q = _seed_quotation(
         db_session,
@@ -100,6 +100,66 @@ def test_enrich_response_cashflow_formula(db_session, admin_user):
 
     data = enrich_response(q)
     assert data["remaining"] == Decimal(400_000)
+    assert data["cashflow"] == Decimal(0)
+
+
+def test_cashflow_excludes_unrefunded_return(db_session, admin_user):
+    """Return chưa refund_paid không trừ cashflow — chưa có cash event."""
+    q = _seed_quotation(
+        db_session,
+        user_id=admin_user.id,
+        items=[
+            {"is_trade_in": False, "name": "Ram 16gb", "purchase_price": 800_000, "selling_price": 1_000_000},
+        ],
+    )
+    q.total_amount = Decimal(1_000_000)
+    db_session.flush()
+
+    # Khách trả 1M
+    db_session.add(Payment(
+        quotation_id=q.id, amount=Decimal(1_000_000), method=PaymentMethod.cash,
+        payment_type=PaymentType.payment, date=_date(2026, 5, 1), created_by=admin_user.id,
+    ))
+    # Ghi nhận return 200K nhưng chưa thực sự hoàn tiền
+    from app.quotation.models import Return, ReturnReason
+    db_session.add(Return(
+        quotation_id=q.id, item_name="Ram 16gb", reason=ReturnReason.seller_fault,
+        selling_price=Decimal(1_000_000), refund_percent=20, refund_amount=Decimal(200_000),
+        date=_date(2026, 5, 2), created_by=admin_user.id,
+    ))
+    db_session.flush()
+    db_session.refresh(q)
+
+    data = enrich_response(q)
+    # cashflow = 1M − 0 + 0 − 800K = 200K
+    assert data["cashflow"] == Decimal(200_000)
+    assert data["total_refund"] == Decimal(200_000)
+    assert data["total_refund_paid"] == Decimal(0)
+
+
+def test_cashflow_subtracts_paid_refund(db_session, admin_user):
+    """Refund đã pay trừ vào cashflow vì cash thực sự ra khỏi két."""
+    q = _seed_quotation(
+        db_session,
+        user_id=admin_user.id,
+        items=[
+            {"is_trade_in": False, "name": "Ram 16gb", "purchase_price": 800_000, "selling_price": 1_000_000},
+        ],
+    )
+    q.total_amount = Decimal(1_000_000)
+    db_session.flush()
+
+    db_session.add_all([
+        Payment(quotation_id=q.id, amount=Decimal(1_000_000), method=PaymentMethod.cash,
+                payment_type=PaymentType.payment, date=_date(2026, 5, 1), created_by=admin_user.id),
+        Payment(quotation_id=q.id, amount=Decimal(200_000), method=PaymentMethod.cash,
+                payment_type=PaymentType.refund, date=_date(2026, 5, 3), created_by=admin_user.id),
+    ])
+    db_session.flush()
+    db_session.refresh(q)
+
+    data = enrich_response(q)
+    # cashflow = 1M − 200K + 0 − 800K = 0
     assert data["cashflow"] == Decimal(0)
 
 

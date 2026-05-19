@@ -237,9 +237,10 @@ def enrich_response(quotation: Quotation) -> dict:
     # are tracked separately in cashflow rather than folded in.
     profit = quotation.total_amount - total_purchase
 
-    # Cashflow: net cash position considering everything in/out plus what the
-    # customer still owes. Formula: selling - (purchase + trade-in) + resale - remaining.
-    cashflow = quotation.total_amount - (total_purchase + quotation.total_trade_in) + total_trade_in_resale - remaining
+    # Cashflow: cash NET đã thực chảy ra/vào từ đơn này tính đến hiện tại.
+    # = (khách trả − shop hoàn) + bán lại trade-in − mua hàng đầu vào.
+    # Không gồm các khoản còn nợ qua lại; số đó nằm ở `remaining`.
+    cashflow = (total_paid - total_refund_paid) + total_trade_in_resale - total_purchase
 
     return {
         **{c.key: getattr(quotation, c.key) for c in quotation.__table__.columns},
