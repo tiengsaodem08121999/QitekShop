@@ -4,6 +4,7 @@ import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { formatNumber, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import DateInput from "@/components/shared/DateInput";
 import type { Transaction, TransactionType } from "@/types";
 
 interface Props {
@@ -47,7 +48,7 @@ export default function TransactionModal({ onClose, onSaved, initial }: Props) {
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className="block text-sm font-medium mb-1">{t.txn_date}</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="border rounded px-3 py-2 w-full text-sm" required />
+            <DateInput value={date} onChange={setDate} className="border rounded px-3 py-2 w-full text-sm" required />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t.txn_category}</label>

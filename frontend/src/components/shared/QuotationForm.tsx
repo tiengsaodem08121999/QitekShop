@@ -7,6 +7,7 @@ import { formatNumber, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { useToast } from "@/components/Toast";
 import { isWarrantyActive } from "@/lib/format";
+import DateInput from "@/components/shared/DateInput";
 import type { Customer, PaginatedResponse, QuotationItem, WarrantyUnit } from "@/types";
 
 interface Props {
@@ -290,7 +291,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                     </div>
                   </td>
                   <td className="px-2 py-2"><input data-col="cost" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateItem(i, "purchase_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "cost", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
-                  <td className="px-2 py-2"><input type="date" value={item.warranty_start || ""} onChange={(e) => updateItem(i, "warranty_start", e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
+                  <td className="px-2 py-2"><DateInput value={item.warranty_start || ""} onChange={(v) => updateItem(i, "warranty_start", v || null)} className="border border-gray-200 rounded-lg px-2 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2 text-center">
                     {(() => {
                       const active = isWarrantyActive(item.warranty_start, item.warranty_count, item.warranty_unit);

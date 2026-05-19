@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { formatDate, formatNumber, formatWarranty, isWarrantyActive, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { useToast } from "@/components/Toast";
+import DateInput from "@/components/shared/DateInput";
 import type { Payment, PaymentMethod, PaymentType, Quotation, Return, ReturnReason } from "@/types";
 
 export default function QuotationDetailPage() {
@@ -338,7 +339,7 @@ export default function QuotationDetailPage() {
                 <td className="px-4 py-3 text-right tabular-nums font-medium text-gray-800">{item.selling_price.toLocaleString()}</td>
                 <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatWarranty(item.warranty_count, item.warranty_unit, t, t.dash)}</td>
                 <td className="px-4 py-3 text-right tabular-nums text-gray-600 hide-on-screenshot">{showCost ? item.purchase_price.toLocaleString() : "•••"}</td>
-                <td className="px-4 py-3 text-gray-500">{item.warranty_start || t.dash}</td>
+                <td className="px-4 py-3 text-gray-500">{item.warranty_start ? formatDate(item.warranty_start) : t.dash}</td>
                 <td className="px-4 py-3 text-center">
                   {(() => {
                     const active = isWarrantyActive(item.warranty_start, item.warranty_count, item.warranty_unit);
@@ -679,10 +680,9 @@ export default function QuotationDetailPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">{t.payment_date}</label>
-                <input
-                  type="date"
+                <DateInput
                   value={paymentForm.date}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, date: e.target.value })}
+                  onChange={(v) => setPaymentForm({ ...paymentForm, date: v })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -765,8 +765,8 @@ export default function QuotationDetailPage() {
               )}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">{t.return_date}</label>
-                <input type="date" value={returnForm.date}
-                  onChange={(e) => setReturnForm({ ...returnForm, date: e.target.value })}
+                <DateInput value={returnForm.date}
+                  onChange={(v) => setReturnForm({ ...returnForm, date: v })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
               </div>
               <div>

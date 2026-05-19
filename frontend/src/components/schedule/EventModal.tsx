@@ -6,6 +6,7 @@ import { useT } from "@/lib/i18n";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/Confirm";
 import { trimSeconds, withSeconds } from "@/lib/schedule";
+import DateInput from "@/components/shared/DateInput";
 import type { EventStatus, ScheduleEvent, ScheduleTag } from "@/types";
 
 interface Props {
@@ -207,7 +208,7 @@ export default function EventModal({
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">{t.schedule_field_date}</label>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
+              <DateInput value={date} onChange={setDate}
                 className="border rounded px-3 py-2 w-full text-sm" required />
             </div>
             <div>

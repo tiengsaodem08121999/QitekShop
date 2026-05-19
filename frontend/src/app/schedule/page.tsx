@@ -7,6 +7,7 @@ import FilterBar from "@/components/schedule/FilterBar";
 import MonthView from "@/components/schedule/MonthView";
 import WeekView from "@/components/schedule/WeekView";
 import { apiFetch } from "@/lib/api";
+import { formatDate } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import {
   addDays, addMonths, getMonthGridRange, getWeekRange, toIsoDate,
@@ -59,7 +60,7 @@ export default function SchedulePage() {
   const headerLabel = useMemo(() => {
     if (view === "week") {
       const ws = getWeekRange(anchor);
-      return `${toIsoDate(ws.start)} – ${toIsoDate(ws.end)}`;
+      return `${formatDate(ws.start)} – ${formatDate(ws.end)}`;
     }
     return anchor.toLocaleDateString(undefined, { year: "numeric", month: "long" });
   }, [view, anchor]);

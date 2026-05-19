@@ -112,7 +112,7 @@ export default function FinanceMonthPage() {
                 runningBalance += txn.type === "thu" ? txn.amount : -txn.amount;
                 return (
                   <tr key={txn.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-5 py-3 text-gray-500 tabular-nums">{formatDate(txn.date).slice(0, 5)}</td>
+                    <td className="px-5 py-3 text-gray-500 tabular-nums">{formatDate(txn.date)}</td>
                     <td className="px-4 py-3 font-medium text-gray-800">
                       {txn.description.split(/(#\d+)/).map((part, i) => {
                         const match = part.match(/^#(\d+)$/);
