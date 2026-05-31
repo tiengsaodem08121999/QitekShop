@@ -52,21 +52,59 @@ echo ""
 echo "  Waiting for tunnel URL..."
 echo ""
 
-# Wait for cloudflared to print the tunnel URL
-for i in $(seq 1 30); do
-  TUNNEL_URL=$(docker compose logs tunnel 2>&1 | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | head -1)
-  if [ -n "$TUNNEL_URL" ]; then
-    echo "  Public:    ${TUNNEL_URL}"
-    echo ""
-    break
-  fi
+URL_LOG_TIMEOUT=${URL_LOG_TIMEOUT:-30}        # giây chờ URL xuất hiện trong log
+URL_VERIFY_TIMEOUT=${URL_VERIFY_TIMEOUT:-60}  # giây chờ URL trả 200
+VERIFY_INTERVAL=${VERIFY_INTERVAL:-3}         # khoảng cách giữa các lần curl
+
+# --- Giai đoạn 1: lấy URL từ log cloudflared ---
+TUNNEL_URL=""
+for i in $(seq 1 "$URL_LOG_TIMEOUT"); do
+  TUNNEL_URL=$(docker compose logs tunnel 2>&1 \
+    | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | head -1)
+  [ -n "$TUNNEL_URL" ] && break
   sleep 1
 done
 
 if [ -z "$TUNNEL_URL" ]; then
-  echo "  Run 'docker compose logs tunnel' to find the public URL"
+  echo "  [FAIL] Tunnel chưa cấp URL sau ${URL_LOG_TIMEOUT}s."
+  echo "         Xem log: docker compose logs tunnel"
   echo ""
+  echo "========================================="
+  echo ""
+  exit 1
 fi
 
-echo "========================================="
-echo ""
+# --- Giai đoạn 2: xác minh URL trả về HTTP 200 ---
+echo "  Đang xác minh public URL (tối đa ${URL_VERIFY_TIMEOUT}s)..."
+VERIFIED=0
+ELAPSED=0
+CODE=""
+while [ "$ELAPSED" -lt "$URL_VERIFY_TIMEOUT" ]; do
+  CODE=$(curl -s -o /dev/null -L --max-time 10 \
+         -w '%{http_code}' "$TUNNEL_URL" 2>/dev/null)
+  if [ "$CODE" = "200" ]; then
+    VERIFIED=1
+    break
+  fi
+  sleep "$VERIFY_INTERVAL"
+  ELAPSED=$((ELAPSED + VERIFY_INTERVAL))
+done
+
+if [ "$VERIFIED" = "1" ]; then
+  echo ""
+  echo "  Public:    ${TUNNEL_URL}  (verified ✓)"
+  echo ""
+  echo "========================================="
+  echo ""
+  exit 0
+else
+  echo ""
+  echo "  [FAIL] Public URL không trả về 200 sau ${URL_VERIFY_TIMEOUT}s."
+  echo "         URL:  ${TUNNEL_URL}"
+  echo "         Mã HTTP cuối cùng: ${CODE:-không phản hồi}"
+  echo "         Kiểm tra: docker compose logs tunnel"
+  echo ""
+  echo "========================================="
+  echo ""
+  exit 1
+fi
