@@ -273,7 +273,9 @@ export default function QuotationDetailPage() {
                   <td className="px-4 py-3 font-medium text-gray-800">{item.name}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-gray-700">{item.purchase_price.toLocaleString()}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-gray-700 hide-on-screenshot">
-                    {editingResaleId === item.id ? (
+                    {!showCost ? (
+                      "•••"
+                    ) : editingResaleId === item.id ? (
                       <input
                         autoFocus
                         type="text"
@@ -303,7 +305,7 @@ export default function QuotationDetailPage() {
               <tr className="bg-gray-50/80">
                 <td className="px-5 py-3 font-semibold text-gray-700">{t.quotation_total_trade_in}</td>
                 <td className="px-5 py-3 text-right font-bold tabular-nums text-gray-800">{q.total_trade_in.toLocaleString()}</td>
-                <td className="px-5 py-3 text-right font-bold tabular-nums text-gray-800 hide-on-screenshot">{q.total_trade_in_resale.toLocaleString()}</td>
+                <td className="px-5 py-3 text-right font-bold tabular-nums text-gray-800 hide-on-screenshot">{showCost ? q.total_trade_in_resale.toLocaleString() : "•••"}</td>
               </tr>
             </tbody>
           </table>

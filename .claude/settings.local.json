@@ -77,7 +77,14 @@
       "Bash(git check-ignore *)",
       "Skill(superpowers:systematic-debugging)",
       "Bash(docker volume *)",
-      "Bash(docker network *)"
+      "Bash(docker network *)",
+      "Bash(cmd *)",
+      "Bash(docker cp *)",
+      "Bash(npx tsc *)",
+      "Bash(git -c color.ui=never diff --stat HEAD -- 'backend/**' 'frontend/src/**')",
+      "Bash(git -c color.ui=never log -5 --pretty=format:\"%h %s\")",
+      "Bash(git *)",
+      "Bash(npx eslint *)"
     ]
   }
 }
