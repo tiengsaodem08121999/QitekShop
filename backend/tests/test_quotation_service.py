@@ -13,8 +13,10 @@ from app.quotation.models import (
     Quotation,
     QuotationItem,
     QuotationStatus,
+    Return,
+    ReturnReason,
 )
-from app.quotation.service import enrich_response, update_item_resale
+from app.quotation.service import delete_quotation, enrich_response, update_item_resale
 
 
 def _seed_quotation(db_session, *, user_id: int = 1, items: list[dict] | None = None):
@@ -249,3 +251,78 @@ def test_update_item_resale_returns_none_for_unknown_item(db_session, admin_user
 
     result = update_item_resale(db_session, q.id, 9999, Decimal(800_000))
     assert result is None
+
+
+def test_delete_quotation_removes_quotation_and_items(db_session, admin_user):
+    q = _seed_quotation(
+        db_session,
+        user_id=admin_user.id,
+        items=[{"is_trade_in": False, "name": "Ram 16gb", "selling_price": 1_000_000}],
+    )
+    db_session.flush()
+    qid = q.id
+
+    result = delete_quotation(db_session, qid)
+
+    assert result is True
+    assert db_session.query(Quotation).filter(Quotation.id == qid).first() is None
+    assert (
+        db_session.query(QuotationItem).filter(QuotationItem.quotation_id == qid).count()
+        == 0
+    )
+
+
+def test_delete_quotation_blocked_when_payment_exists(db_session, admin_user):
+    q = _seed_quotation(
+        db_session,
+        user_id=admin_user.id,
+        items=[{"is_trade_in": False, "name": "Ram 16gb", "selling_price": 1_000_000}],
+    )
+    db_session.add(
+        Payment(
+            quotation_id=q.id,
+            amount=Decimal(500_000),
+            method=PaymentMethod.cash,
+            payment_type=PaymentType.payment,
+            date=_date.today(),
+            created_by=admin_user.id,
+        )
+    )
+    db_session.flush()
+    qid = q.id
+
+    with pytest.raises(ValueError):
+        delete_quotation(db_session, qid)
+
+    assert db_session.query(Quotation).filter(Quotation.id == qid).first() is not None
+
+
+def test_delete_quotation_blocked_when_return_exists(db_session, admin_user):
+    q = _seed_quotation(
+        db_session,
+        user_id=admin_user.id,
+        items=[{"is_trade_in": False, "name": "Ram 16gb", "selling_price": 1_000_000}],
+    )
+    db_session.add(
+        Return(
+            quotation_id=q.id,
+            item_name="Ram 16gb",
+            reason=ReturnReason.customer_fault,
+            selling_price=Decimal(1_000_000),
+            refund_percent=100,
+            refund_amount=Decimal(1_000_000),
+            date=_date.today(),
+            created_by=admin_user.id,
+        )
+    )
+    db_session.flush()
+    qid = q.id
+
+    with pytest.raises(ValueError):
+        delete_quotation(db_session, qid)
+
+    assert db_session.query(Quotation).filter(Quotation.id == qid).first() is not None
+
+
+def test_delete_quotation_returns_none_when_not_found(db_session):
+    assert delete_quotation(db_session, 9999) is None

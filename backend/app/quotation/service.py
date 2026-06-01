@@ -182,6 +182,30 @@ def confirm_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
     return quotation
 
 
+def delete_quotation(db: Session, quotation_id: int) -> Optional[bool]:
+    """Hard-delete a quotation and its items.
+
+    Blocked if the quotation has any payments or returns: those carry real
+    Finance transactions, so deleting would orphan recorded money. The caller
+    must remove all payments/returns first. Trade-in `resale_price` is just a
+    field on an item (no transaction) and does not block deletion.
+
+    Returns True on success, None if the quotation does not exist. Raises
+    ValueError (with a user-facing message) when blocked.
+    """
+    quotation = get_quotation(db, quotation_id)
+    if not quotation:
+        return None
+    if quotation.payments or quotation.returns:
+        raise ValueError(
+            "Không thể xóa báo giá đã có thanh toán hoặc trả hàng. "
+            "Vui lòng gỡ hết thanh toán/trả hàng trước."
+        )
+    db.delete(quotation)
+    db.commit()
+    return True
+
+
 def update_item_resale(
     db: Session,
     quotation_id: int,
