@@ -38,6 +38,19 @@ export default function QuotationsPage() {
     }
   }
 
+  async function handleDelete(quotationId: number) {
+    if (!window.confirm(t.quotation_delete_prompt)) return;
+    try {
+      await apiFetch(`/api/quotations/${quotationId}`, { method: "DELETE" });
+      toast(t.quotation_delete_success);
+      setData((prev) =>
+        prev ? { ...prev, items: prev.items.filter((x) => x.id !== quotationId) } : prev,
+      );
+    } catch (err) {
+      toast(err instanceof Error ? err.message : t.error, "error");
+    }
+  }
+
   const items = data?.items ?? [];
   const totalAmount = items.reduce((s, q) => s + q.total_amount, 0);
   const totalPaid = items.reduce((s, q) => s + q.total_paid, 0);
@@ -138,7 +151,7 @@ export default function QuotationsPage() {
               <th className="px-4 py-3 font-medium text-right">{t.quotations_col_overpaid}</th>
               <th className="px-4 py-3 font-medium text-center">{t.quotations_col_active}</th>
               <th className="px-4 py-3 font-medium">{t.quotations_col_created}</th>
-              <th className="px-2 py-3 w-10"></th>
+              <th className="px-2 py-3 w-20"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -167,14 +180,24 @@ export default function QuotationsPage() {
                   )}
                 </td>
                 <td className="px-4 py-3.5 text-gray-500">{formatDate(q.created_at)}</td>
-                <td className="px-2 py-3.5 text-center">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleCopy(q.id); }}
-                    title={t.quotation_copy}
-                    className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                  </button>
+                <td className="px-2 py-3.5">
+                  <div className="flex items-center justify-center gap-1">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleCopy(q.id); }}
+                      title={t.quotation_copy}
+                      className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(q.id); }}
+                      disabled={!q.deletable}
+                      title={q.deletable ? t.quotation_delete : t.quotation_delete_blocked}
+                      className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-400 disabled:hover:bg-transparent"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
