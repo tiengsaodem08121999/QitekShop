@@ -133,6 +133,7 @@ def list_quotations(
             "warranty_active": warranty_active,
             "warranty_total": warranty_total,
             "created_at": q.created_at,
+            "deletable": len(q.payments) == 0 and len(q.returns) == 0,
         })
     return items, total
 
@@ -280,6 +281,7 @@ def enrich_response(quotation: Quotation) -> dict:
         "total_trade_in_resale": total_trade_in_resale,
         "profit": profit,
         "cashflow": cashflow,
+        "deletable": len(quotation.payments) == 0 and len(quotation.returns) == 0,
     }
 
 

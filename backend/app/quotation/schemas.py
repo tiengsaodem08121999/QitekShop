@@ -147,6 +147,7 @@ class QuotationResponse(DecimalModel):
     total_purchase: Decimal
     profit: Decimal
     cashflow: Decimal
+    deletable: bool
     total_refund: Decimal
     total_refund_paid: Decimal
     items: List[QuotationItemResponse]
@@ -237,6 +238,7 @@ class QuotationListItem(DecimalModel):
     warranty_active: int = 0
     warranty_total: int = 0
     created_at: _dt.datetime
+    deletable: bool = True
 
 
 class PaginatedResponse(BaseModel):

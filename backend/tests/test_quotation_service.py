@@ -326,3 +326,36 @@ def test_delete_quotation_blocked_when_return_exists(db_session, admin_user):
 
 def test_delete_quotation_returns_none_when_not_found(db_session):
     assert delete_quotation(db_session, 9999) is None
+
+
+def test_enrich_response_deletable_true_when_clean(db_session, admin_user):
+    q = _seed_quotation(
+        db_session,
+        user_id=admin_user.id,
+        items=[{"is_trade_in": False, "name": "Ram 16gb", "selling_price": 1_000_000}],
+    )
+    db_session.flush()
+
+    assert enrich_response(q)["deletable"] is True
+
+
+def test_enrich_response_deletable_false_with_payment(db_session, admin_user):
+    q = _seed_quotation(
+        db_session,
+        user_id=admin_user.id,
+        items=[{"is_trade_in": False, "name": "Ram 16gb", "selling_price": 1_000_000}],
+    )
+    db_session.add(
+        Payment(
+            quotation_id=q.id,
+            amount=Decimal(100_000),
+            method=PaymentMethod.cash,
+            payment_type=PaymentType.payment,
+            date=_date.today(),
+            created_by=admin_user.id,
+        )
+    )
+    db_session.flush()
+    db_session.refresh(q)
+
+    assert enrich_response(q)["deletable"] is False
