@@ -133,6 +133,7 @@ def list_quotations(
             "warranty_active": warranty_active,
             "warranty_total": warranty_total,
             "created_at": q.created_at,
+            "deletable": len(q.payments) == 0 and len(q.returns) == 0,
         })
     return items, total
 
@@ -180,6 +181,30 @@ def confirm_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
     db.commit()
     db.refresh(quotation)
     return quotation
+
+
+def delete_quotation(db: Session, quotation_id: int) -> Optional[bool]:
+    """Hard-delete a quotation and its items.
+
+    Blocked if the quotation has any payments or returns: those carry real
+    Finance transactions, so deleting would orphan recorded money. The caller
+    must remove all payments/returns first. Trade-in `resale_price` is just a
+    field on an item (no transaction) and does not block deletion.
+
+    Returns True on success, None if the quotation does not exist. Raises
+    ValueError (with a user-facing message) when blocked.
+    """
+    quotation = get_quotation(db, quotation_id)
+    if not quotation:
+        return None
+    if quotation.payments or quotation.returns:
+        raise ValueError(
+            "Không thể xóa báo giá đã có thanh toán hoặc trả hàng. "
+            "Vui lòng gỡ hết thanh toán/trả hàng trước."
+        )
+    db.delete(quotation)
+    db.commit()
+    return True
 
 
 def update_item_resale(
@@ -256,6 +281,7 @@ def enrich_response(quotation: Quotation) -> dict:
         "total_trade_in_resale": total_trade_in_resale,
         "profit": profit,
         "cashflow": cashflow,
+        "deletable": len(quotation.payments) == 0 and len(quotation.returns) == 0,
     }
 
 

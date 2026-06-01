@@ -126,3 +126,81 @@ def test_patch_resale_forbidden_for_accountant(client, accountant_user, sales_us
         headers=auth_headers(accountant_user),
     )
     assert r.status_code == 403
+
+
+def _create_simple_quotation(client, user):
+    payload = {
+        "new_customer": {"name": "Acme"},
+        "items": [
+            {
+                "is_trade_in": False,
+                "name": "Ram 16gb",
+                "selling_price": 1_000_000,
+                "warranty_count": 1,
+                "warranty_unit": "week",
+            }
+        ],
+    }
+    r = client.post("/api/quotations", json=payload, headers=auth_headers(user))
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+def test_delete_quotation_success(client, sales_user):
+    q = _create_simple_quotation(client, sales_user)
+
+    r = client.delete(f"/api/quotations/{q['id']}", headers=auth_headers(sales_user))
+    assert r.status_code == 204, r.text
+
+    r2 = client.get(f"/api/quotations/{q['id']}", headers=auth_headers(sales_user))
+    assert r2.status_code == 404
+
+
+def test_delete_quotation_blocked_with_payment(client, sales_user):
+    q = _create_simple_quotation(client, sales_user)
+    rp = client.post(
+        f"/api/quotations/{q['id']}/payments",
+        json={"amount": 500_000, "method": "cash"},
+        headers=auth_headers(sales_user),
+    )
+    assert rp.status_code == 201, rp.text
+
+    r = client.delete(f"/api/quotations/{q['id']}", headers=auth_headers(sales_user))
+    assert r.status_code == 400
+
+    r2 = client.get(f"/api/quotations/{q['id']}", headers=auth_headers(sales_user))
+    assert r2.status_code == 200
+
+
+def test_delete_quotation_not_found(client, admin_user):
+    r = client.delete("/api/quotations/9999", headers=auth_headers(admin_user))
+    assert r.status_code == 404
+
+
+def test_delete_quotation_forbidden_for_accountant(client, sales_user, accountant_user):
+    q = _create_simple_quotation(client, sales_user)
+    r = client.delete(
+        f"/api/quotations/{q['id']}", headers=auth_headers(accountant_user)
+    )
+    assert r.status_code == 403
+
+
+def test_quotation_detail_includes_deletable(client, sales_user):
+    q = _create_simple_quotation(client, sales_user)
+    r = client.get(f"/api/quotations/{q['id']}", headers=auth_headers(sales_user))
+    assert r.status_code == 200, r.text
+    assert r.json()["deletable"] is True
+
+
+def test_list_item_deletable_false_with_payment(client, sales_user):
+    q = _create_simple_quotation(client, sales_user)
+    client.post(
+        f"/api/quotations/{q['id']}/payments",
+        json={"amount": 100_000, "method": "cash"},
+        headers=auth_headers(sales_user),
+    )
+
+    r = client.get("/api/quotations", headers=auth_headers(sales_user))
+    assert r.status_code == 200, r.text
+    item = next(i for i in r.json()["items"] if i["id"] == q["id"])
+    assert item["deletable"] is False

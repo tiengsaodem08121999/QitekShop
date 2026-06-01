@@ -69,6 +69,9 @@ const vi: Translations = {
   // Quotation detail
   quotation_confirm_prompt: "Chốt báo giá này?",
   quotation_delete_prompt: "Xóa báo giá này?",
+  quotation_delete: "Xóa",
+  quotation_delete_blocked: "Đơn đã có thanh toán hoặc trả hàng, không thể xóa",
+  quotation_delete_success: "Xóa báo giá thành công",
   quotation_export_pdf: "Xuất PDF",
   quotation_screenshot: "Chụp màn hình",
   quotation_products: "Sản phẩm",

@@ -32,6 +32,7 @@ from app.quotation.service import (
     create_quotation,
     create_return,
     delete_payment,
+    delete_quotation,
     delete_return,
     enrich_response,
     get_customers,
@@ -158,6 +159,20 @@ def update_quotation_endpoint(
     if not quotation:
         raise HTTPException(status_code=404, detail="Quotation not found or already confirmed")
     return enrich_response(quotation)
+
+
+@router.delete("/quotations/{quotation_id}", status_code=204)
+def delete_quotation_endpoint(
+    quotation_id: int,
+    user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
+    db: Session = Depends(get_db),
+):
+    try:
+        result = delete_quotation(db, quotation_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not result:
+        raise HTTPException(status_code=404, detail="Quotation not found")
 
 
 @router.patch("/quotations/{quotation_id}/confirm", response_model=QuotationResponse)
