@@ -67,6 +67,9 @@ const en = {
   // Quotation detail
   quotation_confirm_prompt: "Confirm this quotation?",
   quotation_delete_prompt: "Delete this quotation?",
+  quotation_delete: "Delete",
+  quotation_delete_blocked: "Cannot delete: quotation has payments or returns",
+  quotation_delete_success: "Quotation deleted",
   quotation_export_pdf: "Export PDF",
   quotation_screenshot: "Screenshot",
   quotation_products: "Products",

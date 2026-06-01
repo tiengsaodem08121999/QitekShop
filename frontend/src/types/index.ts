@@ -93,6 +93,7 @@ export interface Quotation {
   created_by: number;
   created_at: string;
   updated_at: string;
+  deletable: boolean;
 }
 
 export interface QuotationListItem {
@@ -107,6 +108,7 @@ export interface QuotationListItem {
   warranty_active: number;
   warranty_total: number;
   created_at: string;
+  deletable: boolean;
 }
 
 export type TransactionType = "thu" | "chi";
