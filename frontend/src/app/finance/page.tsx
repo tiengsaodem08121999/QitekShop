@@ -6,6 +6,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import TransactionModal from "@/components/shared/TransactionModal";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
 import type { MonthlySummary, Transaction } from "@/types";
 
@@ -22,7 +23,7 @@ export default function FinancePage() {
     setLoading(true);
     apiFetch<MonthlySummary[]>(`/api/finance/yearly-summary?year=${year}`)
       .then(setMonths)
-      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"))
+      .catch((err) => toast(apiError(err, t), "error"))
       .finally(() => setLoading(false));
   }, [year, toast, t.error]);
 

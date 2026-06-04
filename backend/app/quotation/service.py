@@ -39,6 +39,97 @@ def update_customer(db: Session, customer_id: int, **kwargs) -> Optional[Custome
     return customer
 
 
+def get_claimed_inventory_ids(db: Session, exclude_quotation_id: Optional[int] = None) -> set:
+    """Stock item ids claimed by a confirmed/delivered quotation."""
+    q = (
+        db.query(QuotationItem.inventory_item_id)
+        .join(Quotation, Quotation.id == QuotationItem.quotation_id)
+        .filter(
+            Quotation.status.in_([QuotationStatus.confirmed, QuotationStatus.delivered]),
+            QuotationItem.is_trade_in == False,  # noqa: E712
+            QuotationItem.inventory_item_id.isnot(None),
+        )
+    )
+    if exclude_quotation_id is not None:
+        q = q.filter(QuotationItem.quotation_id != exclude_quotation_id)
+    claimed = {row[0] for row in q.all()}
+    # A quotation return sends the item back to stock -> no longer claimed.
+    returned = {
+        row[0]
+        for row in db.query(Return.inventory_item_id).filter(Return.inventory_item_id.isnot(None)).all()
+    }
+    return claimed - returned
+
+
+def get_referenced_inventory_ids(db: Session) -> set:
+    """Stock item ids referenced by ANY quotation line (sale or trade-in, any status).
+    Used to warn before deleting a stock item still attached to a quotation."""
+    return {
+        row[0]
+        for row in db.query(QuotationItem.inventory_item_id).filter(QuotationItem.inventory_item_id.isnot(None)).all()
+    }
+
+
+def _check_duplicate_inventory_links(items) -> None:
+    ids = [it.inventory_item_id for it in items if not it.is_trade_in and it.inventory_item_id is not None]
+    if len(ids) != len(set(ids)):
+        raise ValueError("err_inventory_duplicate_link")
+
+
+def annotate_inventory_conflicts(db: Session, quotation) -> None:
+    """Set transient `inventory_conflict` per sale item: true when its linked stock
+    item is claimed by another confirmed/delivered quotation."""
+    claimed = get_claimed_inventory_ids(db, exclude_quotation_id=quotation.id)
+    for item in quotation.items:
+        item.inventory_conflict = (
+            not item.is_trade_in
+            and item.inventory_item_id is not None
+            and item.inventory_item_id in claimed
+        )
+
+
+def _writeback_sale_prices(db: Session, quotation) -> None:
+    """Sale lines linked to stock push their selling price back to the stock item.
+    Runs automatically on every create/update of an inventory-enabled quotation."""
+    from app.inventory.models import InventoryItem
+    for item in quotation.items:
+        if not item.is_trade_in and item.inventory_item_id is not None:
+            inv = db.query(InventoryItem).filter(InventoryItem.id == item.inventory_item_id).first()
+            if inv:
+                inv.selling_price = item.selling_price
+
+
+def _import_trade_in_stock(db: Session, quotation, old_trade_in_links: set) -> None:
+    """Reconcile trade-in lines into stock. Runs ONLY on the explicit "Nhập kho"
+    action: create stock for new trade-ins, update linked ones, delete dropped ones
+    (unless sold/claimed)."""
+    from app.inventory.models import InventoryItem, InventoryStatus
+
+    for item in quotation.items:
+        if not item.is_trade_in:
+            continue
+        inv = (
+            db.query(InventoryItem).filter(InventoryItem.id == item.inventory_item_id).first()
+            if item.inventory_item_id is not None else None
+        )
+        if inv is None:
+            inv = InventoryItem(status=InventoryStatus.in_stock)
+            db.add(inv)
+        inv.name = item.name
+        inv.serial_number = item.serial_number
+        inv.purchase_price = item.purchase_price
+        inv.selling_price = item.resale_price
+        db.flush()
+        item.inventory_item_id = inv.id
+
+    claimed = get_claimed_inventory_ids(db, exclude_quotation_id=quotation.id)
+    current = {i.inventory_item_id for i in quotation.items if i.is_trade_in and i.inventory_item_id is not None}
+    for removed_id in old_trade_in_links - current:
+        inv = db.query(InventoryItem).filter(InventoryItem.id == removed_id).first()
+        if inv and inv.status != InventoryStatus.sold and removed_id not in claimed:
+            db.delete(inv)
+
+
 def _compute_totals(items: List[QuotationItem]) -> Tuple[Decimal, Decimal]:
     """Returns (total_amount, total_trade_in)"""
     total_amount = sum(item.selling_price for item in items if not item.is_trade_in)
@@ -57,9 +148,12 @@ def create_quotation(db: Session, data: QuotationCreate, user_id: int) -> Quotat
     db.add(quotation)
     db.flush()
 
+    _check_duplicate_inventory_links(data.items)
     for item_data in data.items:
-        item = QuotationItem(quotation_id=quotation.id, **item_data.model_dump())
-        db.add(item)
+        payload = item_data.model_dump()
+        if payload.get("is_trade_in"):
+            payload["inventory_item_id"] = None
+        db.add(QuotationItem(quotation_id=quotation.id, **payload))
 
     db.flush()
 
@@ -67,6 +161,12 @@ def create_quotation(db: Session, data: QuotationCreate, user_id: int) -> Quotat
     total_amount, total_trade_in = _compute_totals(quotation.items)
     quotation.total_amount = total_amount
     quotation.total_trade_in = total_trade_in
+
+    # Writeback only once the quotation is committed (confirmed/delivered), not draft.
+    if quotation.status in (QuotationStatus.confirmed, QuotationStatus.delivered):
+        _writeback_sale_prices(db, quotation)
+    if data.import_trade_ins:
+        _import_trade_in_stock(db, quotation, set())
 
     db.commit()
     db.refresh(quotation)
@@ -140,7 +240,7 @@ def list_quotations(
 
 def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> Optional[Quotation]:
     quotation = get_quotation(db, quotation_id)
-    if not quotation or quotation.status == QuotationStatus.confirmed:
+    if not quotation:
         return None
 
     if data.customer_id is not None:
@@ -155,18 +255,34 @@ def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> O
             new_names = {item.name for item in data.items if not item.is_trade_in}
             missing = returned_names - new_names
             if missing:
-                raise ValueError(f"Không thể đổi tên sản phẩm đã có trả hàng: {', '.join(missing)}")
+                raise ValueError("err_rename_returned_item")
 
-        # Replace all items
+        old_trade_in_links = {
+            i.inventory_item_id for i in quotation.items
+            if i.is_trade_in and i.inventory_item_id is not None
+        }
+        _check_duplicate_inventory_links(data.items)
+
+        # Replace all items, keeping payload links (sale + existing trade-in) so
+        # _import_trade_in_stock can update them in place.
         db.query(QuotationItem).filter(QuotationItem.quotation_id == quotation_id).delete()
         for item_data in data.items:
-            item = QuotationItem(quotation_id=quotation_id, **item_data.model_dump())
-            db.add(item)
+            db.add(QuotationItem(quotation_id=quotation_id, **item_data.model_dump()))
         db.flush()
         db.refresh(quotation)
         total_amount, total_trade_in = _compute_totals(quotation.items)
         quotation.total_amount = total_amount
         quotation.total_trade_in = total_trade_in
+
+        if quotation.status in (QuotationStatus.confirmed, QuotationStatus.delivered):
+            # A committed quotation must not grab a stock item already held elsewhere.
+            claimed = get_claimed_inventory_ids(db, exclude_quotation_id=quotation_id)
+            if any(i.inventory_item_id in claimed for i in quotation.items
+                   if not i.is_trade_in and i.inventory_item_id is not None):
+                raise ValueError("err_item_conflict")
+            _writeback_sale_prices(db, quotation)
+        if data.import_trade_ins:
+            _import_trade_in_stock(db, quotation, old_trade_in_links)
 
     db.commit()
     db.refresh(quotation)
@@ -178,6 +294,39 @@ def confirm_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
     if not quotation or quotation.status != QuotationStatus.draft:
         return None
     quotation.status = QuotationStatus.confirmed
+    db.commit()
+    db.refresh(quotation)
+    return quotation
+
+
+def deliver_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
+    """Mark a confirmed inventory-enabled quotation as delivered; its linked sale
+    items become `sold` in stock. One-way (no undo)."""
+    from app.inventory.models import InventoryItem, InventoryStatus
+    quotation = get_quotation(db, quotation_id)
+    if not quotation or quotation.status != QuotationStatus.confirmed:
+        return None
+    # All sale lines must be linked to stock (enough goods imported) before delivery.
+    if any(i.inventory_item_id is None for i in quotation.items if not i.is_trade_in):
+        raise ValueError("err_deliver_requires_linked")
+    for item in quotation.items:
+        if not item.is_trade_in and item.inventory_item_id is not None:
+            inv = db.query(InventoryItem).filter(InventoryItem.id == item.inventory_item_id).first()
+            if inv:
+                inv.status = InventoryStatus.sold
+    quotation.status = QuotationStatus.delivered
+    db.commit()
+    db.refresh(quotation)
+    return quotation
+
+
+def import_trade_ins(db: Session, quotation_id: int) -> Optional[Quotation]:
+    """Sync this quotation's saved trade-in lines into stock (detail-page "Nhập kho")."""
+    quotation = get_quotation(db, quotation_id)
+    if not quotation:
+        return None
+    old_links = {i.inventory_item_id for i in quotation.items if i.is_trade_in and i.inventory_item_id is not None}
+    _import_trade_in_stock(db, quotation, old_links)
     db.commit()
     db.refresh(quotation)
     return quotation
@@ -198,10 +347,23 @@ def delete_quotation(db: Session, quotation_id: int) -> Optional[bool]:
     if not quotation:
         return None
     if quotation.payments or quotation.returns:
-        raise ValueError(
-            "Không thể xóa báo giá đã có thanh toán hoặc trả hàng. "
-            "Vui lòng gỡ hết thanh toán/trả hàng trước."
-        )
+        raise ValueError("err_quotation_has_transactions")
+    from app.inventory.models import InventoryItem, InventoryStatus
+    claimed_elsewhere = get_claimed_inventory_ids(db, exclude_quotation_id=quotation_id)
+    for item in quotation.items:
+        if item.inventory_item_id is None:
+            continue
+        inv = db.query(InventoryItem).filter(InventoryItem.id == item.inventory_item_id).first()
+        if not inv:
+            continue
+        if item.is_trade_in:
+            # Reclaim trade-in stock created from this quotation (unless sold elsewhere).
+            if inv.status != InventoryStatus.sold and inv.id not in claimed_elsewhere:
+                db.delete(inv)
+        else:
+            # Release a sold sale-line item back to stock.
+            if inv.status == InventoryStatus.sold:
+                inv.status = InventoryStatus.in_stock
     db.delete(quotation)
     db.commit()
     return True
@@ -301,6 +463,26 @@ def _txn_description(customer_name: str, quotation_id: int) -> str:
 
 
 def create_payment(db: Session, quotation_id: int, data: PaymentCreate, user_id: int, customer_name: str = "") -> Payment:
+    quotation = db.query(Quotation).filter(Quotation.id == quotation_id).first()
+    if quotation and data.payment_type != PaymentType.refund:
+        sale_lines = [i for i in quotation.items if not i.is_trade_in]
+        claimed = get_claimed_inventory_ids(db, exclude_quotation_id=quotation_id)
+        conflict_lines = [i for i in sale_lines if i.inventory_item_id is not None and i.inventory_item_id in claimed]
+        if conflict_lines:
+            if not data.unlink_conflicts:
+                raise ValueError("err_payment_conflict")
+            # Confirmed by the user: drop the stock link, keep the line as a virtual
+            # (not-in-stock) item. It must be re-linked before delivery. The S/N
+            # came from the now-detached stock item, so clear it too.
+            for i in conflict_lines:
+                i.inventory_item_id = None
+                i.serial_number = None
+        # A transaction confirms the quotation (linking can still be completed up to delivery).
+        if quotation.status == QuotationStatus.draft:
+            quotation.status = QuotationStatus.confirmed
+        # Now committed -> push sale-line prices to the linked stock items.
+        _writeback_sale_prices(db, quotation)
+
     payment = Payment(
         quotation_id=quotation_id,
         amount=data.amount,
@@ -404,6 +586,19 @@ def delete_payment(db: Session, payment_id: int, quotation_id: int) -> bool:
 
     db.delete(payment)
     db.flush()
+
+    # A confirmed quotation is confirmed BY having a payment. If the last income
+    # payment is removed, revert it to draft (releasing the stock claim).
+    quotation = db.query(Quotation).filter(Quotation.id == quotation_id).first()
+    if quotation and quotation.status == QuotationStatus.confirmed:
+        remaining = (
+            db.query(Payment)
+            .filter(Payment.quotation_id == quotation_id, Payment.payment_type == PaymentType.payment)
+            .count()
+        )
+        if remaining == 0:
+            quotation.status = QuotationStatus.draft
+
     db.commit()
     return True
 
@@ -424,10 +619,24 @@ def list_returns(db: Session, quotation_id: int) -> list[Return]:
 
 
 def create_return(db: Session, quotation_id: int, data: ReturnCreate, user_id: int, customer_name: str = "") -> Return:
+    from app.inventory.models import InventoryItem, InventoryStatus
     refund_amount = _calc_refund_amount(data.selling_price, data.refund_percent)
+    # Resolve the stock item this return brings back (customer returns it to us).
+    sale_line = (
+        db.query(QuotationItem)
+        .filter(
+            QuotationItem.quotation_id == quotation_id,
+            QuotationItem.is_trade_in == False,  # noqa: E712
+            QuotationItem.name == data.item_name,
+            QuotationItem.inventory_item_id.isnot(None),
+        )
+        .first()
+    )
+    inventory_item_id = sale_line.inventory_item_id if sale_line else None
     ret = Return(
         quotation_id=quotation_id,
         item_name=data.item_name,
+        inventory_item_id=inventory_item_id,
         reason=data.reason,
         selling_price=data.selling_price,
         refund_percent=data.refund_percent,
@@ -437,6 +646,11 @@ def create_return(db: Session, quotation_id: int, data: ReturnCreate, user_id: i
         created_by=user_id,
     )
     db.add(ret)
+    # The returned product goes back into our stock, available to sell again.
+    if inventory_item_id is not None:
+        inv = db.query(InventoryItem).filter(InventoryItem.id == inventory_item_id).first()
+        if inv:
+            inv.status = InventoryStatus.in_stock
     db.flush()
     db.commit()
     db.refresh(ret)
@@ -481,6 +695,15 @@ def delete_return(db: Session, return_id: int, quotation_id: int) -> bool:
     )
     if not ret:
         return False
+
+    # Undoing a return: the item is sold again if its quotation was delivered.
+    if ret.inventory_item_id is not None:
+        from app.inventory.models import InventoryItem, InventoryStatus
+        quotation = db.query(Quotation).filter(Quotation.id == quotation_id).first()
+        if quotation and quotation.status == QuotationStatus.delivered:
+            inv = db.query(InventoryItem).filter(InventoryItem.id == ret.inventory_item_id).first()
+            if inv:
+                inv.status = InventoryStatus.sold
 
     db.delete(ret)
     db.commit()

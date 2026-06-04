@@ -18,6 +18,22 @@ export interface Customer {
   created_at: string;
 }
 
+export type InventoryStatus = "in_stock" | "sold" | "returned";
+
+export interface InventoryItem {
+  id: number;
+  name: string;
+  serial_number: string | null;
+  purchase_price: number;
+  selling_price: number | null;
+  supplier: string | null;
+  status: InventoryStatus;
+  is_claimed?: boolean;
+  in_use?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export type WarrantyUnit = "week" | "month";
 
 export interface QuotationItem {
@@ -29,6 +45,8 @@ export interface QuotationItem {
   selling_price: number;
   resale_price: number;
   serial_number: string | null;
+  inventory_item_id: number | null;
+  inventory_conflict?: boolean;
   warranty_count: number | null;
   warranty_unit: WarrantyUnit | null;
   warranty_start: string | null;
@@ -71,7 +89,7 @@ export interface Return {
   updated_at: string;
 }
 
-export type QuotationStatus = "draft" | "confirmed";
+export type QuotationStatus = "draft" | "confirmed" | "delivered";
 
 export interface Quotation {
   id: number;

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/Confirm";
 import type { ScheduleTag } from "@/types";
@@ -25,7 +26,7 @@ export default function TagManager() {
     setLoading(true);
     apiFetch<ScheduleTag[]>("/api/schedule/tags")
       .then(setTags)
-      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"))
+      .catch((err) => toast(apiError(err, t), "error"))
       .finally(() => setLoading(false));
   }, [toast, t.error]);
 
@@ -62,7 +63,7 @@ export default function TagManager() {
       cancel();
       load();
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
     } finally {
       setSaving(false);
     }
@@ -74,7 +75,7 @@ export default function TagManager() {
       await apiFetch(`/api/schedule/tags/${tag.id}`, { method: "DELETE" });
       load();
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
     }
   }
 

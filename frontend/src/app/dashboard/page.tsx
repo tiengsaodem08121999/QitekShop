@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
 import type { DashboardData } from "@/types";
 
@@ -15,7 +16,7 @@ export default function DashboardPage() {
   useEffect(() => {
     apiFetch<DashboardData>("/api/dashboard")
       .then(setData)
-      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+      .catch((err) => toast(apiError(err, t), "error"));
   }, [toast, t.error]);
 
   return (

@@ -8,7 +8,9 @@ import TransactionModal from "@/components/shared/TransactionModal";
 import { apiFetch } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
+import { useConfirm } from "@/components/Confirm";
 import type { MonthlySummary, PaginatedResponse, Transaction } from "@/types";
 
 export default function FinanceMonthPage() {
@@ -16,6 +18,7 @@ export default function FinanceMonthPage() {
   const router = useRouter();
   const t = useT();
   const toast = useToast();
+  const confirm = useConfirm();
   const year = Number(params.year);
   const month = Number(params.month);
 
@@ -25,7 +28,7 @@ export default function FinanceMonthPage() {
   const [editTxn, setEditTxn] = useState<Transaction | undefined>();
 
   const load = useCallback(() => {
-    const showError = (err: unknown) => toast(err instanceof Error ? err.message : t.error, "error");
+    const showError = (err: unknown) => toast(apiError(err, t), "error");
     apiFetch<PaginatedResponse<Transaction>>(`/api/finance/transactions?year=${year}&month=${month}&limit=200`)
       .then((r) => setTxns(r.items))
       .catch(showError);
@@ -37,12 +40,12 @@ export default function FinanceMonthPage() {
   useEffect(() => { load(); }, [load]);
 
   async function handleDelete(id: number) {
-    if (!window.confirm(t.finance_delete_txn)) return;
+    if (!(await confirm(t.finance_delete_txn))) return;
     try {
       await apiFetch(`/api/finance/transactions/${id}`, { method: "DELETE" });
       load();
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
     }
   }
 

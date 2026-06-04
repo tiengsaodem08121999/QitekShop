@@ -4,6 +4,8 @@ import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { formatNumber, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { apiError } from "@/lib/apiError";
+import { useAlert } from "@/components/Confirm";
 import DateInput from "@/components/shared/DateInput";
 import type { Transaction, TransactionType } from "@/types";
 
@@ -21,6 +23,7 @@ export default function TransactionModal({ onClose, onSaved, initial }: Props) {
   const [amountDisplay, setAmountDisplay] = useState(initial?.amount ? formatNumber(initial.amount) : "");
   const [notes, setNotes] = useState(initial?.notes || "");
   const [saving, setSaving] = useState(false);
+  const notify = useAlert();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,7 +38,7 @@ export default function TransactionModal({ onClose, onSaved, initial }: Props) {
       }
       onSaved(txn);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : t.error);
+      notify(apiError(err, t));
     } finally {
       setSaving(false);
     }

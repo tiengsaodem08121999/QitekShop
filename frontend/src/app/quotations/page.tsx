@@ -7,13 +7,17 @@ import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
+import QuotationStatusBadge from "@/components/quotation/QuotationStatusBadge";
+import { useConfirm } from "@/components/Confirm";
 import type { PaginatedResponse, Quotation, QuotationListItem } from "@/types";
 
 export default function QuotationsPage() {
   const router = useRouter();
   const t = useT();
   const toast = useToast();
+  const confirm = useConfirm();
   const [data, setData] = useState<PaginatedResponse<QuotationListItem> | null>(null);
   const [search, setSearch] = useState("");
 
@@ -22,7 +26,7 @@ export default function QuotationsPage() {
     if (search) params.set("search", search);
     apiFetch<PaginatedResponse<QuotationListItem>>(`/api/quotations?${params}`)
       .then(setData)
-      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+      .catch((err) => toast(apiError(err, t), "error"));
   }, [search, toast, t.error]);
 
   async function handleCopy(quotationId: number) {
@@ -34,12 +38,12 @@ export default function QuotationsPage() {
       }));
       router.push("/quotations/new?copy=1");
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
     }
   }
 
   async function handleDelete(quotationId: number) {
-    if (!window.confirm(t.quotation_delete_prompt)) return;
+    if (!(await confirm(t.quotation_delete_prompt))) return;
     try {
       await apiFetch(`/api/quotations/${quotationId}`, { method: "DELETE" });
       toast(t.quotation_delete_success);
@@ -47,7 +51,7 @@ export default function QuotationsPage() {
         prev ? { ...prev, items: prev.items.filter((x) => x.id !== quotationId) } : prev,
       );
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
     }
   }
 
@@ -163,7 +167,10 @@ export default function QuotationsPage() {
             )}
             {items.map((q) => (
               <tr key={q.id} onClick={() => router.push(`/quotations/${q.id}`)} className="hover:bg-gray-50/70 cursor-pointer transition-colors">
-                <td className="px-5 py-3.5"><div className="font-medium text-gray-800">{q.customer_name}</div><div className="text-xs text-gray-400 mt-0.5">#{q.id}</div></td>
+                <td className="px-5 py-3.5">
+                  <div className="font-medium text-gray-800 flex items-center gap-2">{q.customer_name}<QuotationStatusBadge status={q.status} /></div>
+                  <div className="text-xs text-gray-400 mt-0.5">#{q.id}</div>
+                </td>
                 <td className="px-4 py-3.5 text-right font-medium tabular-nums text-gray-700">{q.total_amount.toLocaleString()}</td>
                 <td className="px-4 py-3.5 text-right tabular-nums text-gray-600">{q.total_paid.toLocaleString()}</td>
                 <td className={`px-4 py-3.5 text-right font-medium tabular-nums ${q.remaining > 0 ? "text-red-600" : "text-emerald-600"}`}>{q.remaining > 0 ? q.remaining.toLocaleString() : "0"}</td>

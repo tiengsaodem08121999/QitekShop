@@ -26,8 +26,11 @@ from app.quotation.schemas import (
     ReturnUpdate,
 )
 from app.quotation.service import (
+    annotate_inventory_conflicts,
     confirm_quotation,
     create_customer,
+    deliver_quotation,
+    import_trade_ins,
     create_payment,
     create_quotation,
     create_return,
@@ -129,7 +132,10 @@ def create_quotation_endpoint(
     user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
     db: Session = Depends(get_db),
 ):
-    quotation = create_quotation(db, data, user.id)
+    try:
+        quotation = create_quotation(db, data, user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return enrich_response(quotation)
 
 
@@ -142,6 +148,7 @@ def get_quotation_endpoint(
     quotation = get_quotation(db, quotation_id)
     if not quotation:
         raise HTTPException(status_code=404, detail="Quotation not found")
+    annotate_inventory_conflicts(db, quotation)
     return enrich_response(quotation)
 
 
@@ -184,6 +191,34 @@ def confirm_quotation_endpoint(
     quotation = confirm_quotation(db, quotation_id)
     if not quotation:
         raise HTTPException(status_code=400, detail="Cannot confirm quotation")
+    return enrich_response(quotation)
+
+
+@router.patch("/quotations/{quotation_id}/import-trade-ins", response_model=QuotationResponse)
+def import_trade_ins_endpoint(
+    quotation_id: int,
+    user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
+    db: Session = Depends(get_db),
+):
+    quotation = import_trade_ins(db, quotation_id)
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    annotate_inventory_conflicts(db, quotation)
+    return enrich_response(quotation)
+
+
+@router.patch("/quotations/{quotation_id}/deliver", response_model=QuotationResponse)
+def deliver_quotation_endpoint(
+    quotation_id: int,
+    user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
+    db: Session = Depends(get_db),
+):
+    try:
+        quotation = deliver_quotation(db, quotation_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not quotation:
+        raise HTTPException(status_code=400, detail="err_deliver_not_confirmed")
     return enrich_response(quotation)
 
 
@@ -259,7 +294,10 @@ def create_payment_endpoint(
     quotation = get_quotation(db, quotation_id)
     if not quotation:
         raise HTTPException(status_code=404, detail="Quotation not found")
-    return create_payment(db, quotation_id, data, user.id, customer_name=quotation.customer.name)
+    try:
+        return create_payment(db, quotation_id, data, user.id, customer_name=quotation.customer.name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.put("/quotations/{quotation_id}/payments/{payment_id}", response_model=PaymentResponse)
