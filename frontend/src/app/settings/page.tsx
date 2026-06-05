@@ -5,11 +5,14 @@ import AppLayout from "@/components/layout/AppLayout";
 import TagManager from "@/components/shared/TagManager";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
+import { useAlert } from "@/components/Confirm";
 
 export default function SettingsPage() {
   const t = useT();
   const toast = useToast();
+  const notify = useAlert();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -17,7 +20,7 @@ export default function SettingsPage() {
   useEffect(() => {
     apiFetch<Record<string, string>>("/api/settings")
       .then(setSettings)
-      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+      .catch((err) => toast(apiError(err, t), "error"));
   }, [toast, t.error]);
 
   function update(key: string, value: string) {
@@ -31,7 +34,7 @@ export default function SettingsPage() {
       await apiFetch("/api/settings", { method: "PUT", body: JSON.stringify(settings) });
       setSaved(true);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : t.error);
+      notify(apiError(err, t));
     } finally {
       setSaving(false);
     }

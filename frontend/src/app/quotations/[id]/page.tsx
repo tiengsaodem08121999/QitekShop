@@ -6,10 +6,13 @@ import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
 import { formatDate, formatNumber, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
 import ProductsTable from "@/components/quotation/ProductsTable";
 import PaymentModal, { type PaymentSubmitBody } from "@/components/quotation/PaymentModal";
 import ReturnModal, { type ReturnSubmitBody } from "@/components/quotation/ReturnModal";
+import QuotationStatusBadge from "@/components/quotation/QuotationStatusBadge";
+import { useConfirm } from "@/components/Confirm";
 import type { Payment, Quotation, Return } from "@/types";
 
 export default function QuotationDetailPage() {
@@ -17,6 +20,7 @@ export default function QuotationDetailPage() {
   const router = useRouter();
   const t = useT();
   const toast = useToast();
+  const confirm = useConfirm();
   const contentRef = useRef<HTMLDivElement>(null);
   const [q, setQ] = useState<Quotation | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -31,27 +35,47 @@ export default function QuotationDetailPage() {
   useEffect(() => {
     apiFetch<Quotation>(`/api/quotations/${id}`)
       .then(setQ)
-      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+      .catch((err) => toast(apiError(err, t), "error"));
   }, [id, toast, t.error]);
 
   async function handleConfirm() {
-    if (!window.confirm(t.quotation_confirm_prompt)) return;
+    if (!(await confirm(t.quotation_confirm_prompt))) return;
     try {
       const updated = await apiFetch<Quotation>(`/api/quotations/${id}/confirm`, { method: "PATCH" });
       setQ(updated);
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
+    }
+  }
+
+  async function handleDeliver() {
+    if (!(await confirm(t.quotation_deliver_confirm))) return;
+    try {
+      const updated = await apiFetch<Quotation>(`/api/quotations/${id}/deliver`, { method: "PATCH" });
+      setQ(updated);
+    } catch (err) {
+      toast(apiError(err, t), "error");
+    }
+  }
+
+  async function handleImportTradeIns() {
+    try {
+      const updated = await apiFetch<Quotation>(`/api/quotations/${id}/import-trade-ins`, { method: "PATCH" });
+      setQ(updated);
+      toast(t.toast_update_success);
+    } catch (err) {
+      toast(apiError(err, t), "error");
     }
   }
 
   async function handleDelete() {
-    if (!window.confirm(t.quotation_delete_prompt)) return;
+    if (!(await confirm(t.quotation_delete_prompt))) return;
     try {
       await apiFetch(`/api/quotations/${id}`, { method: "DELETE" });
       toast(t.quotation_delete_success);
       router.push("/quotations");
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
     }
   }
 
@@ -98,7 +122,7 @@ export default function QuotationDetailPage() {
       setQ(updated);
       setEditingResaleId(null);
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
     }
   }
 
@@ -118,37 +142,49 @@ export default function QuotationDetailPage() {
     setShowPaymentModal(true);
   }
 
+  async function finishPayment() {
+    setShowPaymentModal(false);
+    toast(editingPayment ? "Cập nhật thanh toán thành công" : "Thêm thanh toán thành công");
+    setQ(await apiFetch<Quotation>(`/api/quotations/${id}`));
+  }
+
   async function handlePaymentSubmit(body: PaymentSubmitBody) {
     try {
       if (editingPayment) {
-        await apiFetch(`/api/quotations/${id}/payments/${editingPayment.id}`, {
-          method: "PUT",
-          body: JSON.stringify(body),
-        });
+        await apiFetch(`/api/quotations/${id}/payments/${editingPayment.id}`, { method: "PUT", body: JSON.stringify(body) });
       } else {
-        await apiFetch(`/api/quotations/${id}/payments`, {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
+        await apiFetch(`/api/quotations/${id}/payments`, { method: "POST", body: JSON.stringify(body) });
       }
-      setShowPaymentModal(false);
-      toast(editingPayment ? "Cập nhật thanh toán thành công" : "Thêm thanh toán thành công");
-      const updated = await apiFetch<Quotation>(`/api/quotations/${id}`);
-      setQ(updated);
+      await finishPayment();
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      // Conflicting items held by another quotation: offer to unlink them (virtual items) and proceed.
+      if (!editingPayment && err instanceof Error && err.message === "err_payment_conflict") {
+        if (await confirm(t.payment_conflict_unlink_prompt)) {
+          try {
+            await apiFetch(`/api/quotations/${id}/payments`, {
+              method: "POST",
+              body: JSON.stringify({ ...body, unlink_conflicts: true }),
+            });
+            await finishPayment();
+          } catch (e2) {
+            toast(apiError(e2, t), "error");
+          }
+        }
+        return;
+      }
+      toast(apiError(err, t), "error");
     }
   }
 
   async function handleDeletePayment(paymentId: number) {
-    if (!window.confirm(t.payment_confirm_delete)) return;
+    if (!(await confirm(t.payment_confirm_delete))) return;
     try {
       await apiFetch(`/api/quotations/${id}/payments/${paymentId}`, { method: "DELETE" });
       toast("Xóa thanh toán thành công");
       const updated = await apiFetch<Quotation>(`/api/quotations/${id}`);
       setQ(updated);
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
     }
   }
 
@@ -174,19 +210,19 @@ export default function QuotationDetailPage() {
       const updated = await apiFetch<Quotation>(`/api/quotations/${id}`);
       setQ(updated);
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
     }
   }
 
   async function handleDeleteReturn(returnId: number) {
-    if (!window.confirm(t.return_confirm_delete)) return;
+    if (!(await confirm(t.return_confirm_delete))) return;
     try {
       await apiFetch(`/api/quotations/${id}/returns/${returnId}`, { method: "DELETE" });
       toast("Xóa trả hàng thành công");
       const updated = await apiFetch<Quotation>(`/api/quotations/${id}`);
       setQ(updated);
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
     }
   }
 
@@ -206,11 +242,21 @@ export default function QuotationDetailPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">{q.customer.name}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-800">{q.customer.name}</h1>
+              <QuotationStatusBadge status={q.status} />
+            </div>
             <p className="text-sm text-gray-400 mt-0.5">#{q.id} &middot; {formatDate(q.created_at)}</p>
           </div>
         </div>
         <div className="flex gap-2">
+          {q.status === "confirmed" && (
+            <button onClick={handleDeliver}
+              className="inline-flex items-center gap-1.5 bg-emerald-600 text-white px-3.5 py-2 rounded-lg text-sm hover:bg-emerald-700 transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+              {t.quotation_deliver}
+            </button>
+          )}
           <button onClick={() => router.push(`/quotations/${id}/edit`)}
             className="inline-flex items-center gap-1.5 border border-gray-200 px-3.5 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors text-gray-700">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
@@ -273,8 +319,13 @@ export default function QuotationDetailPage() {
       {/* Trade-ins */}
       {tradeIns.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6 max-w-2xl">
-          <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+          <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{t.quotation_trade_ins}</h3>
+            <button onClick={handleImportTradeIns}
+              className="inline-flex items-center gap-1 text-emerald-600 text-sm font-medium hover:text-emerald-700 transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+              {t.form_import_stock}
+            </button>
           </div>
           <table className="w-full text-sm">
             <thead>

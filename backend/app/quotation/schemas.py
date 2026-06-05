@@ -53,6 +53,7 @@ class QuotationItemCreate(DecimalModel):
     selling_price: Decimal = 0
     resale_price: Decimal = 0
     serial_number: Optional[str] = None
+    inventory_item_id: Optional[int] = None
     warranty_count: Optional[int] = None
     warranty_unit: Optional[WarrantyUnit] = None
     warranty_start: Optional[_dt.date] = None
@@ -90,6 +91,8 @@ class QuotationItemResponse(DecimalModel):
     selling_price: Decimal
     resale_price: Decimal
     serial_number: Optional[str]
+    inventory_item_id: Optional[int] = None
+    inventory_conflict: bool = False
     warranty_count: Optional[int]
     warranty_unit: Optional[WarrantyUnit]
     warranty_start: Optional[_dt.date]
@@ -121,6 +124,7 @@ class QuotationCreate(BaseModel):
     customer_id: Optional[int] = None
     new_customer: Optional[CustomerCreate] = None
     items: List[QuotationItemCreate] = []
+    import_trade_ins: bool = False
 
     @model_validator(mode="after")
     def require_customer(self):
@@ -133,6 +137,7 @@ class QuotationUpdate(BaseModel):
     customer_id: Optional[int] = None
     customer_name: Optional[str] = None
     items: Optional[List[QuotationItemCreate]] = None
+    import_trade_ins: bool = False
 
 
 class QuotationResponse(DecimalModel):
@@ -166,6 +171,9 @@ class PaymentCreate(BaseModel):
     payment_type: PaymentType = PaymentType.payment
     date: Optional[_dt.date] = None
     note: Optional[str] = None
+    # When a conflicting item is held by another quotation, set true to unlink
+    # those sale lines from stock (treat them as virtual items) and proceed.
+    unlink_conflicts: bool = False
 
 
 class PaymentUpdate(BaseModel):

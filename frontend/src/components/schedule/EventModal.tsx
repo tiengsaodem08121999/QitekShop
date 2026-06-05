@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/Confirm";
 import { trimSeconds, withSeconds } from "@/lib/schedule";
@@ -176,7 +177,7 @@ export default function EventModal({
       }
       onSaved();
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
     } finally {
       setSaving(false);
     }
@@ -189,7 +190,7 @@ export default function EventModal({
       await apiFetch(`/api/schedule/events/${initial.id}`, { method: "DELETE" });
       onDeleted?.();
     } catch (err) {
-      toast(err instanceof Error ? err.message : t.error, "error");
+      toast(apiError(err, t), "error");
     }
   }
 

@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
+import { useAlert } from "@/components/Confirm";
 import type { Customer, PaginatedResponse } from "@/types";
 
 export default function CustomersPage() {
@@ -22,7 +24,7 @@ export default function CustomersPage() {
     params.set("sort", "created_desc");
     apiFetch<PaginatedResponse<Customer>>(`/api/customers?${params}`)
       .then(setData)
-      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+      .catch((err) => toast(apiError(err, t), "error"));
   }
 
   useEffect(() => { load(); }, [search]);
@@ -106,6 +108,7 @@ function CustomerModal({ t, initial, onClose, onSaved }: { t: ReturnType<typeof 
   const [address, setAddress] = useState(initial?.address || "");
   const [notes, setNotes] = useState(initial?.notes || "");
   const [saving, setSaving] = useState(false);
+  const notify = useAlert();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -119,7 +122,7 @@ function CustomerModal({ t, initial, onClose, onSaved }: { t: ReturnType<typeof 
       }
       onSaved();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : t.error);
+      notify(apiError(err, t));
     } finally {
       setSaving(false);
     }

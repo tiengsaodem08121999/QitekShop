@@ -9,6 +9,7 @@ import WeekView from "@/components/schedule/WeekView";
 import { apiFetch } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
 import {
   addDays, addMonths, getMonthGridRange, getWeekRange, toIsoDate,
@@ -46,13 +47,13 @@ export default function SchedulePage() {
     });
     apiFetch<ScheduleEvent[]>(`/api/schedule/events?${qs.toString()}`)
       .then(setEvents)
-      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+      .catch((err) => toast(apiError(err, t), "error"));
   }, [range.start, range.end, toast, t.error]);
 
   useEffect(() => {
     apiFetch<ScheduleTag[]>("/api/schedule/tags")
       .then(setTags)
-      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+      .catch((err) => toast(apiError(err, t), "error"));
   }, [toast, t.error]);
 
   useEffect(loadEvents, [loadEvents]);

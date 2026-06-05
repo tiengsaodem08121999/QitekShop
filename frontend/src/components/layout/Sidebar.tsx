@@ -18,6 +18,7 @@ export default function Sidebar({ user }: { user: User }) {
     { href: "/customers", label: t.nav_customers, icon: "\u{1F465}" },
     { href: "/schedule", label: t.nav_schedule, icon: "\u{1F4C5}" },
     { href: "/finance", label: t.nav_finance, icon: "\u{1F4B0}" },
+    { href: "/inventory", label: t.nav_inventory, icon: "\u{1F4E6}", roles: ["admin", "sales"] as string[] },
     { href: "/settings", label: t.nav_settings, icon: "\u2699\uFE0F", roles: ["admin"] as string[] },
   ];
 

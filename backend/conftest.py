@@ -13,6 +13,7 @@ from app.main import app
 from app.models import Setting  # noqa: F401
 from app.quotation.models import Customer, Quotation, QuotationItem  # noqa: F401
 from app.finance.models import Transaction  # noqa: F401
+from app.inventory.models import InventoryItem  # noqa: F401
 
 
 @pytest.fixture

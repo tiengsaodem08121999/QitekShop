@@ -6,6 +6,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import QuotationForm from "@/components/shared/QuotationForm";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
 import type { Quotation } from "@/types";
 
@@ -18,7 +19,7 @@ export default function EditQuotationPage() {
   useEffect(() => {
     apiFetch<Quotation>(`/api/quotations/${id}`)
       .then(setQ)
-      .catch((err) => toast(err instanceof Error ? err.message : t.error, "error"));
+      .catch((err) => toast(apiError(err, t), "error"));
   }, [id, toast, t.error]);
 
   if (!q) return <AppLayout><p>{t.loading}</p></AppLayout>;
@@ -32,6 +33,7 @@ export default function EditQuotationPage() {
         initialCustomer={q.customer}
         initialItems={q.items}
         returnedNames={new Set(q.returns.map((r) => r.item_name))}
+        status={q.status}
       />
     </AppLayout>
   );

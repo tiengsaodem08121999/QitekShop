@@ -14,6 +14,7 @@ from app.database import Base
 class QuotationStatus(str, enum.Enum):
     draft = "draft"
     confirmed = "confirmed"
+    delivered = "delivered"
 
 
 class WarrantyUnit(str, enum.Enum):
@@ -75,6 +76,9 @@ class QuotationItem(Base):
     selling_price: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0)
     resale_price: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0, server_default="0")
     serial_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    inventory_item_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("inventory_items.id", ondelete="SET NULL"), nullable=True
+    )
     warranty_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     warranty_unit: Mapped[Optional[WarrantyUnit]] = mapped_column(
         Enum(WarrantyUnit), nullable=True
@@ -127,6 +131,9 @@ class Return(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     quotation_id: Mapped[int] = mapped_column(ForeignKey("quotations.id"))
     item_name: Mapped[str] = mapped_column(String(200))
+    inventory_item_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("inventory_items.id", ondelete="SET NULL"), nullable=True
+    )
     reason: Mapped[ReturnReason] = mapped_column(Enum(ReturnReason))
     selling_price: Mapped[Decimal] = mapped_column(Numeric(12, 0))
     refund_percent: Mapped[int] = mapped_column(default=100)
