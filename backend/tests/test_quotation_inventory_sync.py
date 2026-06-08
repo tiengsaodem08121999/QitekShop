@@ -118,3 +118,23 @@ def test_sn_draft_does_not_writeback_confirm_does(client, sales_user, db_session
                 headers=auth_headers(sales_user))
     db_session.expire_all()
     assert db_session.get(InventoryItem, it.id).serial_number == "SN-NEW-1"
+
+
+def test_sn_edit_on_confirmed_writes_back(client, sales_user, db_session):
+    it = _add_item(db_session)
+    q = _quote(client, sales_user, [{
+        "is_trade_in": False, "name": "RAM", "selling_price": 200,
+        "serial_number": "SN-OLD", "inventory_item_id": it.id,
+    }])
+    # Confirm via payment, which writes back "SN-OLD".
+    client.post(f"/api/quotations/{q['id']}/payments",
+                json={"amount": 50, "method": "cash"},
+                headers=auth_headers(sales_user))
+    db_session.expire_all()
+    assert db_session.get(InventoryItem, it.id).serial_number == "SN-OLD"
+    # Edit the S/N via PUT on the now-confirmed quotation.
+    items = list(_detail(client, sales_user, q["id"])["items"])
+    items[0]["serial_number"] = "SN-EDITED"
+    assert _put(client, sales_user, q["id"], items).status_code == 200
+    db_session.expire_all()
+    assert db_session.get(InventoryItem, it.id).serial_number == "SN-EDITED"
