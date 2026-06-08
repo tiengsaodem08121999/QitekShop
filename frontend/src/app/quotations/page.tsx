@@ -10,8 +10,11 @@ import { useT } from "@/lib/i18n";
 import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
 import QuotationStatusBadge from "@/components/quotation/QuotationStatusBadge";
+import Pagination from "@/components/shared/Pagination";
 import { useConfirm } from "@/components/Confirm";
 import type { PaginatedResponse, Quotation, QuotationListItem } from "@/types";
+
+const PAGE_SIZE = 5;
 
 export default function QuotationsPage() {
   const router = useRouter();
@@ -20,6 +23,7 @@ export default function QuotationsPage() {
   const confirm = useConfirm();
   const [data, setData] = useState<PaginatedResponse<QuotationListItem> | null>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -29,6 +33,9 @@ export default function QuotationsPage() {
       .then(setData)
       .catch((err) => toast(apiError(err, t), "error"));
   }, [search, toast, t.error]);
+
+  // Reset to page 1 whenever the search term changes.
+  useEffect(() => { setPage(1); }, [search]);
 
   async function handleCopy(quotationId: number) {
     try {
@@ -57,6 +64,9 @@ export default function QuotationsPage() {
   }
 
   const items = data?.items ?? [];
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages); // stay valid after deletes
+  const pageItems = items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const totalAmount = items.reduce((s, q) => s + q.total_amount, 0);
   const totalPaid = items.reduce((s, q) => s + q.total_paid, 0);
   // Split positive (customer owes shop) and negative (shop owes back when trade-in is handed over)
@@ -166,7 +176,7 @@ export default function QuotationsPage() {
                 {t.quotations_empty}
               </td></tr>
             )}
-            {items.map((q) => (
+            {pageItems.map((q) => (
               <tr key={q.id} onClick={() => router.push(`/quotations/${q.id}`)} className="hover:bg-gray-50/70 cursor-pointer transition-colors">
                 <td className="px-5 py-3.5">
                   <div className="font-medium text-gray-800 flex items-center gap-2">{q.customer_name}<QuotationStatusBadge status={q.status} /></div>
@@ -212,6 +222,7 @@ export default function QuotationsPage() {
           </tbody>
         </table>
         </div>
+        <Pagination page={safePage} pageSize={PAGE_SIZE} total={items.length} onPageChange={setPage} />
       </div>
       </div>
     </AppLayout>
