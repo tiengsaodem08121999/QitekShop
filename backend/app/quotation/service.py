@@ -148,6 +148,7 @@ def create_quotation(db: Session, data: QuotationCreate, user_id: int) -> Quotat
         customer_id = data.customer_id
 
     quotation = Quotation(customer_id=customer_id, created_by=user_id)
+    quotation.note = data.note
     db.add(quotation)
     db.flush()
 
@@ -248,6 +249,8 @@ def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> O
         quotation.customer_id = data.customer_id
     elif data.customer_name is not None:
         quotation.customer.name = data.customer_name
+
+    quotation.note = data.note
 
     if data.items is not None:
         # Check: items with returns cannot have their name changed
