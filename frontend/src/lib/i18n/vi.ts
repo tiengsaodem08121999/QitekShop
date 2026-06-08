@@ -13,6 +13,7 @@ const vi: Translations = {
   dash: "—",
   pagination_prev: "Trang trước",
   pagination_next: "Trang sau",
+  quotation_note_label: "Ghi chú",
 
   // Nav
   nav_dashboard: "Tổng quan",

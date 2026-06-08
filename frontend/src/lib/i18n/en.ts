@@ -11,6 +11,7 @@ const en = {
   dash: "—",
   pagination_prev: "Previous page",
   pagination_next: "Next page",
+  quotation_note_label: "Note",
 
   // Nav
   nav_dashboard: "Dashboard",
