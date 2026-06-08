@@ -138,3 +138,19 @@ def test_sn_edit_on_confirmed_writes_back(client, sales_user, db_session):
     assert _put(client, sales_user, q["id"], items).status_code == 200
     db_session.expire_all()
     assert db_session.get(InventoryItem, it.id).serial_number == "SN-EDITED"
+
+
+def test_sn_blank_line_clears_stock_sn(client, sales_user, db_session):
+    it = _add_item(db_session)
+    it.serial_number = "SN-EXISTING"
+    db_session.commit()
+    q = _quote(client, sales_user, [{
+        "is_trade_in": False, "name": "RAM", "selling_price": 200,
+        "serial_number": None, "inventory_item_id": it.id,
+    }])
+    # Confirm via payment -> blank line S/N mirrors onto stock (clears it).
+    client.post(f"/api/quotations/{q['id']}/payments",
+                json={"amount": 50, "method": "cash"},
+                headers=auth_headers(sales_user))
+    db_session.expire_all()
+    assert db_session.get(InventoryItem, it.id).serial_number is None
