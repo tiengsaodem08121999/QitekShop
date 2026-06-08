@@ -28,11 +28,10 @@ export default function QuotationsPage() {
   useEffect(() => {
     const params = new URLSearchParams();
     params.set("limit", "0"); // load all quotations (no pagination cap)
-    if (search) params.set("search", search);
     apiFetch<PaginatedResponse<QuotationListItem>>(`/api/quotations?${params}`)
       .then(setData)
       .catch((err) => toast(apiError(err, t), "error"));
-  }, [search, toast, t.error]);
+  }, [toast, t.error]);
 
   // Reset to page 1 whenever the search term changes.
   useEffect(() => { setPage(1); }, [search]);
@@ -63,10 +62,13 @@ export default function QuotationsPage() {
     }
   }
 
-  const items = data?.items ?? [];
-  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const items = data?.items ?? []; // ALL quotations — summary cards use this
+  const filtered = search
+    ? items.filter((q) => q.customer_name.toLowerCase().includes(search.toLowerCase()))
+    : items;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages); // stay valid after deletes
-  const pageItems = items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const totalAmount = items.reduce((s, q) => s + q.total_amount, 0);
   const totalPaid = items.reduce((s, q) => s + q.total_paid, 0);
   // Split positive (customer owes shop) and negative (shop owes back when trade-in is handed over)
@@ -170,7 +172,7 @@ export default function QuotationsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {items.length === 0 && (
+            {filtered.length === 0 && (
               <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-400">
                 <svg className="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 {t.quotations_empty}
@@ -222,7 +224,7 @@ export default function QuotationsPage() {
           </tbody>
         </table>
         </div>
-        <Pagination page={safePage} pageSize={PAGE_SIZE} total={items.length} onPageChange={setPage} />
+        <Pagination page={safePage} pageSize={PAGE_SIZE} total={filtered.length} onPageChange={setPage} />
       </div>
       </div>
     </AppLayout>
