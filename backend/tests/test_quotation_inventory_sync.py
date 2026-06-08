@@ -101,3 +101,20 @@ def test_edit_confirmed_add_unlinked_stays_confirmed(client, sales_user, db_sess
     items.append({"is_trade_in": False, "name": "Freebie", "selling_price": 0})
     assert _put(client, sales_user, q["id"], items).status_code == 200
     assert _detail(client, sales_user, q["id"])["status"] == "confirmed"
+
+
+def test_sn_draft_does_not_writeback_confirm_does(client, sales_user, db_session):
+    it = _add_item(db_session)  # serial_number None initially
+    q = _quote(client, sales_user, [{
+        "is_trade_in": False, "name": "RAM", "selling_price": 200,
+        "serial_number": "SN-NEW-1", "inventory_item_id": it.id,
+    }])
+    db_session.expire_all()
+    # Draft -> stock S/N unchanged (still None)
+    assert db_session.get(InventoryItem, it.id).serial_number is None
+    # First payment confirms -> S/N writeback happens
+    client.post(f"/api/quotations/{q['id']}/payments",
+                json={"amount": 50, "method": "cash"},
+                headers=auth_headers(sales_user))
+    db_session.expire_all()
+    assert db_session.get(InventoryItem, it.id).serial_number == "SN-NEW-1"
