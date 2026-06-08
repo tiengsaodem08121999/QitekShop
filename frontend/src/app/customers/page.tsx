@@ -10,7 +10,7 @@ import { useAlert } from "@/components/Confirm";
 import Pagination from "@/components/shared/Pagination";
 import type { Customer, PaginatedResponse } from "@/types";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 export default function CustomersPage() {
   const t = useT();
