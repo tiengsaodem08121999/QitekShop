@@ -118,7 +118,7 @@ def list_quotations_endpoint(
     status: Optional[QuotationStatus] = None,
     search: Optional[str] = None,
     page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(20, ge=0),  # limit=0 -> load all (no cap)
     _user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

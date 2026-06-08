@@ -203,17 +203,15 @@ def list_quotations(
     if search:
         query = query.filter(Customer.name.ilike(f"%{search}%"))
     total = query.count()
-    rows = (
-        query.options(
-            joinedload(Quotation.returns),
-            joinedload(Quotation.payments),
-            joinedload(Quotation.items),
-        )
-        .order_by(Quotation.created_at.desc())
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .all()
-    )
+    query = query.options(
+        joinedload(Quotation.returns),
+        joinedload(Quotation.payments),
+        joinedload(Quotation.items),
+    ).order_by(Quotation.created_at.desc())
+    # limit=0 is the "load all" sentinel: skip pagination entirely.
+    if limit:
+        query = query.offset((page - 1) * limit).limit(limit)
+    rows = query.all()
     today = date_type.today()
     # Build list items with computed remaining
     items = []

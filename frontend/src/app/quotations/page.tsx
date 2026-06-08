@@ -23,6 +23,7 @@ export default function QuotationsPage() {
 
   useEffect(() => {
     const params = new URLSearchParams();
+    params.set("limit", "0"); // load all quotations (no pagination cap)
     if (search) params.set("search", search);
     apiFetch<PaginatedResponse<QuotationListItem>>(`/api/quotations?${params}`)
       .then(setData)
