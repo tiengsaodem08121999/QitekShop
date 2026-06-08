@@ -9,7 +9,10 @@ import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
 import { useAlert } from "@/components/Confirm";
 import { formatDate, formatNumber, parseNumber } from "@/lib/format";
+import Pagination from "@/components/shared/Pagination";
 import type { InventoryItem, InventoryStatus, PaginatedResponse } from "@/types";
+
+const PAGE_SIZE = 5;
 
 const STATUS_STYLE: Record<InventoryStatus, string> = {
   in_stock: "bg-emerald-50 text-emerald-700",
@@ -30,6 +33,7 @@ export default function InventoryPage() {
   const t = useT();
   const toast = useToast();
   const [data, setData] = useState<PaginatedResponse<InventoryItem> | null>(null);
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<InventoryItem | undefined>();
@@ -46,6 +50,7 @@ export default function InventoryPage() {
   }
 
   useEffect(() => { load(); }, [search]);
+  useEffect(() => { setPage(1); }, [search]);
 
   async function handleDelete() {
     if (!deleteItem) return;
@@ -62,6 +67,9 @@ export default function InventoryPage() {
   }
 
   const items = data?.items ?? [];
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <AppLayout>
@@ -104,7 +112,7 @@ export default function InventoryPage() {
             {items.length === 0 && (
               <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-400">{t.inventory_empty}</td></tr>
             )}
-            {items.map((it) => {
+            {pageItems.map((it) => {
               return (
               <tr key={it.id} className="hover:bg-gray-50/70 transition-colors">
                 <td className="px-5 py-3.5"><div className="font-medium text-gray-800">{it.name}</div></td>
@@ -135,6 +143,7 @@ export default function InventoryPage() {
           </tbody>
         </table>
         </div>
+        <Pagination page={safePage} pageSize={PAGE_SIZE} total={items.length} onPageChange={setPage} />
       </div>
       </div>
 
