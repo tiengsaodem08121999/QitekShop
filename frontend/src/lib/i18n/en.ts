@@ -9,6 +9,8 @@ const en = {
   delete: "Delete",
   confirm: "Confirm",
   dash: "—",
+  pagination_prev: "Previous page",
+  pagination_next: "Next page",
 
   // Nav
   nav_dashboard: "Dashboard",

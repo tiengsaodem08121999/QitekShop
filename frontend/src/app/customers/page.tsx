@@ -7,7 +7,10 @@ import { useT } from "@/lib/i18n";
 import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
 import { useAlert } from "@/components/Confirm";
+import Pagination from "@/components/shared/Pagination";
 import type { Customer, PaginatedResponse } from "@/types";
+
+const PAGE_SIZE = 10;
 
 export default function CustomersPage() {
   const t = useT();
@@ -16,6 +19,7 @@ export default function CustomersPage() {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editCustomer, setEditCustomer] = useState<Customer | undefined>();
+  const [page, setPage] = useState(1);
 
   function load() {
     const params = new URLSearchParams();
@@ -28,8 +32,12 @@ export default function CustomersPage() {
   }
 
   useEffect(() => { load(); }, [search]);
+  useEffect(() => { setPage(1); }, [search]);
 
   const items = data?.items ?? [];
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <AppLayout>
@@ -74,7 +82,7 @@ export default function CustomersPage() {
                 {t.customers_empty}
               </td></tr>
             )}
-            {items.map((c) => (
+            {pageItems.map((c) => (
               <tr key={c.id} className="hover:bg-gray-50/70 transition-colors">
                 <td className="px-5 py-3.5"><div className="font-medium text-gray-800">{c.name}</div></td>
                 <td className="px-4 py-3.5 text-gray-600">{c.phone || t.dash}</td>
@@ -93,6 +101,7 @@ export default function CustomersPage() {
           </tbody>
         </table>
         </div>
+        <Pagination page={safePage} pageSize={PAGE_SIZE} total={items.length} onPageChange={setPage} />
       </div>
       </div>
 
