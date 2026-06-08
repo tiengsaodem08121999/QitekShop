@@ -11,6 +11,8 @@ const vi: Translations = {
   delete: "Xóa",
   confirm: "Chốt",
   dash: "—",
+  pagination_prev: "Trang trước",
+  pagination_next: "Trang sau",
 
   // Nav
   nav_dashboard: "Tổng quan",
