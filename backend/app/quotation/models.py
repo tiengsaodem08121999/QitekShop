@@ -51,6 +51,7 @@ class Quotation(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     customer: Mapped["Customer"] = relationship(back_populates="quotations")
     items: Mapped[List["QuotationItem"]] = relationship(

@@ -112,6 +112,7 @@ export interface Quotation {
   created_at: string;
   updated_at: string;
   deletable: boolean;
+  note: string | null;
 }
 
 export interface QuotationListItem {

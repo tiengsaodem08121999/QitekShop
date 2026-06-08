@@ -588,6 +588,13 @@ export default function QuotationDetailPage() {
 
       </div>
 
+      {q.note && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mt-6">
+          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">{t.quotation_note_label}</h3>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap">{q.note}</p>
+        </div>
+      )}
+
       {showPaymentModal && (
         <PaymentModal
           initial={editingPayment}

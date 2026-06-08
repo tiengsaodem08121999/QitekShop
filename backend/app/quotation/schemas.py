@@ -125,6 +125,7 @@ class QuotationCreate(BaseModel):
     new_customer: Optional[CustomerCreate] = None
     items: List[QuotationItemCreate] = []
     import_trade_ins: bool = False
+    note: Optional[str] = None
 
     @model_validator(mode="after")
     def require_customer(self):
@@ -138,6 +139,7 @@ class QuotationUpdate(BaseModel):
     customer_name: Optional[str] = None
     items: Optional[List[QuotationItemCreate]] = None
     import_trade_ins: bool = False
+    note: Optional[str] = None
 
 
 class QuotationResponse(DecimalModel):
@@ -152,6 +154,7 @@ class QuotationResponse(DecimalModel):
     total_purchase: Decimal
     profit: Decimal
     cashflow: Decimal
+    note: Optional[str] = None
     deletable: bool
     total_refund: Decimal
     total_refund_paid: Decimal

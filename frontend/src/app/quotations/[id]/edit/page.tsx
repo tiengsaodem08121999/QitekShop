@@ -32,6 +32,7 @@ export default function EditQuotationPage() {
         quotationId={q.id}
         initialCustomer={q.customer}
         initialItems={q.items}
+        initialNote={q.note}
         returnedNames={new Set(q.returns.map((r) => r.item_name))}
         status={q.status}
       />

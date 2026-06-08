@@ -16,6 +16,7 @@ interface Props {
   quotationId?: number;
   initialCustomer?: Customer;
   initialItems?: QuotationItem[];
+  initialNote?: string | null;
   returnedNames?: Set<string>;
   status?: QuotationStatus;
 }
@@ -36,7 +37,7 @@ const EMPTY_TRADE_IN: QuotationItem = {
   warranty_start: null, delivery_date: null, notes: null,
 };
 
-export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems, returnedNames, status }: Props) {
+export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems, initialNote, returnedNames, status }: Props) {
   // Delivered quotations: sale lines locked to price/warranty/condition/note only
   // (no add/remove/relink). Trade-ins stay editable.
   const saleLocked = status === "delivered";
@@ -57,6 +58,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
     initialItems?.filter((i) => i.is_trade_in) || []
   );
   const [saving, setSaving] = useState(false);
+  const [note, setNote] = useState(initialNote || "");
   const [stock, setStock] = useState<InventoryItem[]>([]);
   const [stockOpenRow, setStockOpenRow] = useState<number | null>(null);
   const nameCellRef = useRef<HTMLTableCellElement>(null);
@@ -204,7 +206,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
 
     try {
       if (mode === "create") {
-        const payload: Record<string, unknown> = { items: allItems, import_trade_ins: importTradeIns };
+        const payload: Record<string, unknown> = { items: allItems, import_trade_ins: importTradeIns, note: note || null };
         if (selectedCustomer) {
           payload.customer_id = selectedCustomer.id;
         } else {
@@ -217,7 +219,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
         toast(t.toast_create_success);
         router.push(`/quotations/${res.id}`);
       } else {
-        const payload: Record<string, unknown> = { items: allItems, import_trade_ins: importTradeIns };
+        const payload: Record<string, unknown> = { items: allItems, import_trade_ins: importTradeIns, note: note || null };
         if (selectedCustomer && selectedCustomer.id !== initialCustomer?.id) {
           payload.customer_id = selectedCustomer.id;
         } else {
@@ -479,6 +481,12 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
         ) : (
           <div className="px-5 py-6 text-center text-gray-400 text-sm">{t.form_no_trade_ins}</div>
         )}
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">{t.quotation_note_label}</label>
+        <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors" />
       </div>
 
       <div className="flex gap-3">
