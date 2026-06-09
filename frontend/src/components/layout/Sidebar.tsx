@@ -14,6 +14,7 @@ export default function Sidebar({ user }: { user: User }) {
 
   const NAV_ITEMS = [
     { href: "/dashboard", label: t.nav_dashboard, icon: "\u{1F4CA}" },
+    { href: "/note", label: t.nav_note, icon: "\u{1F4DD}" },
     { href: "/quotations", label: t.nav_quotations, icon: "\u{1F4CB}" },
     { href: "/customers", label: t.nav_customers, icon: "\u{1F465}" },
     { href: "/schedule", label: t.nav_schedule, icon: "\u{1F4C5}" },
