@@ -14,13 +14,13 @@ export default function Sidebar({ user }: { user: User }) {
 
   const NAV_ITEMS = [
     { href: "/dashboard", label: t.nav_dashboard, icon: "\u{1F4CA}" },
-    { href: "/note", label: t.nav_note, icon: "\u{1F4DD}" },
     { href: "/quotations", label: t.nav_quotations, icon: "\u{1F4CB}" },
     { href: "/customers", label: t.nav_customers, icon: "\u{1F465}" },
     { href: "/schedule", label: t.nav_schedule, icon: "\u{1F4C5}" },
     { href: "/finance", label: t.nav_finance, icon: "\u{1F4B0}" },
     { href: "/inventory", label: t.nav_inventory, icon: "\u{1F4E6}", roles: ["admin", "sales"] as string[] },
     { href: "/settings", label: t.nav_settings, icon: "\u2699\uFE0F", roles: ["admin"] as string[] },
+    { href: "/note", label: t.nav_note, icon: "\u{1F4DD}" },
   ];
 
   const ROLE_LABELS: Record<string, string> = {
