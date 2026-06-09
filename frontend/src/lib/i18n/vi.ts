@@ -17,12 +17,19 @@ const vi: Translations = {
 
   // Nav
   nav_dashboard: "Tổng quan",
+  nav_note: "Ghi chú",
   nav_quotations: "Báo giá",
   nav_customers: "Khách hàng",
   nav_finance: "Thu chi",
   nav_inventory: "Kho hàng",
   nav_schedule: "Lịch",
   nav_settings: "Cài đặt",
+
+  // Note
+  note_title: "Ghi chú",
+  note_placeholder: "Viết bất cứ điều gì bạn muốn ghi nhớ ở đây...",
+  note_saved: "Đã lưu",
+  note_last_saved: "Lưu lần cuối",
 
   // Inventory
   inventory_title: "Kho hàng",
