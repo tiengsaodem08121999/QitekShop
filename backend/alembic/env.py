@@ -17,6 +17,7 @@ from app.quotation.models import Customer, Quotation, QuotationItem  # noqa: F40
 from app.finance.models import Transaction  # noqa: F401
 from app.schedule.models import ScheduleEvent, ScheduleTag  # noqa: F401
 from app.inventory.models import InventoryItem  # noqa: F401
+from app.note.models import Note  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

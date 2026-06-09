@@ -20,6 +20,7 @@ export default function Sidebar({ user }: { user: User }) {
     { href: "/finance", label: t.nav_finance, icon: "\u{1F4B0}" },
     { href: "/inventory", label: t.nav_inventory, icon: "\u{1F4E6}", roles: ["admin", "sales"] as string[] },
     { href: "/settings", label: t.nav_settings, icon: "\u2699\uFE0F", roles: ["admin"] as string[] },
+    { href: "/note", label: t.nav_note, icon: "\u{1F4DD}" },
   ];
 
   const ROLE_LABELS: Record<string, string> = {

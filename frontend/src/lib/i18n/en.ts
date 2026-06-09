@@ -15,12 +15,19 @@ const en = {
 
   // Nav
   nav_dashboard: "Dashboard",
+  nav_note: "Note",
   nav_quotations: "Quotations",
   nav_customers: "Customers",
   nav_finance: "Finance",
   nav_inventory: "Inventory",
   nav_schedule: "Schedule",
   nav_settings: "Settings",
+
+  // Note
+  note_title: "Note",
+  note_placeholder: "Write anything you want to remember here...",
+  note_saved: "Saved",
+  note_last_saved: "Last saved",
 
   // Inventory
   inventory_title: "Inventory",
