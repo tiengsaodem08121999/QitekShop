@@ -12,7 +12,7 @@ import { formatDate, formatNumber, parseNumber } from "@/lib/format";
 import Pagination from "@/components/shared/Pagination";
 import type { InventoryItem, InventoryStatus, PaginatedResponse } from "@/types";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 12;
 
 const STATUS_STYLE: Record<InventoryStatus, string> = {
   in_stock: "bg-emerald-50 text-emerald-700",

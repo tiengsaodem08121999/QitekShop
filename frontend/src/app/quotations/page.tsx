@@ -14,7 +14,7 @@ import Pagination from "@/components/shared/Pagination";
 import { useConfirm } from "@/components/Confirm";
 import type { PaginatedResponse, Quotation, QuotationListItem } from "@/types";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 12;
 
 export default function QuotationsPage() {
   const router = useRouter();
