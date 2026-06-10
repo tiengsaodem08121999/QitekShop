@@ -378,7 +378,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                             <button key={s.id} type="button" onClick={() => pickStock(i, s)}
                               className="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm flex justify-between items-center border-b border-gray-50 last:border-0">
                               <span className="font-medium text-gray-800">{s.name}</span>
-                              <span className="text-gray-400 text-xs font-mono">{s.serial_number || ""}</span>
+                              <span className="text-gray-500 text-xs tabular-nums">{formatNumber(s.purchase_price)}</span>
                             </button>
                           ))}
                         </div>
