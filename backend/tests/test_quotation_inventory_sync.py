@@ -57,6 +57,22 @@ def test_stock_edit_zero_selling_does_not_wipe_line(client, sales_user, db_sessi
     assert int(line["selling_price"]) == 555  # 0 treated as blank -> no wipe
 
 
+def test_sale_save_propagates_price_to_trade_in_sibling(client, sales_user, db_session):
+    # Quotation A: a trade-in imported to stock with resale 0 (stock selling stays empty).
+    qa = _quote(client, sales_user,
+                [dict(SALE), {"is_trade_in": True, "name": "GPU", "purchase_price": 1500, "resale_price": 0}],
+                import_trade_ins=True)
+    db_session.expire_all()
+    inv = db_session.query(InventoryItem).filter(InventoryItem.name == "GPU").one()
+    # Quotation B sells that same stock item at 2300.
+    _quote(client, sales_user, [{"is_trade_in": False, "name": "GPU",
+                                 "selling_price": 2300, "inventory_item_id": inv.id}])
+    db_session.expire_all()
+    # Saving B updates stock; that must propagate to A's trade-in line (resale = stock selling).
+    trade_line = [it for it in _detail(client, sales_user, qa["id"])["items"] if it["is_trade_in"]][0]
+    assert int(trade_line["resale_price"]) == 2300
+
+
 def test_create_trade_in_no_stock_without_button(client, sales_user, db_session):
     _quote(client, sales_user, [dict(SALE), dict(TRADE)])  # import_trade_ins defaults False
     db_session.expire_all()

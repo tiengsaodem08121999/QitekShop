@@ -153,9 +153,20 @@ def _sync_line_to_stock(db: Session, item) -> None:
 
 
 def _sync_quotation_to_stock(db: Session, quotation) -> None:
-    """Sync every linked line of a quotation onto its stock item."""
+    """Sync every linked line of a quotation onto its stock item, then propagate
+    each touched stock item back out to all other quotation lines linked to it, so
+    editing a price/S/N in one quotation reflects in sibling lines (e.g. a trade-in
+    line in another quotation) sharing the same stock item."""
+    from app.inventory.models import InventoryItem
+    touched_ids = set()
     for item in quotation.items:
-        _sync_line_to_stock(db, item)
+        if item.inventory_item_id is not None:
+            _sync_line_to_stock(db, item)
+            touched_ids.add(item.inventory_item_id)
+    for inv_id in touched_ids:
+        inv = db.query(InventoryItem).filter(InventoryItem.id == inv_id).first()
+        if inv is not None:
+            sync_stock_to_quotations(db, inv)
 
 
 def sync_stock_to_quotations(db: Session, inv) -> None:
