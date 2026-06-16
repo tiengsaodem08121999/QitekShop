@@ -53,5 +53,12 @@ def test_create_requires_serial(client, sales_user):
     assert r.status_code == 400
 
 
+def test_create_with_condition_roundtrips(client, sales_user):
+    b = _create(client, sales_user, condition="new")
+    assert b["condition"] == "new"
+    r = client.put(f"/api/inventory/{b['id']}", json={"condition": "2nd"}, headers=auth_headers(sales_user))
+    assert r.status_code == 200 and r.json()["condition"] == "2nd"
+
+
 def test_accountant_cannot_create(client, accountant_user):
     assert client.post("/api/inventory", json={"name": "x"}, headers=auth_headers(accountant_user)).status_code == 403
