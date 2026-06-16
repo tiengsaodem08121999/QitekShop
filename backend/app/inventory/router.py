@@ -51,8 +51,6 @@ def create_inventory_endpoint(
     _user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
     db: Session = Depends(get_db),
 ):
-    if not (data.serial_number or "").strip():
-        raise HTTPException(status_code=400, detail="err_inventory_serial_required")
     item = create_inventory_item(db, data)
     db.commit()
     db.refresh(item)

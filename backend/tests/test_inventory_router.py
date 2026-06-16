@@ -47,10 +47,11 @@ def test_edit_sold_item_blocked(client, sales_user, db_session):
     assert r.status_code == 400
 
 
-def test_create_requires_serial(client, sales_user):
+def test_create_allows_null_serial(client, sales_user):
     r = client.post("/api/inventory", json={"name": "NoSN", "purchase_price": 100},
                     headers=auth_headers(sales_user))
-    assert r.status_code == 400
+    assert r.status_code == 201
+    assert r.json()["serial_number"] is None
 
 
 def test_create_with_condition_roundtrips(client, sales_user):
