@@ -39,7 +39,7 @@ export default function InventoryPage() {
   const [editItem, setEditItem] = useState<InventoryItem | undefined>();
   const [deleteItem, setDeleteItem] = useState<InventoryItem | undefined>();
   const [deleting, setDeleting] = useState(false);
-  const [showSelling, setShowSelling] = useState(true);
+  const [showSelling, setShowSelling] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | "in_stock" | "sold">("all");
 
   function load() {
