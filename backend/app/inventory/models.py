@@ -21,6 +21,7 @@ class InventoryItem(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(200))
     serial_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    condition: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     purchase_price: Mapped[Decimal] = mapped_column(Numeric(12, 0), default=0)
     selling_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 0), nullable=True)
     supplier: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)

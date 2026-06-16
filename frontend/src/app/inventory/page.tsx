@@ -39,6 +39,8 @@ export default function InventoryPage() {
   const [editItem, setEditItem] = useState<InventoryItem | undefined>();
   const [deleteItem, setDeleteItem] = useState<InventoryItem | undefined>();
   const [deleting, setDeleting] = useState(false);
+  const [showSelling, setShowSelling] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | "in_stock" | "sold">("all");
 
   function load() {
     const params = new URLSearchParams();
@@ -50,7 +52,7 @@ export default function InventoryPage() {
   }
 
   useEffect(() => { load(); }, [search]);
-  useEffect(() => { setPage(1); }, [search]);
+  useEffect(() => { setPage(1); }, [search, statusFilter]);
 
   async function handleDelete() {
     if (!deleteItem) return;
@@ -67,9 +69,10 @@ export default function InventoryPage() {
   }
 
   const items = data?.items ?? [];
-  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const filteredItems = statusFilter === "all" ? items : items.filter((i) => i.status === statusFilter);
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
-  const pageItems = items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pageItems = filteredItems.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <AppLayout>
@@ -87,12 +90,18 @@ export default function InventoryPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col min-h-0 flex-1 mb-5">
-        <div className="p-4 border-b border-gray-50 shrink-0">
-          <div className="relative max-w-xs">
+        <div className="p-4 border-b border-gray-50 shrink-0 flex items-center gap-3">
+          <div className="relative max-w-xs flex-1">
             <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             <input placeholder={t.inventory_search} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors" />
           </div>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | "in_stock" | "sold")}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors">
+            <option value="all">{t.inventory_status_all}</option>
+            <option value="in_stock">{t.inventory_status_in_stock}</option>
+            <option value="sold">{t.inventory_status_sold}</option>
+          </select>
         </div>
         <div className="overflow-auto flex-1" style={{ paddingBottom: 20 }}>
         <table className="w-full text-sm">
@@ -101,7 +110,20 @@ export default function InventoryPage() {
               <th className="px-5 py-3 font-medium">{t.inventory_col_name}</th>
               <th className="px-4 py-3 font-medium">{t.inventory_col_serial}</th>
               <th className="px-4 py-3 font-medium text-right">{t.inventory_col_purchase_price}</th>
-              <th className="px-4 py-3 font-medium text-right">{t.inventory_col_selling_price}</th>
+              <th className="px-4 py-3 font-medium text-right">
+                <button
+                  onClick={() => setShowSelling((v) => !v)}
+                  className="inline-flex items-center gap-1 hover:text-gray-700 transition-colors uppercase tracking-wider"
+                  title={t.inventory_col_selling_price}
+                >
+                  {t.inventory_col_selling_price}
+                  {showSelling ? (
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                  ) : (
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                  )}
+                </button>
+              </th>
               <th className="px-4 py-3 font-medium">{t.inventory_col_supplier}</th>
               <th className="px-4 py-3 font-medium">{t.inventory_col_import_date}</th>
               <th className="px-4 py-3 font-medium">{t.inventory_col_status}</th>
@@ -109,7 +131,7 @@ export default function InventoryPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {items.length === 0 && (
+            {filteredItems.length === 0 && (
               <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-400">{t.inventory_empty}</td></tr>
             )}
             {pageItems.map((it) => {
@@ -118,7 +140,7 @@ export default function InventoryPage() {
                 <td className="px-5 py-3.5"><div className="font-medium text-gray-800">{it.name}</div></td>
                 <td className="px-4 py-3.5 text-gray-600 font-mono">{it.serial_number || t.dash}</td>
                 <td className="px-4 py-3.5 text-right tabular-nums text-gray-700">{(it.purchase_price || 0).toLocaleString()}</td>
-                <td className="px-4 py-3.5 text-right tabular-nums font-medium text-gray-700">{it.selling_price != null ? it.selling_price.toLocaleString() : t.dash}</td>
+                <td className="px-4 py-3.5 text-right tabular-nums font-medium text-gray-700">{showSelling ? (it.selling_price != null ? it.selling_price.toLocaleString() : t.dash) : "•••"}</td>
                 <td className="px-4 py-3.5 text-gray-500 max-w-[150px] truncate">{it.supplier || t.dash}</td>
                 <td className="px-4 py-3.5 text-gray-600">{formatDate(it.created_at)}</td>
                 <td className="px-4 py-3.5"><StatusBadge status={it.status} /></td>
@@ -143,7 +165,7 @@ export default function InventoryPage() {
           </tbody>
         </table>
         </div>
-        <Pagination page={safePage} pageSize={PAGE_SIZE} total={items.length} onPageChange={setPage} />
+        <Pagination page={safePage} pageSize={PAGE_SIZE} total={filteredItems.length} onPageChange={setPage} />
       </div>
       </div>
 
@@ -203,8 +225,8 @@ function InventoryModal({ t, initial, onClose, onSaved }: { t: ReturnType<typeof
             <input value={name} onChange={(e) => setName(e.target.value)} className="border rounded px-3 py-2 w-full text-sm" required />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">{t.inventory_col_serial}{!initial && " *"}</label>
-            <input value={serial} onChange={(e) => setSerial(e.target.value)} className="border rounded px-3 py-2 w-full text-sm" required={!initial} />
+            <label className="block text-sm font-medium mb-1">{t.inventory_col_serial}</label>
+            <input value={serial} onChange={(e) => setSerial(e.target.value)} className="border rounded px-3 py-2 w-full text-sm" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

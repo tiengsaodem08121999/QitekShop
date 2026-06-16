@@ -22,6 +22,7 @@ router = APIRouter(prefix="/api/inventory", tags=["inventory"])
 def list_inventory_endpoint(
     search: Optional[str] = None,
     available: bool = False,
+    exclude_quotation_id: Optional[int] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(100, ge=1, le=200),
     sort: Optional[str] = None,
@@ -29,7 +30,7 @@ def list_inventory_endpoint(
     db: Session = Depends(get_db),
 ):
     from app.quotation.service import get_claimed_inventory_ids, get_referenced_inventory_ids
-    claimed = get_claimed_inventory_ids(db)
+    claimed = get_claimed_inventory_ids(db, exclude_quotation_id=exclude_quotation_id)
     referenced = get_referenced_inventory_ids(db)
     items, total = list_inventory(db, search=search, page=page, limit=limit, sort=sort)
     result = []
@@ -51,8 +52,6 @@ def create_inventory_endpoint(
     _user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
     db: Session = Depends(get_db),
 ):
-    if not (data.serial_number or "").strip():
-        raise HTTPException(status_code=400, detail="err_inventory_serial_required")
     item = create_inventory_item(db, data)
     db.commit()
     db.refresh(item)
@@ -74,6 +73,8 @@ def update_inventory_endpoint(
     item = update_inventory_item(db, item_id, data)
     if not item:
         raise HTTPException(status_code=404, detail="Inventory item not found")
+    from app.quotation.service import sync_stock_to_quotations
+    sync_stock_to_quotations(db, item)
     db.commit()
     db.refresh(item)
     return item

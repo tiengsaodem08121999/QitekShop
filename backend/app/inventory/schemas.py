@@ -14,6 +14,7 @@ class DecimalModel(BaseModel):
 class InventoryItemCreate(DecimalModel):
     name: str
     serial_number: Optional[str] = None
+    condition: Optional[str] = None
     purchase_price: Decimal = 0
     selling_price: Optional[Decimal] = None
     supplier: Optional[str] = None
@@ -22,6 +23,7 @@ class InventoryItemCreate(DecimalModel):
 class InventoryItemUpdate(DecimalModel):
     name: Optional[str] = None
     serial_number: Optional[str] = None
+    condition: Optional[str] = None
     purchase_price: Optional[Decimal] = None
     selling_price: Optional[Decimal] = None
     supplier: Optional[str] = None
@@ -32,6 +34,7 @@ class InventoryItemResponse(DecimalModel):
     id: int
     name: str
     serial_number: Optional[str]
+    condition: Optional[str]
     purchase_price: Decimal
     selling_price: Optional[Decimal]
     supplier: Optional[str]
