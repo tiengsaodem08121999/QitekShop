@@ -96,7 +96,7 @@ export default function InventoryPage() {
             <input placeholder={t.inventory_search} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors" />
           </div>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | "in_stock" | "sold")}
+          <select defaultValue={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | "in_stock" | "sold")}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors">
             <option value="all">{t.inventory_status_all}</option>
             <option value="in_stock">{t.inventory_status_in_stock}</option>
