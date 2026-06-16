@@ -203,8 +203,8 @@ function InventoryModal({ t, initial, onClose, onSaved }: { t: ReturnType<typeof
             <input value={name} onChange={(e) => setName(e.target.value)} className="border rounded px-3 py-2 w-full text-sm" required />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">{t.inventory_col_serial}{!initial && " *"}</label>
-            <input value={serial} onChange={(e) => setSerial(e.target.value)} className="border rounded px-3 py-2 w-full text-sm" required={!initial} />
+            <label className="block text-sm font-medium mb-1">{t.inventory_col_serial}</label>
+            <input value={serial} onChange={(e) => setSerial(e.target.value)} className="border rounded px-3 py-2 w-full text-sm" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
