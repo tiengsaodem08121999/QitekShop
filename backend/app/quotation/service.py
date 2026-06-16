@@ -133,6 +133,72 @@ def _import_trade_in_stock(db: Session, quotation, old_trade_in_links: set) -> N
             db.delete(inv)
 
 
+def _blank_text(v) -> bool:
+    return v is None or (isinstance(v, str) and not v.strip())
+
+
+def _blank_price(v) -> bool:
+    return v is None or Decimal(v) == 0
+
+
+def _sync_line_to_stock(db: Session, item) -> None:
+    """Copy non-blank shared fields from a quotation line onto its linked stock
+    item. Never overwrites a populated stock field with a blank line value, so a
+    blank S/N or a 0 price cannot wipe real stock data (fixes Bug 1)."""
+    from app.inventory.models import InventoryItem
+    if item.inventory_item_id is None:
+        return
+    inv = db.query(InventoryItem).filter(InventoryItem.id == item.inventory_item_id).first()
+    if inv is None:
+        return
+    if not _blank_text(item.name):
+        inv.name = item.name
+    if not _blank_text(item.serial_number):
+        inv.serial_number = item.serial_number
+    if not item.is_trade_in and not _blank_text(item.condition):
+        inv.condition = item.condition
+    if not _blank_price(item.purchase_price):
+        inv.purchase_price = item.purchase_price
+    sell = item.resale_price if item.is_trade_in else item.selling_price
+    if not _blank_price(sell):
+        inv.selling_price = sell
+
+
+def _sync_quotation_to_stock(db: Session, quotation) -> None:
+    """Sync every linked line of a quotation onto its stock item."""
+    for item in quotation.items:
+        _sync_line_to_stock(db, item)
+
+
+def sync_stock_to_quotations(db: Session, inv) -> None:
+    """Push non-blank stock fields onto every quotation line linked to this stock
+    item (any status), then recompute affected quotations' stored totals. Called
+    after a stock item is edited on the inventory page."""
+    lines = db.query(QuotationItem).filter(QuotationItem.inventory_item_id == inv.id).all()
+    affected: set = set()
+    for item in lines:
+        if not _blank_text(inv.name):
+            item.name = inv.name
+        if not _blank_text(inv.serial_number):
+            item.serial_number = inv.serial_number
+        if not item.is_trade_in and not _blank_text(inv.condition):
+            item.condition = inv.condition
+        if not _blank_price(inv.purchase_price):
+            item.purchase_price = inv.purchase_price
+        if not _blank_price(inv.selling_price):
+            if item.is_trade_in:
+                item.resale_price = inv.selling_price
+            else:
+                item.selling_price = inv.selling_price
+        affected.add(item.quotation_id)
+    for qid in affected:
+        q = db.query(Quotation).filter(Quotation.id == qid).first()
+        if q:
+            total_amount, total_trade_in = _compute_totals(q.items)
+            q.total_amount = total_amount
+            q.total_trade_in = total_trade_in
+
+
 def _compute_totals(items: List[QuotationItem]) -> Tuple[Decimal, Decimal]:
     """Returns (total_amount, total_trade_in)"""
     total_amount = sum(item.selling_price for item in items if not item.is_trade_in)
