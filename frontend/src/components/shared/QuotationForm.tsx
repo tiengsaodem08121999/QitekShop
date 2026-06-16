@@ -97,10 +97,13 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
   }, [toast, t.error]);
 
   useEffect(() => {
-    apiFetch<PaginatedResponse<InventoryItem>>("/api/inventory?available=true&limit=200")
+    const url = quotationId
+      ? `/api/inventory?available=true&limit=200&exclude_quotation_id=${quotationId}`
+      : "/api/inventory?available=true&limit=200";
+    apiFetch<PaginatedResponse<InventoryItem>>(url)
       .then((r) => setStock(r.items))
       .catch(() => {});
-  }, []);
+  }, [quotationId]);
 
   useEffect(() => {
     function onDown(e: MouseEvent) {
@@ -181,7 +184,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
     setItems((prev) => prev.map((item, i) => i === 0 ? item : { ...item, [field]: firstValue }));
   }
 
-  function updateTradeIn(index: number, field: string, value: string | number) {
+  function updateTradeIn(index: number, field: string, value: string | number | null) {
     setTradeIns((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   }
 
@@ -461,9 +464,10 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
           <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="w-[50%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
-                <th className="w-[23%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_price}</th>
-                <th className="w-[23%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_resale_price}</th>
+                <th className="w-[38%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
+                <th className="w-[16%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_serial}</th>
+                <th className="w-[21%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_price}</th>
+                <th className="w-[21%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_resale_price}</th>
                 <th className="w-[4%]"></th>
               </tr>
             </thead>
@@ -471,6 +475,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
               {tradeIns.map((item, i) => (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-2 py-2"><input data-col="name" data-row={i} value={item.name} onChange={(e) => updateTradeIn(i, "name", e.target.value)} onKeyDown={(e) => handleTabDown(e, "name", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
+                  <td className="px-2 py-2"><input data-col="serial" data-row={i} value={item.serial_number || ""} onChange={(e) => updateTradeIn(i, "serial_number", e.target.value || null)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input data-col="purchase_price" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateTradeIn(i, "purchase_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "purchase_price", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input data-col="resale_price" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.resale_price)} onChange={(e) => updateTradeIn(i, "resale_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "resale_price", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-1 py-2 text-center"><button type="button" onClick={() => setTradeIns(tradeIns.filter((_, j) => j !== i))} className="p-1 rounded-md hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></td>
