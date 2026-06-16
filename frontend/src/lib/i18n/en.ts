@@ -45,6 +45,7 @@ const en = {
   inventory_modal_add: "Add item",
   inventory_modal_edit: "Edit item",
   inventory_name_required: "Item name *",
+  inventory_status_all: "All",
   inventory_status_in_stock: "In stock",
   inventory_status_sold: "Sold",
   inventory_status_returned: "Returned",

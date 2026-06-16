@@ -40,6 +40,7 @@ export default function InventoryPage() {
   const [deleteItem, setDeleteItem] = useState<InventoryItem | undefined>();
   const [deleting, setDeleting] = useState(false);
   const [showSelling, setShowSelling] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<"all" | "in_stock" | "sold">("all");
 
   function load() {
     const params = new URLSearchParams();
@@ -51,7 +52,7 @@ export default function InventoryPage() {
   }
 
   useEffect(() => { load(); }, [search]);
-  useEffect(() => { setPage(1); }, [search]);
+  useEffect(() => { setPage(1); }, [search, statusFilter]);
 
   async function handleDelete() {
     if (!deleteItem) return;
@@ -68,9 +69,10 @@ export default function InventoryPage() {
   }
 
   const items = data?.items ?? [];
-  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const filteredItems = statusFilter === "all" ? items : items.filter((i) => i.status === statusFilter);
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
-  const pageItems = items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pageItems = filteredItems.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <AppLayout>
@@ -88,12 +90,18 @@ export default function InventoryPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col min-h-0 flex-1 mb-5">
-        <div className="p-4 border-b border-gray-50 shrink-0">
-          <div className="relative max-w-xs">
+        <div className="p-4 border-b border-gray-50 shrink-0 flex items-center gap-3">
+          <div className="relative max-w-xs flex-1">
             <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             <input placeholder={t.inventory_search} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors" />
           </div>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | "in_stock" | "sold")}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors">
+            <option value="all">{t.inventory_status_all}</option>
+            <option value="in_stock">{t.inventory_status_in_stock}</option>
+            <option value="sold">{t.inventory_status_sold}</option>
+          </select>
         </div>
         <div className="overflow-auto flex-1" style={{ paddingBottom: 20 }}>
         <table className="w-full text-sm">
@@ -123,7 +131,7 @@ export default function InventoryPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {items.length === 0 && (
+            {filteredItems.length === 0 && (
               <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-400">{t.inventory_empty}</td></tr>
             )}
             {pageItems.map((it) => {
@@ -157,7 +165,7 @@ export default function InventoryPage() {
           </tbody>
         </table>
         </div>
-        <Pagination page={safePage} pageSize={PAGE_SIZE} total={items.length} onPageChange={setPage} />
+        <Pagination page={safePage} pageSize={PAGE_SIZE} total={filteredItems.length} onPageChange={setPage} />
       </div>
       </div>
 

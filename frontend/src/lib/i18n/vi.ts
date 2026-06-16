@@ -47,6 +47,7 @@ const vi: Translations = {
   inventory_modal_add: "Thêm món hàng",
   inventory_modal_edit: "Sửa món hàng",
   inventory_name_required: "Tên hàng *",
+  inventory_status_all: "Tất cả",
   inventory_status_in_stock: "Nhập kho",
   inventory_status_sold: "Đã bán",
   inventory_status_returned: "Trả hàng",
