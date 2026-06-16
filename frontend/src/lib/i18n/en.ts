@@ -75,7 +75,6 @@ const en = {
   err_inventory_delete_locked: "Cannot delete a sold or claimed item",
   err_inventory_no_manual_sold: "Cannot set the status to 'sold' manually",
   err_quotation_has_transactions: "Cannot delete a quotation that has payments or returns. Remove them first.",
-  err_inventory_serial_required: "S/N is required when adding stock",
   err_item_conflict: "A product is already held by another quotation",
   err_inventory_edit_sold: "A sold item cannot be edited",
   err_inventory_delete_sold: "A sold item cannot be deleted",

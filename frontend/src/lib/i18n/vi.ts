@@ -77,7 +77,6 @@ const vi: Translations = {
   err_inventory_delete_locked: "Không thể xóa món đã bán hoặc đang trong báo giá đã xác nhận",
   err_inventory_no_manual_sold: "Không thể đặt trạng thái 'đã bán' bằng tay",
   err_quotation_has_transactions: "Không thể xóa báo giá đã có thanh toán hoặc trả hàng. Vui lòng gỡ hết trước.",
-  err_inventory_serial_required: "Bắt buộc nhập S/N khi nhập hàng",
   err_item_conflict: "Có sản phẩm đã bị báo giá khác giữ",
   err_inventory_edit_sold: "Món đã bán không thể sửa",
   err_inventory_delete_sold: "Món đã bán không thể xóa",
