@@ -74,6 +74,8 @@ def update_inventory_endpoint(
     item = update_inventory_item(db, item_id, data)
     if not item:
         raise HTTPException(status_code=404, detail="Inventory item not found")
+    from app.quotation.service import sync_stock_to_quotations
+    sync_stock_to_quotations(db, item)
     db.commit()
     db.refresh(item)
     return item

@@ -31,6 +31,32 @@ SALE = {"is_trade_in": False, "name": "Laptop", "selling_price": 1000}
 TRADE = {"is_trade_in": True, "name": "Old RAM", "purchase_price": 80, "resale_price": 150}
 
 
+def test_stock_edit_syncs_to_linked_line_and_total(client, sales_user, db_session):
+    it = _add_item(db_session)  # selling_price 200
+    q = _quote(client, sales_user, [{"is_trade_in": False, "name": "RAM",
+                                     "selling_price": 200, "inventory_item_id": it.id}])
+    client.put(f"/api/inventory/{it.id}",
+               json={"selling_price": 999, "name": "RAM-X"},
+               headers=auth_headers(sales_user))
+    db_session.expire_all()
+    detail = _detail(client, sales_user, q["id"])
+    line = detail["items"][0]
+    assert int(line["selling_price"]) == 999
+    assert line["name"] == "RAM-X"
+    assert int(detail["total_amount"]) == 999
+
+
+def test_stock_edit_zero_selling_does_not_wipe_line(client, sales_user, db_session):
+    it = _add_item(db_session)
+    q = _quote(client, sales_user, [{"is_trade_in": False, "name": "RAM",
+                                     "selling_price": 555, "inventory_item_id": it.id}])
+    client.put(f"/api/inventory/{it.id}", json={"selling_price": 0},
+               headers=auth_headers(sales_user))
+    db_session.expire_all()
+    line = _detail(client, sales_user, q["id"])["items"][0]
+    assert int(line["selling_price"]) == 555  # 0 treated as blank -> no wipe
+
+
 def test_create_trade_in_no_stock_without_button(client, sales_user, db_session):
     _quote(client, sales_user, [dict(SALE), dict(TRADE)])  # import_trade_ins defaults False
     db_session.expire_all()
