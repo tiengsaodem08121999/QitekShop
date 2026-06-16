@@ -331,6 +331,7 @@ export default function QuotationDetailPage() {
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_serial}</th>
                 <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_price}</th>
                 <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hide-on-screenshot">{t.quotation_resale_price}</th>
               </tr>
@@ -339,6 +340,7 @@ export default function QuotationDetailPage() {
               {tradeIns.map((item, i) => (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-4 py-3 font-medium text-gray-800">{item.name}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-gray-600">{item.serial_number || t.dash}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-gray-700">{item.purchase_price.toLocaleString()}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-gray-700 hide-on-screenshot">
                     {!showCost ? (
@@ -371,7 +373,7 @@ export default function QuotationDetailPage() {
                 </tr>
               ))}
               <tr className="bg-gray-50/80">
-                <td className="px-5 py-3 font-semibold text-gray-700">{t.quotation_total_trade_in}</td>
+                <td colSpan={2} className="px-5 py-3 font-semibold text-gray-700">{t.quotation_total_trade_in}</td>
                 <td className="px-5 py-3 text-right font-bold tabular-nums text-gray-800">{q.total_trade_in.toLocaleString()}</td>
                 <td className="px-5 py-3 text-right font-bold tabular-nums text-gray-800 hide-on-screenshot">{showCost ? q.total_trade_in_resale.toLocaleString() : "•••"}</td>
               </tr>
