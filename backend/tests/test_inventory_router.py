@@ -61,5 +61,21 @@ def test_create_with_condition_roundtrips(client, sales_user):
     assert r.status_code == 200 and r.json()["condition"] == "2nd"
 
 
+def test_available_includes_own_quotation_claimed(client, sales_user):
+    b = _create(client, sales_user, name="RAM", serial_number="SNX")
+    q = client.post("/api/quotations", json={"new_customer": {"name": "A"},
+                    "items": [{"is_trade_in": False, "name": "RAM", "selling_price": 200,
+                               "inventory_item_id": b["id"]}]},
+                    headers=auth_headers(sales_user)).json()
+    # Confirm so the item becomes claimed.
+    client.post(f"/api/quotations/{q['id']}/payments", json={"amount": 50, "method": "cash"},
+                headers=auth_headers(sales_user))
+    avail = client.get("/api/inventory?available=true", headers=auth_headers(sales_user)).json()
+    assert b["id"] not in {i["id"] for i in avail["items"]}  # claimed -> hidden
+    own = client.get(f"/api/inventory?available=true&exclude_quotation_id={q['id']}",
+                     headers=auth_headers(sales_user)).json()
+    assert b["id"] in {i["id"] for i in own["items"]}  # selectable again for its own quotation
+
+
 def test_accountant_cannot_create(client, accountant_user):
     assert client.post("/api/inventory", json={"name": "x"}, headers=auth_headers(accountant_user)).status_code == 403
