@@ -60,7 +60,8 @@ export default function ProductsTable({
                 className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
             </th>
-            <th className="w-[16%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
+            <th className="w-[4%] px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_stt}</th>
+            <th className="w-[15%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
             <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_serial}</th>
             <th className="w-[6%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_cond}</th>
             <th className="w-[14%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hide-on-screenshot">
@@ -97,6 +98,7 @@ export default function ProductsTable({
                     className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
                 </td>
+                <td className="px-2 py-3 text-center text-xs text-gray-400 tabular-nums">{i + 1}</td>
                 <td className="px-4 py-3 font-medium text-gray-800">{item.name}</td>
                 <td className="px-4 py-3 font-mono text-xs text-gray-600">{item.serial_number || t.dash}</td>
                 <td className="px-4 py-3">
@@ -126,6 +128,7 @@ export default function ProductsTable({
         </tbody>
         <tfoot className="hide-on-screenshot">
           <tr className="bg-gray-50/80 border-t border-gray-200">
+            <td></td>
             <td></td>
             <td className="px-4 py-3 font-semibold text-gray-700" colSpan={3}>{t.quotations_total}</td>
             <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-600">

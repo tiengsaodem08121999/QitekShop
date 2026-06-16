@@ -25,7 +25,7 @@ const EMPTY_ITEM: QuotationItem = {
   is_trade_in: false, name: "", condition: "2nd",
   purchase_price: 0, selling_price: 0, resale_price: 0,
   serial_number: null, inventory_item_id: null,
-  warranty_count: 1, warranty_unit: "week",
+  warranty_count: 1, warranty_unit: "month",
   warranty_start: null, delivery_date: null, notes: null,
 };
 
@@ -36,6 +36,16 @@ const EMPTY_TRADE_IN: QuotationItem = {
   warranty_count: null, warranty_unit: null,
   warranty_start: null, delivery_date: null, notes: null,
 };
+
+function todayISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Fresh sale row: warranty defaults to 1 month, warranty date defaults to today.
+function blankItem(): QuotationItem {
+  return { ...EMPTY_ITEM, warranty_start: todayISO() };
+}
 
 export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems, initialNote, returnedNames, status }: Props) {
   // Delivered quotations: sale lines locked to price/warranty/condition/note only
@@ -52,7 +62,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
   const [customerPhone, setCustomerPhone] = useState(initialCustomer?.phone || "");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<QuotationItem[]>(
-    initialItems?.filter((i) => !i.is_trade_in) || [{ ...EMPTY_ITEM }]
+    initialItems?.filter((i) => !i.is_trade_in) || [blankItem()]
   );
   const [tradeIns, setTradeIns] = useState<QuotationItem[]>(
     initialItems?.filter((i) => i.is_trade_in) || []
@@ -315,7 +325,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
         <div className="flex justify-between items-center px-5 py-3 border-b border-gray-100 bg-gray-50/50 rounded-t-xl">
           <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{t.form_products}</h3>
           {!saleLocked && (
-            <button type="button" onClick={() => setItems([...items, { ...EMPTY_ITEM }])}
+            <button type="button" onClick={() => setItems([...items, blankItem()])}
               className="inline-flex items-center gap-1 text-blue-600 text-sm font-medium hover:text-blue-700 transition-colors">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
               {t.form_add_line}
@@ -326,7 +336,8 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
           <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="w-[17%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_name}</th>
+                <th className="w-[4%] px-2 py-2.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_stt}</th>
+                <th className="w-[13%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_name}</th>
                 <th className="w-[9%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_serial}</th>
                 <th className="w-[7%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_cond}</th>
                 <th className="w-[13%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_cost}</th>
@@ -358,6 +369,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
                 const nameLocked = isReturned || saleLocked;
                 return (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-2 py-2 text-center text-xs text-gray-400 tabular-nums">{i + 1}</td>
                   <td className="px-2 py-2 relative" ref={stockOpenRow === i ? nameCellRef : undefined}>
                     <input data-col="name" data-row={i} value={item.name}
                       onChange={(e) => handleNameChange(i, e.target.value)}
@@ -431,7 +443,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
             </tbody>
             <tfoot>
               <tr className="border-t border-gray-200 bg-gray-50/50">
-                <td colSpan={3} className="px-2 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{t.form_total}</td>
+                <td colSpan={4} className="px-2 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{t.form_total}</td>
                 <td className="px-2 py-2.5 text-right text-sm font-semibold text-gray-800 tabular-nums pr-5">{formatNumber(items.reduce((s, i) => s + (i.purchase_price || 0), 0))}</td>
                 <td className="px-2 py-2.5 text-right text-sm font-semibold text-gray-800 tabular-nums pr-5">{formatNumber(items.reduce((s, i) => s + (i.selling_price || 0), 0))}</td>
                 <td></td>
@@ -464,7 +476,8 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
           <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="w-[38%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
+                <th className="w-[6%] px-2 py-2.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_stt}</th>
+                <th className="w-[32%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
                 <th className="w-[16%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_col_serial}</th>
                 <th className="w-[21%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_price}</th>
                 <th className="w-[21%] px-2 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.form_trade_in_resale_price}</th>
@@ -474,6 +487,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
             <tbody className="divide-y divide-gray-50">
               {tradeIns.map((item, i) => (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-2 py-2 text-center text-xs text-gray-400 tabular-nums">{i + 1}</td>
                   <td className="px-2 py-2"><input data-col="name" data-row={i} value={item.name} onChange={(e) => updateTradeIn(i, "name", e.target.value)} onKeyDown={(e) => handleTabDown(e, "name", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input data-col="serial" data-row={i} value={item.serial_number || ""} onChange={(e) => updateTradeIn(i, "serial_number", e.target.value || null)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
                   <td className="px-2 py-2"><input data-col="purchase_price" data-row={i} type="text" inputMode="numeric" value={formatNumber(item.purchase_price)} onChange={(e) => updateTradeIn(i, "purchase_price", parseNumber(e.target.value))} onKeyDown={(e) => handleTabDown(e, "purchase_price", i)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 w-full text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" /></td>
