@@ -47,15 +47,11 @@ def test_create_trade_in_creates_stock_with_button(client, sales_user, db_sessio
     assert created.status == InventoryStatus.in_stock
 
 
-def test_draft_does_not_writeback_confirm_does(client, sales_user, db_session):
+def test_draft_syncs_price_to_stock(client, sales_user, db_session):
     it = _add_item(db_session)  # selling_price 200
-    q = _quote(client, sales_user, [{"is_trade_in": False, "name": "RAM", "selling_price": 777, "inventory_item_id": it.id}])
+    _quote(client, sales_user, [{"is_trade_in": False, "name": "RAM", "selling_price": 777, "inventory_item_id": it.id}])
     db_session.expire_all()
-    # Draft -> stock price unchanged
-    assert int(db_session.get(InventoryItem, it.id).selling_price) == 200
-    # First payment confirms -> writeback happens
-    client.post(f"/api/quotations/{q['id']}/payments", json={"amount": 50, "method": "cash"}, headers=auth_headers(sales_user))
-    db_session.expire_all()
+    # Sync now happens on every save, draft included.
     assert int(db_session.get(InventoryItem, it.id).selling_price) == 777
 
 
@@ -103,19 +99,12 @@ def test_edit_confirmed_add_unlinked_stays_confirmed(client, sales_user, db_sess
     assert _detail(client, sales_user, q["id"])["status"] == "confirmed"
 
 
-def test_sn_draft_does_not_writeback_confirm_does(client, sales_user, db_session):
+def test_draft_syncs_sn_to_stock(client, sales_user, db_session):
     it = _add_item(db_session)  # serial_number None initially
-    q = _quote(client, sales_user, [{
+    _quote(client, sales_user, [{
         "is_trade_in": False, "name": "RAM", "selling_price": 200,
         "serial_number": "SN-NEW-1", "inventory_item_id": it.id,
     }])
-    db_session.expire_all()
-    # Draft -> stock S/N unchanged (still None)
-    assert db_session.get(InventoryItem, it.id).serial_number is None
-    # First payment confirms -> S/N writeback happens
-    client.post(f"/api/quotations/{q['id']}/payments",
-                json={"amount": 50, "method": "cash"},
-                headers=auth_headers(sales_user))
     db_session.expire_all()
     assert db_session.get(InventoryItem, it.id).serial_number == "SN-NEW-1"
 
@@ -140,17 +129,32 @@ def test_sn_edit_on_confirmed_writes_back(client, sales_user, db_session):
     assert db_session.get(InventoryItem, it.id).serial_number == "SN-EDITED"
 
 
-def test_sn_blank_line_clears_stock_sn(client, sales_user, db_session):
+def test_blank_line_sn_does_not_clear_stock(client, sales_user, db_session):
     it = _add_item(db_session)
     it.serial_number = "SN-EXISTING"
     db_session.commit()
-    q = _quote(client, sales_user, [{
+    _quote(client, sales_user, [{
         "is_trade_in": False, "name": "RAM", "selling_price": 200,
         "serial_number": None, "inventory_item_id": it.id,
     }])
-    # Confirm via payment -> blank line S/N mirrors onto stock (clears it).
-    client.post(f"/api/quotations/{q['id']}/payments",
-                json={"amount": 50, "method": "cash"},
-                headers=auth_headers(sales_user))
     db_session.expire_all()
-    assert db_session.get(InventoryItem, it.id).serial_number is None
+    # Blank line S/N must NOT wipe the stock S/N (Bug 1 fixed).
+    assert db_session.get(InventoryItem, it.id).serial_number == "SN-EXISTING"
+
+
+def test_import_trade_in_blank_line_keeps_stock_sn(client, sales_user, db_session):
+    q = _quote(client, sales_user,
+               [dict(SALE), {"is_trade_in": True, "name": "Old", "purchase_price": 80,
+                             "resale_price": 150, "serial_number": "TI-SN"}],
+               import_trade_ins=True)
+    db_session.expire_all()
+    inv = db_session.query(InventoryItem).filter(InventoryItem.name == "Old").one()
+    assert inv.serial_number == "TI-SN"
+    # Re-import with a blank S/N on the line -> stock keeps its S/N.
+    items = list(_detail(client, sales_user, q["id"])["items"])
+    for it in items:
+        if it["is_trade_in"]:
+            it["serial_number"] = None
+    assert _put(client, sales_user, q["id"], items, import_trade_ins=True).status_code == 200
+    db_session.expire_all()
+    assert db_session.query(InventoryItem).filter(InventoryItem.name == "Old").one().serial_number == "TI-SN"

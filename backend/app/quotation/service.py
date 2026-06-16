@@ -88,20 +88,6 @@ def annotate_inventory_conflicts(db: Session, quotation) -> None:
         )
 
 
-def _writeback_sale_to_stock(db: Session, quotation) -> None:
-    """Sale lines linked to stock push their selling price AND serial number
-    back to the stock item. Runs only when the quotation is committed
-    (confirmed/delivered), not on draft. The S/N is mirrored exactly, so a
-    blank line S/N clears the stock item's S/N."""
-    from app.inventory.models import InventoryItem
-    for item in quotation.items:
-        if not item.is_trade_in and item.inventory_item_id is not None:
-            inv = db.query(InventoryItem).filter(InventoryItem.id == item.inventory_item_id).first()
-            if inv:
-                inv.selling_price = item.selling_price
-                inv.serial_number = item.serial_number
-
-
 def _import_trade_in_stock(db: Session, quotation, old_trade_in_links: set) -> None:
     """Reconcile trade-in lines into stock. Runs ONLY on the explicit "Nhập kho"
     action: create stock for new trade-ins, update linked ones, delete dropped ones
@@ -118,10 +104,7 @@ def _import_trade_in_stock(db: Session, quotation, old_trade_in_links: set) -> N
         if inv is None:
             inv = InventoryItem(status=InventoryStatus.in_stock)
             db.add(inv)
-        inv.name = item.name
-        inv.serial_number = item.serial_number
-        inv.purchase_price = item.purchase_price
-        inv.selling_price = item.resale_price
+        _copy_line_fields_to_stock(item, inv)
         db.flush()
         item.inventory_item_id = inv.id
 
@@ -141,16 +124,10 @@ def _blank_price(v) -> bool:
     return v is None or Decimal(v) == 0
 
 
-def _sync_line_to_stock(db: Session, item) -> None:
-    """Copy non-blank shared fields from a quotation line onto its linked stock
-    item. Never overwrites a populated stock field with a blank line value, so a
-    blank S/N or a 0 price cannot wipe real stock data (fixes Bug 1)."""
-    from app.inventory.models import InventoryItem
-    if item.inventory_item_id is None:
-        return
-    inv = db.query(InventoryItem).filter(InventoryItem.id == item.inventory_item_id).first()
-    if inv is None:
-        return
+def _copy_line_fields_to_stock(item, inv) -> None:
+    """Copy non-blank shared fields from a quotation line onto a stock item object.
+    Never overwrites a populated stock field with a blank line value, so a blank
+    S/N or a 0 price cannot wipe real stock data (fixes Bug 1)."""
     if not _blank_text(item.name):
         inv.name = item.name
     if not _blank_text(item.serial_number):
@@ -162,6 +139,17 @@ def _sync_line_to_stock(db: Session, item) -> None:
     sell = item.resale_price if item.is_trade_in else item.selling_price
     if not _blank_price(sell):
         inv.selling_price = sell
+
+
+def _sync_line_to_stock(db: Session, item) -> None:
+    """Sync a quotation line onto its already-linked stock item."""
+    from app.inventory.models import InventoryItem
+    if item.inventory_item_id is None:
+        return
+    inv = db.query(InventoryItem).filter(InventoryItem.id == item.inventory_item_id).first()
+    if inv is None:
+        return
+    _copy_line_fields_to_stock(item, inv)
 
 
 def _sync_quotation_to_stock(db: Session, quotation) -> None:
@@ -232,9 +220,8 @@ def create_quotation(db: Session, data: QuotationCreate, user_id: int) -> Quotat
     quotation.total_amount = total_amount
     quotation.total_trade_in = total_trade_in
 
-    # Writeback only once the quotation is committed (confirmed/delivered), not draft.
-    if quotation.status in (QuotationStatus.confirmed, QuotationStatus.delivered):
-        _writeback_sale_to_stock(db, quotation)
+    # Keep every linked line's stock item in sync on every save (draft included).
+    _sync_quotation_to_stock(db, quotation)
     if data.import_trade_ins:
         _import_trade_in_stock(db, quotation, set())
 
@@ -350,7 +337,7 @@ def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> O
             if any(i.inventory_item_id in claimed for i in quotation.items
                    if not i.is_trade_in and i.inventory_item_id is not None):
                 raise ValueError("err_item_conflict")
-            _writeback_sale_to_stock(db, quotation)
+        _sync_quotation_to_stock(db, quotation)
         if data.import_trade_ins:
             _import_trade_in_stock(db, quotation, old_trade_in_links)
 
@@ -550,8 +537,8 @@ def create_payment(db: Session, quotation_id: int, data: PaymentCreate, user_id:
         # A transaction confirms the quotation (linking can still be completed up to delivery).
         if quotation.status == QuotationStatus.draft:
             quotation.status = QuotationStatus.confirmed
-        # Now committed -> push sale-line prices and serials to the linked stock items.
-        _writeback_sale_to_stock(db, quotation)
+        # Now committed -> sync linked lines to their stock items.
+        _sync_quotation_to_stock(db, quotation)
 
     payment = Payment(
         quotation_id=quotation_id,
