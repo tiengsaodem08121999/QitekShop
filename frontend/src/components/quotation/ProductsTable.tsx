@@ -63,8 +63,6 @@ export default function ProductsTable({
             <th className="w-[16%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_name}</th>
             <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_serial}</th>
             <th className="w-[6%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_cond}</th>
-            <th className="w-[14%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_price}</th>
-            <th className="w-[8%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_warranty}</th>
             <th className="w-[14%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hide-on-screenshot">
               <button
                 onClick={onToggleShowCost}
@@ -79,6 +77,8 @@ export default function ProductsTable({
                 )}
               </button>
             </th>
+            <th className="w-[14%] px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_price}</th>
+            <th className="w-[8%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_warranty}</th>
             <th className="w-[14%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_warranty_date}</th>
             <th className="w-[5%] px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_warranty_status}</th>
             <th className="w-[9%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.quotation_col_notes}</th>
@@ -104,9 +104,9 @@ export default function ProductsTable({
                     item.condition === "new" ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-600"
                   }`}>{item.condition}</span>
                 </td>
+                <td className="px-4 py-3 text-right tabular-nums text-gray-600 hide-on-screenshot">{showCost ? item.purchase_price.toLocaleString() : "•••"}</td>
                 <td className="px-4 py-3 text-right tabular-nums font-medium text-gray-800">{item.selling_price.toLocaleString()}</td>
                 <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatWarranty(item.warranty_count, item.warranty_unit, t, t.dash)}</td>
-                <td className="px-4 py-3 text-right tabular-nums text-gray-600 hide-on-screenshot">{showCost ? item.purchase_price.toLocaleString() : "•••"}</td>
                 <td className="px-4 py-3 text-gray-500">{item.warranty_start ? formatDate(item.warranty_start) : t.dash}</td>
                 <td className="px-4 py-3 text-center">
                   {(() => {
@@ -128,14 +128,13 @@ export default function ProductsTable({
           <tr className="bg-gray-50/80 border-t border-gray-200">
             <td></td>
             <td className="px-4 py-3 font-semibold text-gray-700" colSpan={3}>{t.quotations_total}</td>
-            <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-800">
-              {checkedSellingTotal.toLocaleString()}
-            </td>
-            <td></td>
             <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-600">
               {showCost ? checkedPurchaseTotal.toLocaleString() : "•••"}
             </td>
-            <td colSpan={3}></td>
+            <td className="px-4 py-3 text-right tabular-nums font-bold text-gray-800">
+              {checkedSellingTotal.toLocaleString()}
+            </td>
+            <td colSpan={4}></td>
           </tr>
         </tfoot>
       </table>
