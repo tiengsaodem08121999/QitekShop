@@ -79,6 +79,21 @@ export default function QuotationDetailPage() {
     }
   }
 
+  async function handleSendEmail() {
+    if (!q) return;
+    if (!q.customer.email?.trim()) {
+      toast(t.quotation_send_email_no_email, "error");
+      return;
+    }
+    if (!(await confirm(t.quotation_send_email_confirm.replace("{email}", q.customer.email)))) return;
+    try {
+      await apiFetch(`/api/quotations/${id}/send-email`, { method: "POST" });
+      toast(t.quotation_send_email_success);
+    } catch (err) {
+      toast(apiError(err, t), "error");
+    }
+  }
+
   async function handleScreenshot() {
     if (!contentRef.current || !q) return;
     contentRef.current.classList.add("screenshot-mode");
@@ -248,6 +263,13 @@ export default function QuotationDetailPage() {
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
             {t.edit}
           </button>
+          {q.status !== "draft" && (
+            <button onClick={handleSendEmail}
+              className="inline-flex items-center gap-1.5 border border-gray-200 px-3.5 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors text-gray-700">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+              {t.quotation_send_email}
+            </button>
+          )}
           <button onClick={handleScreenshot}
             className="inline-flex items-center gap-1.5 border border-gray-200 px-3.5 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors text-gray-700">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>

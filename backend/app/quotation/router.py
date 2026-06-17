@@ -250,6 +250,42 @@ def update_item_resale_endpoint(
     return enrich_response(quotation)
 
 
+@router.post("/quotations/{quotation_id}/send-email")
+def send_quotation_email_endpoint(
+    quotation_id: int,
+    _user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
+    db: Session = Depends(get_db),
+):
+    from app.auth.models import User as AuthUser
+    from app.models import Setting
+    from app.quotation.email_service import send_quotation_email
+
+    quotation = get_quotation(db, quotation_id)
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    if quotation.status == QuotationStatus.draft:
+        raise HTTPException(status_code=400, detail="err_quotation_is_draft")
+    if not (quotation.customer.email or "").strip():
+        raise HTTPException(status_code=400, detail="err_customer_no_email")
+
+    settings_dict = {s.key: s.value for s in db.query(Setting).all()}
+    salesperson = db.query(AuthUser).filter(AuthUser.id == quotation.created_by).first()
+    salesperson_name = salesperson.full_name if salesperson else ""
+
+    try:
+        to_addr = send_quotation_email(
+            enrich_response(quotation), settings_dict, salesperson_name
+        )
+    except RuntimeError as exc:
+        # err_customer_no_email is already guarded above; remaining causes are
+        # configuration / transport failures.
+        code = str(exc)
+        status_code = 400 if code == "err_customer_no_email" else 500
+        raise HTTPException(status_code=status_code, detail=code)
+
+    return {"status": "sent", "to": to_addr}
+
+
 # --- Payments ---
 
 @router.get("/quotations/{quotation_id}/payments", response_model=list[PaymentResponse])
