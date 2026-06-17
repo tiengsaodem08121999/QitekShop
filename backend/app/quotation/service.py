@@ -81,15 +81,20 @@ def _check_duplicate_inventory_links(items) -> None:
 
 
 def annotate_inventory_conflicts(db: Session, quotation) -> None:
-    """Set transient `inventory_conflict` per sale item: true when its linked stock
-    item is claimed by another confirmed/delivered quotation."""
+    """Set transient per-item flags based on stock claimed by *other*
+    confirmed/delivered quotations:
+
+    - `inventory_conflict`: a sale line holding stock already claimed elsewhere.
+    - `resale_locked`: a trade-in line whose stock is being sold by another
+      confirmed/delivered quotation. Its resale price and deletion are locked in
+      the UI (the resale price is now governed by the selling quotation), while
+      its purchase price stays editable. (Bug 1)
+    """
     claimed = get_claimed_inventory_ids(db, exclude_quotation_id=quotation.id)
     for item in quotation.items:
-        item.inventory_conflict = (
-            not item.is_trade_in
-            and item.inventory_item_id is not None
-            and item.inventory_item_id in claimed
-        )
+        linked_and_claimed = item.inventory_item_id is not None and item.inventory_item_id in claimed
+        item.inventory_conflict = not item.is_trade_in and linked_and_claimed
+        item.resale_locked = item.is_trade_in and linked_and_claimed
 
 
 def _import_trade_in_stock(db: Session, quotation, old_trade_in_links: set) -> None:

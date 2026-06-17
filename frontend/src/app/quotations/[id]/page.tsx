@@ -355,6 +355,13 @@ export default function QuotationDetailPage() {
                   <td className="px-4 py-3 text-right tabular-nums text-gray-700 hide-on-screenshot">
                     {!showCost ? (
                       "•••"
+                    ) : item.resale_locked ? (
+                      <span
+                        className="px-2 py-1 text-gray-400 cursor-not-allowed"
+                        title={t.quotation_resale_locked}
+                      >
+                        {item.resale_price.toLocaleString()}
+                      </span>
                     ) : editingResaleId === item.id ? (
                       <input
                         autoFocus

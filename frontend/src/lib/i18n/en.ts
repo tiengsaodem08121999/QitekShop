@@ -166,6 +166,7 @@ const en = {
   quotation_paid: "Paid",
   quotation_trade_in: "Trade-in",
   quotation_resale_price: "Resale price",
+  quotation_resale_locked: "This trade-in is being sold by another confirmed quotation; its resale price and removal are locked",
   quotation_remaining: "Remaining",
   quotation_overpaid: "Overpaid",
   quotation_profit: "Profit",

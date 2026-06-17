@@ -47,6 +47,7 @@ export interface QuotationItem {
   serial_number: string | null;
   inventory_item_id: number | null;
   inventory_conflict?: boolean;
+  resale_locked?: boolean;
   warranty_count: number | null;
   warranty_unit: WarrantyUnit | null;
   warranty_start: string | null;

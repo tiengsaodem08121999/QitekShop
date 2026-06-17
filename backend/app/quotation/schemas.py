@@ -93,6 +93,7 @@ class QuotationItemResponse(DecimalModel):
     serial_number: Optional[str]
     inventory_item_id: Optional[int] = None
     inventory_conflict: bool = False
+    resale_locked: bool = False
     warranty_count: Optional[int]
     warranty_unit: Optional[WarrantyUnit]
     warranty_start: Optional[_dt.date]

@@ -168,6 +168,7 @@ const vi: Translations = {
   quotation_paid: "Đã thanh toán",
   quotation_trade_in: "Thu cũ",
   quotation_resale_price: "Giá bán",
+  quotation_resale_locked: "Sản phẩm thu cũ này đang được bán ở một báo giá đã xác nhận khác; giá bán và nút xóa đã bị khóa",
   quotation_remaining: "Còn lại",
   quotation_overpaid: "Trả dư",
   quotation_profit: "Lợi nhuận",
