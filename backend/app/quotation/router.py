@@ -389,5 +389,9 @@ def delete_return_endpoint(
     user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
     db: Session = Depends(get_db),
 ):
-    if not delete_return(db, return_id, quotation_id):
+    try:
+        deleted = delete_return(db, return_id, quotation_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not deleted:
         raise HTTPException(status_code=404, detail="Return not found")

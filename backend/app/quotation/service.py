@@ -714,11 +714,23 @@ def create_return(db: Session, quotation_id: int, data: ReturnCreate, user_id: i
         )
         .first()
     )
-    inventory_item_id = sale_line.inventory_item_id if sale_line else None
+    # The originally-sold stock item stays 'sold' to preserve the sale history.
+    # The returned unit re-enters stock as a NEW item whose cost basis is the
+    # refund we paid out, so it can be resold without disturbing the old sale.
+    restock = InventoryItem(
+        name=sale_line.name if sale_line else data.item_name,
+        serial_number=sale_line.serial_number if sale_line else None,
+        condition=sale_line.condition if sale_line else None,
+        purchase_price=refund_amount,
+        selling_price=0,
+        status=InventoryStatus.in_stock,
+    )
+    db.add(restock)
+    db.flush()
     ret = Return(
         quotation_id=quotation_id,
         item_name=data.item_name,
-        inventory_item_id=inventory_item_id,
+        inventory_item_id=restock.id,
         reason=data.reason,
         selling_price=data.selling_price,
         refund_percent=data.refund_percent,
@@ -728,11 +740,6 @@ def create_return(db: Session, quotation_id: int, data: ReturnCreate, user_id: i
         created_by=user_id,
     )
     db.add(ret)
-    # The returned product goes back into our stock, available to sell again.
-    if inventory_item_id is not None:
-        inv = db.query(InventoryItem).filter(InventoryItem.id == inventory_item_id).first()
-        if inv:
-            inv.status = InventoryStatus.in_stock
     db.flush()
     db.commit()
     db.refresh(ret)
@@ -778,14 +785,17 @@ def delete_return(db: Session, return_id: int, quotation_id: int) -> bool:
     if not ret:
         return False
 
-    # Undoing a return: the item is sold again if its quotation was delivered.
+    # Undoing a return removes the restock item it created. Block the undo if
+    # that item has since been sold or claimed by another quotation (the
+    # originally-sold item is untouched — it stayed 'sold').
     if ret.inventory_item_id is not None:
         from app.inventory.models import InventoryItem, InventoryStatus
-        quotation = db.query(Quotation).filter(Quotation.id == quotation_id).first()
-        if quotation and quotation.status == QuotationStatus.delivered:
-            inv = db.query(InventoryItem).filter(InventoryItem.id == ret.inventory_item_id).first()
-            if inv:
-                inv.status = InventoryStatus.sold
+        inv = db.query(InventoryItem).filter(InventoryItem.id == ret.inventory_item_id).first()
+        if inv is not None:
+            claimed = get_claimed_inventory_ids(db, exclude_quotation_id=quotation_id)
+            if inv.status == InventoryStatus.sold or inv.id in claimed:
+                raise ValueError("err_return_restock_sold")
+            db.delete(inv)
 
     db.delete(ret)
     db.commit()

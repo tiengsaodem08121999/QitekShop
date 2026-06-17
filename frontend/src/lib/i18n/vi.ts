@@ -75,6 +75,7 @@ const vi: Translations = {
   err_deliver_requires_linked: "Phải liên kết toàn bộ hàng bán với kho (đã nhập đủ hàng) trước khi giao hàng",
   err_deliver_not_confirmed: "Không thể giao hàng (báo giá phải đang ở trạng thái xác nhận)",
   err_payment_conflict: "Không thể thanh toán: có món đã bị báo giá khác giữ",
+  err_return_restock_sold: "Không thể xóa trả hàng: món vừa nhập lại kho đã được bán ở báo giá khác",
   err_quotation_is_draft: "Báo giá nháp không gửi được, cần xác nhận trước",
   err_customer_no_email: "Khách hàng chưa có email, không thể gửi báo giá",
   err_email_not_configured: "Chưa cấu hình SMTP để gửi email",

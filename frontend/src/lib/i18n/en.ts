@@ -73,6 +73,7 @@ const en = {
   err_deliver_requires_linked: "All sold products must be linked to stock (fully imported) before delivery",
   err_deliver_not_confirmed: "Cannot deliver (quotation must be confirmed)",
   err_payment_conflict: "Cannot take payment: some items are held by another quotation",
+  err_return_restock_sold: "Cannot delete this return: the restocked item has already been sold by another quotation",
   err_quotation_is_draft: "Draft quotations cannot be emailed; confirm it first",
   err_customer_no_email: "Customer has no email; cannot send the quotation",
   err_email_not_configured: "SMTP is not configured for sending email",
