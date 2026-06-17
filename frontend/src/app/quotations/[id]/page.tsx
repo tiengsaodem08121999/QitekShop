@@ -79,20 +79,6 @@ export default function QuotationDetailPage() {
     }
   }
 
-  async function handleExportPDF() {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/quotations/${id}/pdf`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `quotation-${id}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   async function handleScreenshot() {
     if (!contentRef.current || !q) return;
     contentRef.current.classList.add("screenshot-mode");

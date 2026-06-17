@@ -133,7 +133,6 @@ const en = {
   quotation_delete: "Delete",
   quotation_delete_blocked: "Cannot delete: quotation has payments or returns",
   quotation_delete_success: "Quotation deleted",
-  quotation_export_pdf: "Export PDF",
   quotation_screenshot: "Screenshot",
   quotation_products: "Products",
   quotation_trade_ins: "Trade-ins",

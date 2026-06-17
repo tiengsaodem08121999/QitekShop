@@ -135,7 +135,6 @@ const vi: Translations = {
   quotation_delete: "Xóa",
   quotation_delete_blocked: "Đơn đã có thanh toán hoặc trả hàng, không thể xóa",
   quotation_delete_success: "Xóa báo giá thành công",
-  quotation_export_pdf: "Xuất PDF",
   quotation_screenshot: "Chụp màn hình",
   quotation_products: "Sản phẩm",
   quotation_trade_ins: "Thu cũ",

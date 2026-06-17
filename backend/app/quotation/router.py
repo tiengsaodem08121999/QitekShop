@@ -2,7 +2,6 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_role
@@ -188,7 +187,10 @@ def confirm_quotation_endpoint(
     user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
     db: Session = Depends(get_db),
 ):
-    quotation = confirm_quotation(db, quotation_id)
+    try:
+        quotation = confirm_quotation(db, quotation_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     if not quotation:
         raise HTTPException(status_code=400, detail="Cannot confirm quotation")
     return enrich_response(quotation)
@@ -246,31 +248,6 @@ def update_item_resale_endpoint(
     if not quotation:
         raise HTTPException(status_code=404, detail="Trade-in item not found")
     return enrich_response(quotation)
-
-
-@router.get("/quotations/{quotation_id}/pdf")
-def export_pdf_endpoint(
-    quotation_id: int,
-    _user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    from app.models import Setting
-    from app.quotation.pdf import generate_quotation_pdf
-
-    quotation = get_quotation(db, quotation_id)
-    if not quotation:
-        raise HTTPException(status_code=404, detail="Quotation not found")
-
-    settings_rows = db.query(Setting).all()
-    settings_dict = {s.key: s.value for s in settings_rows}
-
-    pdf_bytes = generate_quotation_pdf(quotation, settings_dict)
-
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=bao-gia-{quotation_id}.pdf"},
-    )
 
 
 # --- Payments ---

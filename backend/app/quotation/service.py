@@ -42,7 +42,7 @@ def update_customer(db: Session, customer_id: int, **kwargs) -> Optional[Custome
 def get_claimed_inventory_ids(db: Session, exclude_quotation_id: Optional[int] = None) -> set:
     """Stock item ids claimed by a confirmed/delivered quotation."""
     q = (
-        db.query(QuotationItem.inventory_item_id)
+        db.query(QuotationItem.quotation_id, QuotationItem.inventory_item_id)
         .join(Quotation, Quotation.id == QuotationItem.quotation_id)
         .filter(
             Quotation.status.in_([QuotationStatus.confirmed, QuotationStatus.delivered]),
@@ -52,13 +52,17 @@ def get_claimed_inventory_ids(db: Session, exclude_quotation_id: Optional[int] =
     )
     if exclude_quotation_id is not None:
         q = q.filter(QuotationItem.quotation_id != exclude_quotation_id)
-    claimed = {row[0] for row in q.all()}
-    # A quotation return sends the item back to stock -> no longer claimed.
-    returned = {
-        row[0]
-        for row in db.query(Return.inventory_item_id).filter(Return.inventory_item_id.isnot(None)).all()
+    claims = q.all()  # (quotation_id, inventory_item_id)
+    # A return sends the item back to stock, releasing only the *returning*
+    # quotation's claim. Netting per (quotation, item) so another quotation that
+    # has since re-claimed the back-in-stock item still counts as claiming it.
+    returned_pairs = {
+        (row[0], row[1])
+        for row in db.query(Return.quotation_id, Return.inventory_item_id)
+        .filter(Return.inventory_item_id.isnot(None))
+        .all()
     }
-    return claimed - returned
+    return {inv_id for (qid, inv_id) in claims if (qid, inv_id) not in returned_pairs}
 
 
 def get_referenced_inventory_ids(db: Session) -> set:
@@ -361,6 +365,11 @@ def confirm_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
     quotation = get_quotation(db, quotation_id)
     if not quotation or quotation.status != QuotationStatus.draft:
         return None
+    # A committed quotation must not grab a stock item already held elsewhere.
+    claimed = get_claimed_inventory_ids(db, exclude_quotation_id=quotation_id)
+    if any(i.inventory_item_id in claimed for i in quotation.items
+           if not i.is_trade_in and i.inventory_item_id is not None):
+        raise ValueError("err_item_conflict")
     quotation.status = QuotationStatus.confirmed
     db.commit()
     db.refresh(quotation)
