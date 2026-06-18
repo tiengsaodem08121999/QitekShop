@@ -68,19 +68,32 @@ def list_customers_endpoint(
     # Calculate total purchased (selling_price of non-trade-in items) per customer
     from sqlalchemy import func as sa_func
     totals = {}
+    purchases = {}
     if customer_ids:
         rows = (
-            db.query(Quotation.customer_id, sa_func.coalesce(sa_func.sum(QuotationItem.selling_price), 0))
+            db.query(
+                Quotation.customer_id,
+                sa_func.coalesce(sa_func.sum(QuotationItem.selling_price), 0),
+                sa_func.coalesce(sa_func.sum(QuotationItem.purchase_price), 0),
+            )
             .join(QuotationItem, QuotationItem.quotation_id == Quotation.id)
             .filter(Quotation.customer_id.in_(customer_ids), QuotationItem.is_trade_in == False)
             .group_by(Quotation.customer_id)
             .all()
         )
         totals = {row[0]: int(row[1]) for row in rows}
+        purchases = {row[0]: int(row[2]) for row in rows}
     result = []
     for c in items:
         data = CustomerResponse.model_validate(c).model_dump()
-        data["total_purchased"] = totals.get(c.id, 0)
+        sum_selling = totals.get(c.id, 0)
+        sum_purchase = purchases.get(c.id, 0)
+        data["total_purchased"] = sum_selling
+        data["profit_margin_pct"] = (
+            round((sum_selling - sum_purchase) / sum_purchase * 100)
+            if sum_purchase > 0
+            else None
+        )
         result.append(data)
     return {"items": result, "total": total, "page": page, "limit": limit}
 

@@ -101,9 +101,10 @@ const en = {
 
   // Dashboard
   dashboard_title: "Dashboard",
-  dashboard_quotations_month: "Quotations this month",
-  dashboard_income_month: "Monthly income",
-  dashboard_expense_month: "Monthly expense",
+  dashboard_revenue: "Revenue",
+  dashboard_profit: "Profit",
+  dashboard_year_label: "Year",
+  dashboard_month_labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
 
   // Quotations list
   quotations_title: "Quotations",

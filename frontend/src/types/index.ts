@@ -15,6 +15,7 @@ export interface Customer {
   address: string | null;
   notes: string | null;
   total_purchased?: number;
+  profit_margin_pct?: number | null;
   created_at: string;
 }
 
@@ -163,12 +164,15 @@ export interface PaginatedResponse<T> {
 
 export type YearlySummary = MonthlySummary[];
 
-export interface DashboardData {
-  quotation_count: number;
-  total_income: number;
-  total_expense: number;
+export interface DashboardMonth {
   month: number;
+  revenue: number;
+  profit: number;
+}
+
+export interface DashboardData {
   year: number;
+  months: DashboardMonth[];
 }
 
 export type EventStatus = "pending" | "in_progress" | "done" | "cancelled";
