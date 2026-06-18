@@ -188,14 +188,36 @@ def create_transaction(db: Session, data: TransactionCreate, user_id: int) -> Tr
     return txn
 
 
+def _rollback_items(db: Session, txn_id: int) -> None:
+    """Return all items linked to txn_id back to stock."""
+    items = (
+        db.query(InventoryItem)
+        .filter(InventoryItem.transaction_id == txn_id)
+        .all()
+    )
+    for it in items:
+        it.status = InventoryStatus.in_stock
+        it.selling_price = None
+        it.transaction_id = None
+    db.flush()
+
+
 def update_transaction(db: Session, txn_id: int, data: TransactionCreate) -> Optional[Transaction]:
     txn = db.query(Transaction).filter(Transaction.id == txn_id, Transaction.is_deleted == False).first()
     if not txn:
         return None
-    for key, value in data.model_dump(exclude_unset=True).items():
+    new_type = data.type if data.type is not None else txn.type
+    sold = data.sold_items or []
+    if sold and new_type != TransactionType.thu:
+        raise HTTPException(status_code=400, detail="err_txn_sold_requires_income")
+    for key, value in data.model_dump(exclude={"sold_items"}, exclude_unset=True).items():
         setattr(txn, key, value)
+    _rollback_items(db, txn_id)
+    if new_type == TransactionType.thu:
+        _sell_items(db, txn_id, sold)
     db.commit()
     db.refresh(txn)
+    attach_sold_items(db, [txn])
     return txn
 
 
