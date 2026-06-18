@@ -28,7 +28,10 @@ def list_inventory(
         query = query.filter(InventoryItem.id.notin_(exclude_ids))
     total = query.count()
     order = InventoryItem.name if sort == "name" else InventoryItem.created_at.desc()
-    items = query.order_by(order).offset((page - 1) * limit).limit(limit).all()
+    query = query.order_by(order)
+    if limit and limit > 0:  # limit <= 0 means "return all"
+        query = query.offset((page - 1) * limit).limit(limit)
+    items = query.all()
     return items, total
 
 

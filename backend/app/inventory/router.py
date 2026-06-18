@@ -24,7 +24,7 @@ def list_inventory_endpoint(
     available: bool = False,
     exclude_quotation_id: Optional[int] = None,
     page: int = Query(1, ge=1),
-    limit: int = Query(100, ge=1, le=200),
+    limit: int = Query(100, ge=0),  # 0 = return all items
     sort: Optional[str] = None,
     _user: User = Depends(get_current_user),
     db: Session = Depends(get_db),

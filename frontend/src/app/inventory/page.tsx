@@ -47,7 +47,7 @@ export default function InventoryPage() {
   function load() {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
-    params.set("limit", "200");
+    params.set("limit", "0"); // 0 = load all items (client-side pagination)
     apiFetch<PaginatedResponse<InventoryItem>>(`/api/inventory?${params}`)
       .then(setData)
       .catch((err) => toast(apiError(err, t), "error"));
