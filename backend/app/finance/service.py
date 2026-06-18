@@ -94,6 +94,24 @@ def get_yearly_summary(db: Session, year: int) -> list[dict]:
     return [get_monthly_summary(db, year, m) for m in months]
 
 
+def get_yearly_revenue_profit(db: Session, year: int) -> list[dict]:
+    """Return exactly 12 months of {month, revenue, profit}, zero-filled.
+
+    revenue = total income (thu); profit = income - expense (thu - chi).
+    """
+    series = []
+    for month in range(1, 13):
+        income, expense = _get_month_totals(db, year, month)
+        series.append(
+            {
+                "month": month,
+                "revenue": int(income),
+                "profit": int(income - expense),
+            }
+        )
+    return series
+
+
 def list_transactions(db: Session, year: int, month: int, page: int = 1, limit: int = 50):
     query = (
         db.query(Transaction)
