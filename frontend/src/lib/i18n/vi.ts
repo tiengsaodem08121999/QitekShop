@@ -103,9 +103,10 @@ const vi: Translations = {
 
   // Dashboard
   dashboard_title: "Tổng quan",
-  dashboard_quotations_month: "Báo giá tháng này",
-  dashboard_income_month: "Tổng thu tháng",
-  dashboard_expense_month: "Tổng chi tháng",
+  dashboard_revenue: "Doanh thu",
+  dashboard_profit: "Lợi nhuận",
+  dashboard_year_label: "Năm",
+  dashboard_month_labels: ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"],
 
   // Quotations list
   quotations_title: "Báo giá",
