@@ -130,3 +130,12 @@ def test_update_type_to_chi_rolls_back_all(client, admin_user):
     assert r.status_code == 200 and r.json()["sold_items"] == []
     inv = client.get("/api/inventory", headers=auth_headers(admin_user)).json()["items"][0]
     assert inv["status"] == "in_stock" and inv["selling_price"] is None
+
+
+def test_delete_rolls_back_items(client, admin_user):
+    a = _item(client, admin_user, name="A")
+    txn = _create_txn_with(client, admin_user, [(a["id"], 100)])
+    r = client.delete(f"/api/finance/transactions/{txn['id']}", headers=auth_headers(admin_user))
+    assert r.status_code == 204
+    inv = client.get("/api/inventory", headers=auth_headers(admin_user)).json()["items"][0]
+    assert inv["status"] == "in_stock" and inv["selling_price"] is None

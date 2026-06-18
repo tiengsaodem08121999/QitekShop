@@ -225,6 +225,7 @@ def soft_delete_transaction(db: Session, txn_id: int) -> bool:
     txn = db.query(Transaction).filter(Transaction.id == txn_id, Transaction.is_deleted == False).first()
     if not txn:
         return False
+    _rollback_items(db, txn_id)
     txn.is_deleted = True
     db.commit()
     return True
