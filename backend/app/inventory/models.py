@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import DateTime, Enum, Numeric, String, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -27,6 +27,9 @@ class InventoryItem(Base):
     supplier: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     status: Mapped[InventoryStatus] = mapped_column(
         Enum(InventoryStatus), default=InventoryStatus.in_stock, server_default="in_stock"
+    )
+    transaction_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("transactions.id"), nullable=True, index=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
