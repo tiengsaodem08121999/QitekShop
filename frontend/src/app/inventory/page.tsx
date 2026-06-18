@@ -40,7 +40,9 @@ export default function InventoryPage() {
   const [deleteItem, setDeleteItem] = useState<InventoryItem | undefined>();
   const [deleting, setDeleting] = useState(false);
   const [showSelling, setShowSelling] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<"all" | "in_stock" | "sold">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "in_stock" | "in_stock_available" | "in_stock_claimed" | "sold"
+  >("all");
 
   function load() {
     const params = new URLSearchParams();
@@ -69,7 +71,16 @@ export default function InventoryPage() {
   }
 
   const items = data?.items ?? [];
-  const filteredItems = statusFilter === "all" ? items : items.filter((i) => i.status === statusFilter);
+  const filteredItems = items.filter((i) => {
+    switch (statusFilter) {
+      case "in_stock": return i.status === "in_stock";
+      case "in_stock_available": return i.status === "in_stock" && !i.is_claimed;
+      case "in_stock_claimed": return i.status === "in_stock" && !!i.is_claimed;
+      case "sold": return i.status === "sold";
+      default: return true; // all
+    }
+  });
+  const totalPurchase = filteredItems.reduce((sum, i) => sum + (i.purchase_price || 0), 0);
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageItems = filteredItems.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
@@ -96,10 +107,12 @@ export default function InventoryPage() {
             <input placeholder={t.inventory_search} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors" />
           </div>
-          <select defaultValue={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | "in_stock" | "sold")}
+          <select defaultValue={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors">
             <option value="all">{t.inventory_status_all}</option>
             <option value="in_stock">{t.inventory_status_in_stock}</option>
+            <option value="in_stock_available">{t.inventory_status_in_stock_available}</option>
+            <option value="in_stock_claimed">{t.inventory_status_in_stock_claimed}</option>
             <option value="sold">{t.inventory_status_sold}</option>
           </select>
         </div>
@@ -165,7 +178,8 @@ export default function InventoryPage() {
           </tbody>
         </table>
         </div>
-        <Pagination page={safePage} pageSize={PAGE_SIZE} total={filteredItems.length} onPageChange={setPage} />
+        <Pagination page={safePage} pageSize={PAGE_SIZE} total={filteredItems.length} onPageChange={setPage}
+          center={<span className="text-gray-600 tabular-nums font-medium">{t.inventory_total_purchase}: {totalPurchase.toLocaleString()}</span>} />
       </div>
       </div>
 
