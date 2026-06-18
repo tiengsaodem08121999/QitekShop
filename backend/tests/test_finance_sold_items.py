@@ -41,3 +41,40 @@ def test_schemas_accept_and_default_sold_items():
     assert c2.sold_items is None
     fields = TransactionResponse.model_fields
     assert "sold_items" in fields
+
+
+def test_create_sells_item(client, admin_user):
+    it = _item(client, admin_user)
+    body = _txn_body(sold_items=[{"inventory_item_id": it["id"], "selling_price": 1_200_000}])
+    r = client.post("/api/finance/transactions", json=body, headers=auth_headers(admin_user))
+    assert r.status_code == 201, r.text
+    data = r.json()
+    assert len(data["sold_items"]) == 1
+    assert data["sold_items"][0]["inventory_item_id"] == it["id"]
+    assert data["sold_items"][0]["selling_price"] == 1_200_000
+    inv = client.get("/api/inventory", headers=auth_headers(admin_user)).json()["items"][0]
+    assert inv["status"] == "sold" and inv["selling_price"] == 1_200_000
+
+
+def test_create_chi_with_sold_items_rejected(client, admin_user):
+    it = _item(client, admin_user)
+    body = _txn_body(type="chi",
+                     sold_items=[{"inventory_item_id": it["id"], "selling_price": 100}])
+    r = client.post("/api/finance/transactions", json=body, headers=auth_headers(admin_user))
+    assert r.status_code == 400
+
+
+def test_create_rejects_already_sold_item(client, admin_user):
+    it = _item(client, admin_user)
+    first = _txn_body(sold_items=[{"inventory_item_id": it["id"], "selling_price": 100}])
+    client.post("/api/finance/transactions", json=first, headers=auth_headers(admin_user))
+    second = _txn_body(sold_items=[{"inventory_item_id": it["id"], "selling_price": 200}])
+    r = client.post("/api/finance/transactions", json=second, headers=auth_headers(admin_user))
+    assert r.status_code == 400
+
+
+def test_create_rejects_nonpositive_price(client, admin_user):
+    it = _item(client, admin_user)
+    body = _txn_body(sold_items=[{"inventory_item_id": it["id"], "selling_price": 0}])
+    r = client.post("/api/finance/transactions", json=body, headers=auth_headers(admin_user))
+    assert r.status_code == 400
