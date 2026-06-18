@@ -11,6 +11,7 @@ from app.finance.schemas import (
     TransactionResponse,
 )
 from app.finance.service import (
+    attach_sold_items,
     create_transaction,
     get_monthly_summary,
     get_yearly_summary,
@@ -32,6 +33,7 @@ def list_transactions_endpoint(
     db: Session = Depends(get_db),
 ):
     items, total = list_transactions(db, year, month, page, limit)
+    attach_sold_items(db, items)
     return {
         "items": [TransactionResponse.model_validate(t) for t in items],
         "total": total,

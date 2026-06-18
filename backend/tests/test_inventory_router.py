@@ -79,3 +79,12 @@ def test_available_includes_own_quotation_claimed(client, sales_user):
 
 def test_accountant_cannot_create(client, accountant_user):
     assert client.post("/api/inventory", json={"name": "x"}, headers=auth_headers(accountant_user)).status_code == 403
+
+
+def test_limit_zero_returns_all(client, sales_user):
+    for n in ("A", "B", "C"):
+        _create(client, sales_user, name=n, serial_number=f"SN{n}")
+    paged = client.get("/api/inventory?limit=2&page=1", headers=auth_headers(sales_user)).json()
+    assert len(paged["items"]) == 2 and paged["total"] == 3
+    all_items = client.get("/api/inventory?limit=0", headers=auth_headers(sales_user)).json()
+    assert len(all_items["items"]) == 3 and all_items["total"] == 3

@@ -2,11 +2,13 @@
 from decimal import Decimal
 from typing import Optional, Tuple
 
+from fastapi import HTTPException
 from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 
 from app.finance.models import Transaction, TransactionType
 from app.finance.schemas import TransactionCreate
+from app.inventory.models import InventoryItem, InventoryStatus
 from app.models import Setting
 
 
@@ -127,22 +129,95 @@ def list_transactions(db: Session, year: int, month: int, page: int = 1, limit: 
     return items, total
 
 
+def attach_sold_items(db: Session, txns: list[Transaction]) -> None:
+    """Attach a `.sold_items` list of dicts to each Transaction instance."""
+    ids = [t.id for t in txns]
+    by_txn: dict[int, list[dict]] = {}
+    if ids:
+        rows = (
+            db.query(InventoryItem)
+            .filter(InventoryItem.transaction_id.in_(ids))
+            .all()
+        )
+        for it in rows:
+            by_txn.setdefault(it.transaction_id, []).append(
+                {
+                    "inventory_item_id": it.id,
+                    "name": it.name,
+                    "selling_price": it.selling_price,
+                }
+            )
+    for t in txns:
+        t.sold_items = by_txn.get(t.id, [])
+
+
+def _sell_items(db: Session, txn_id: int, sold_items: list) -> None:
+    """Validate and mark each item sold, linking it to txn_id."""
+    from app.quotation.service import get_claimed_inventory_ids
+
+    claimed = get_claimed_inventory_ids(db)
+    for si in sold_items:
+        if si.selling_price is None or si.selling_price <= 0:
+            raise HTTPException(status_code=400, detail="err_txn_sold_price_invalid")
+        item = (
+            db.query(InventoryItem)
+            .filter(InventoryItem.id == si.inventory_item_id)
+            .first()
+        )
+        if item is None:
+            raise HTTPException(status_code=400, detail="err_txn_sold_item_not_found")
+        if item.status != InventoryStatus.in_stock or item.id in claimed:
+            raise HTTPException(status_code=400, detail="err_txn_sold_item_unavailable")
+        item.status = InventoryStatus.sold
+        item.selling_price = si.selling_price
+        item.transaction_id = txn_id
+    db.flush()
+
+
 def create_transaction(db: Session, data: TransactionCreate, user_id: int) -> Transaction:
-    txn = Transaction(**data.model_dump(), created_by=user_id)
+    sold = data.sold_items or []
+    if sold and data.type != TransactionType.thu:
+        raise HTTPException(status_code=400, detail="err_txn_sold_requires_income")
+    txn = Transaction(**data.model_dump(exclude={"sold_items"}), created_by=user_id)
     db.add(txn)
+    db.flush()
+    _sell_items(db, txn.id, sold)
     db.commit()
     db.refresh(txn)
+    attach_sold_items(db, [txn])
     return txn
+
+
+def _rollback_items(db: Session, txn_id: int) -> None:
+    """Return all items linked to txn_id back to stock."""
+    items = (
+        db.query(InventoryItem)
+        .filter(InventoryItem.transaction_id == txn_id)
+        .all()
+    )
+    for it in items:
+        it.status = InventoryStatus.in_stock
+        it.selling_price = None
+        it.transaction_id = None
+    db.flush()
 
 
 def update_transaction(db: Session, txn_id: int, data: TransactionCreate) -> Optional[Transaction]:
     txn = db.query(Transaction).filter(Transaction.id == txn_id, Transaction.is_deleted == False).first()
     if not txn:
         return None
-    for key, value in data.model_dump(exclude_unset=True).items():
+    new_type = data.type if data.type is not None else txn.type
+    sold = data.sold_items or []
+    if sold and new_type != TransactionType.thu:
+        raise HTTPException(status_code=400, detail="err_txn_sold_requires_income")
+    for key, value in data.model_dump(exclude={"sold_items"}, exclude_unset=True).items():
         setattr(txn, key, value)
+    _rollback_items(db, txn_id)
+    if new_type == TransactionType.thu:
+        _sell_items(db, txn_id, sold)
     db.commit()
     db.refresh(txn)
+    attach_sold_items(db, [txn])
     return txn
 
 
@@ -150,6 +225,7 @@ def soft_delete_transaction(db: Session, txn_id: int) -> bool:
     txn = db.query(Transaction).filter(Transaction.id == txn_id, Transaction.is_deleted == False).first()
     if not txn:
         return False
+    _rollback_items(db, txn_id)
     txn.is_deleted = True
     db.commit()
     return True
