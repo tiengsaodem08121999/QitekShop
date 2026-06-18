@@ -30,3 +30,14 @@ def test_inventory_item_has_transaction_id_column(db_session, admin_user):
     db_session.commit()
     db_session.refresh(it)
     assert it.transaction_id == txn.id
+
+
+def test_schemas_accept_and_default_sold_items():
+    from app.finance.schemas import TransactionCreate, TransactionResponse
+    c = TransactionCreate(date="2026-06-18", description="x", type="thu", amount=100,
+                          sold_items=[{"inventory_item_id": 1, "selling_price": 500}])
+    assert c.sold_items[0].inventory_item_id == 1
+    c2 = TransactionCreate(date="2026-06-18", description="x", type="chi", amount=100)
+    assert c2.sold_items is None
+    fields = TransactionResponse.model_fields
+    assert "sold_items" in fields
