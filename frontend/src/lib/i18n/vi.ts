@@ -308,6 +308,12 @@ const vi: Translations = {
   txn_notes: "Ghi chú",
   txn_type_income: "Thu",
   txn_type_expense: "Chi",
+  txn_sell_section: "Bán hàng từ kho",
+  txn_sell_add_item: "Thêm item để bán…",
+  txn_sell_price: "Giá bán",
+  txn_sell_remove: "Xóa",
+  txn_sell_switch_warning: "Các item đã gắn sẽ được trả về kho khi bạn lưu.",
+  txn_sell_no_items: "Không có item nào trong kho.",
 
   // Settings
   settings_title: "Cài đặt",

@@ -134,6 +134,17 @@ export interface QuotationListItem {
 
 export type TransactionType = "thu" | "chi";
 
+export interface SoldItemInput {
+  inventory_item_id: number;
+  selling_price: number;
+}
+
+export interface SoldItem {
+  inventory_item_id: number;
+  name: string;
+  selling_price: number;
+}
+
 export interface Transaction {
   id: number;
   date: string;
@@ -143,6 +154,7 @@ export interface Transaction {
   notes: string | null;
   created_by: number;
   created_at: string;
+  sold_items?: SoldItem[];
 }
 
 export interface MonthlySummary {

@@ -306,6 +306,12 @@ const en = {
   txn_notes: "Notes",
   txn_type_income: "Income",
   txn_type_expense: "Expense",
+  txn_sell_section: "Sell items from stock",
+  txn_sell_add_item: "Add item to sell…",
+  txn_sell_price: "Sale price",
+  txn_sell_remove: "Remove",
+  txn_sell_switch_warning: "Linked items will be returned to stock when you save.",
+  txn_sell_no_items: "No items available in stock.",
 
   // Settings
   settings_title: "Settings",
