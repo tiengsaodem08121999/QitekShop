@@ -86,7 +86,14 @@ export default function CustomersPage() {
               <tr key={c.id} className="hover:bg-gray-50/70 transition-colors">
                 <td className="px-5 py-3.5"><div className="font-medium text-gray-800">{c.name}</div></td>
                 <td className="px-4 py-3.5 text-gray-600">{c.phone || t.dash}</td>
-                <td className="px-4 py-3.5 text-right tabular-nums font-medium text-gray-700">{(c.total_purchased || 0).toLocaleString()}</td>
+                <td className="px-4 py-3.5 text-right tabular-nums font-medium text-gray-700">
+                  {(c.total_purchased || 0).toLocaleString()}
+                  {c.profit_margin_pct != null && (
+                    <span className={`ml-1.5 text-xs font-medium ${c.profit_margin_pct >= 0 ? "text-green-600" : "text-red-500"}`}>
+                      ({c.profit_margin_pct >= 0 ? "+" : ""}{c.profit_margin_pct}%)
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3.5 text-gray-600">{c.email || t.dash}</td>
                 <td className="px-4 py-3.5 text-gray-500 max-w-[200px] truncate">{c.address || t.dash}</td>
                 <td className="px-4 py-3.5 text-gray-400 max-w-[150px] truncate">{c.notes || t.dash}</td>
