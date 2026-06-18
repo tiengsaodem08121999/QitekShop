@@ -1,4 +1,7 @@
 FROM node:20-alpine AS base
+# Next.js 16's SWC binary is a glibc (gnu) build; Alpine uses musl.
+# libc6-compat + gcompat provide the glibc loader shim so it can run.
+RUN apk add --no-cache libc6-compat gcompat
 
 # --- Dependencies ---
 FROM base AS deps
