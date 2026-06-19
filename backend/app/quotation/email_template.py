@@ -364,7 +364,32 @@ def build_quotation_email_html(
         </td></tr>"""
 
     # ===== amount-due banner =====
-    due_banner = f"""
+    if remaining == 0:
+        paid_badge = (
+            f'<span style="display:inline-block;width:34px;height:34px;line-height:34px;'
+            f'text-align:center;border-radius:50%;background:{_GREEN};color:#ffffff;'
+            f'font-size:18px;font-weight:800;">&#10003;</span>'
+        )
+        due_banner = f"""
+    <tr><td style="padding:16px 28px 8px 28px;">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+             style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;"><tr>
+        <td valign="middle" width="42%" style="padding:18px 22px;">
+          <table cellpadding="0" cellspacing="0" role="presentation"><tr>
+            <td valign="middle" style="padding-right:12px;">{paid_badge}</td>
+            <td valign="middle">
+              <div style="font-size:15px;font-weight:800;color:{_GREEN};letter-spacing:0.3px;">ĐƠN HÀNG ĐÃ THANH TOÁN ĐẦY ĐỦ</div>
+              <div style="font-size:13px;color:{_GRAY};margin-top:2px;">Hoàn tất</div>
+            </td>
+          </tr></table>
+        </td>
+        <td valign="middle" style="padding:18px 22px;border-left:1px solid #bbf7d0;">
+          <div style="font-size:12px;color:{_GRAY};">Cảm ơn Quý khách đã hoàn tất thanh toán. Rất mong được tiếp tục phục vụ Quý khách!</div>
+        </td>
+      </tr></table>
+    </td></tr>"""
+    else:
+        due_banner = f"""
     <tr><td style="padding:16px 28px 8px 28px;">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
              style="background:#fef2f3;border:1px solid #f6c9cd;border-radius:12px;"><tr>

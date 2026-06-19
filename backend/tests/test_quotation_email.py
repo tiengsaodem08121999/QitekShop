@@ -199,6 +199,22 @@ def test_remaining_row_shown_when_partial(db_session, sales_user):
     assert "CÒN THANH TOÁN" in html
 
 
+def test_fully_paid_banner_is_green(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=8300000)  # remaining 0
+    html = build_quotation_email_html(enrich_response(q), {})
+    assert "ĐƠN HÀNG ĐÃ THANH TOÁN ĐẦY ĐỦ" in html
+    assert "Cảm ơn Quý khách đã hoàn tất thanh toán" in html
+    # red dunning message must NOT appear when fully paid
+    assert "vui lòng thanh toán số tiền còn lại" not in html
+
+
+def test_partial_banner_still_red_message(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=3000000)  # remaining > 0
+    html = build_quotation_email_html(enrich_response(q), {})
+    assert "vui lòng thanh toán số tiền còn lại" in html
+    assert "ĐƠN HÀNG ĐÃ THANH TOÁN ĐẦY ĐỦ" not in html
+
+
 def test_header_subtitle_removed(db_session, sales_user):
     q = _confirmed_quotation(db_session, sales_user)
     html = build_quotation_email_html(enrich_response(q), {"shop_name": "QITEK COMPUTER"})
