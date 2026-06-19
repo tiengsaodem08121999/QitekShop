@@ -231,7 +231,7 @@ def build_quotation_email_html(
     if total_trade_in:
         summary_lines += summary_line(icon("recycle", 17), "Giá trị thu cũ", "-" + _vnd(total_trade_in), _GREEN)
     if total_paid:
-        summary_lines += summary_line(icon("card", 17), "Đã thanh toán", "-" + _vnd(total_paid), _GREEN)
+        summary_lines += summary_line(icon("card", 17), "Đã thanh toán", _vnd(total_paid), _GREEN)
     summary = f"""
     <tr><td style="padding:10px 28px;">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"

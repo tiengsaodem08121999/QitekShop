@@ -32,6 +32,22 @@ def _confirmed_quotation(db, sales_user, *, email="cust@example.com"):
     return q
 
 
+def _quotation_with_payment(db, sales_user, paid):
+    """A confirmed quotation (total_amount 8.300.000) plus one cash payment of `paid`.
+    paid == 8300000 -> remaining 0 (fully paid); paid < 8300000 -> partial."""
+    from datetime import date as _date
+    from app.quotation.models import Payment, PaymentMethod, PaymentType
+    q = _confirmed_quotation(db, sales_user)
+    db.add(Payment(
+        quotation_id=q.id, amount=paid, method=PaymentMethod.cash,
+        payment_type=PaymentType.payment, date=_date(2026, 6, 19),
+        created_by=sales_user.id,
+    ))
+    db.commit()
+    db.refresh(q)
+    return q
+
+
 def test_send_email_rejects_draft(client, sales_user, db_session):
     cust = Customer(name="A", email="a@example.com")
     db_session.add(cust)
@@ -161,6 +177,14 @@ def test_icons_use_cid_when_available_else_emoji(db_session, sales_user):
     html2 = build_quotation_email_html(enriched, {}, icons=set())
     assert "🛒" in html2
     assert 'cid:ic_cart' not in html2
+
+
+def test_paid_amount_shown_positive(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=3000000)  # partial
+    html = build_quotation_email_html(enrich_response(q), {})
+    assert "Đã thanh toán" in html
+    assert "3.000.000đ" in html
+    assert "-3.000.000đ" not in html
 
 
 def test_header_subtitle_removed(db_session, sales_user):
