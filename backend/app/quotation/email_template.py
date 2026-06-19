@@ -373,17 +373,14 @@ def build_quotation_email_html(
     <tr><td style="padding:16px 28px 8px 28px;">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
              style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;"><tr>
-        <td valign="middle" width="42%" style="padding:18px 22px;">
+        <td valign="middle" style="padding:18px 22px;">
           <table cellpadding="0" cellspacing="0" role="presentation"><tr>
             <td valign="middle" style="padding-right:12px;">{paid_badge}</td>
             <td valign="middle">
               <div style="font-size:15px;font-weight:800;color:{_GREEN};letter-spacing:0.3px;">ĐƠN HÀNG ĐÃ THANH TOÁN ĐẦY ĐỦ</div>
-              <div style="font-size:13px;color:{_GRAY};margin-top:2px;">Hoàn tất</div>
             </td>
           </tr></table>
-        </td>
-        <td valign="middle" style="padding:18px 22px;border-left:1px solid #bbf7d0;">
-          <div style="font-size:12px;color:{_GRAY};">Cảm ơn Quý khách đã hoàn tất thanh toán. Rất mong được tiếp tục phục vụ Quý khách!</div>
+          <div style="font-size:12px;color:{_GRAY};margin-top:10px;">Cảm ơn Quý khách đã hoàn tất thanh toán. Rất mong được tiếp tục phục vụ Quý khách!</div>
         </td>
       </tr></table>
     </td></tr>"""
@@ -408,7 +405,7 @@ def build_quotation_email_html(
     </td></tr>"""
 
     # ===== closing + footer =====
-    closing = f"""
+    closing = "" if remaining == 0 else f"""
     <tr><td style="padding:14px 28px 18px 28px;text-align:center;">
       <span style="font-size:14px;font-weight:700;color:{_NAVY};">Trân trọng cảm ơn và rất mong được phục vụ Quý khách!</span>
     </td></tr>"""

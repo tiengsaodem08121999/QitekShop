@@ -206,6 +206,9 @@ def test_fully_paid_banner_is_green(db_session, sales_user):
     assert "Cảm ơn Quý khách đã hoàn tất thanh toán" in html
     # red dunning message must NOT appear when fully paid
     assert "vui lòng thanh toán số tiền còn lại" not in html
+    # "Hoàn tất" subtext and the closing line are dropped when fully paid
+    assert "Hoàn tất" not in html
+    assert "Trân trọng cảm ơn và rất mong được phục vụ Quý khách" not in html
 
 
 def test_partial_banner_still_red_message(db_session, sales_user):
@@ -213,6 +216,8 @@ def test_partial_banner_still_red_message(db_session, sales_user):
     html = build_quotation_email_html(enrich_response(q), {})
     assert "vui lòng thanh toán số tiền còn lại" in html
     assert "ĐƠN HÀNG ĐÃ THANH TOÁN ĐẦY ĐỦ" not in html
+    # closing line still present when not fully paid
+    assert "Trân trọng cảm ơn và rất mong được phục vụ Quý khách" in html
 
 
 def test_greeting_thanks_line_removed(db_session, sales_user):
