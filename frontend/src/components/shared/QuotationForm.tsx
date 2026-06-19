@@ -47,6 +47,20 @@ function blankItem(): QuotationItem {
   return { ...EMPTY_ITEM, warranty_start: todayISO() };
 }
 
+// Component rows seeded by the "Full case" button, in display order.
+const FULL_CASE_NAMES = ["Main", "CPU", "Ram", "SSD", "Vga", "PSU", "Case", "Tan", "Fan"];
+
+// True when a row is an untouched blankItem (no name, no S/N, no prices, not linked).
+function isBlankItem(item: QuotationItem): boolean {
+  return (
+    item.name.trim() === "" &&
+    !item.serial_number &&
+    item.purchase_price === 0 &&
+    item.selling_price === 0 &&
+    item.inventory_item_id == null
+  );
+}
+
 export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems, initialNote, returnedNames, status }: Props) {
   // Delivered quotations: sale lines locked to price/warranty/condition/note only
   // (no add/remove/relink). Trade-ins stay editable.
@@ -152,6 +166,12 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
 
   function updateItem(index: number, field: string, value: string | number | null) {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
+  }
+
+  function addFullCase() {
+    const rows = FULL_CASE_NAMES.map((n) => ({ ...blankItem(), name: n }));
+    const onlyInitialBlank = items.length === 1 && isBlankItem(items[0]);
+    setItems(onlyInitialBlank ? rows : [...items, ...rows]);
   }
 
   // Editing the name unlinks the row from stock. If it was linked, the S/N was
@@ -325,11 +345,18 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
         <div className="flex justify-between items-center px-5 py-3 border-b border-gray-100 bg-gray-50/50 rounded-t-xl">
           <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{t.form_products}</h3>
           {!saleLocked && (
-            <button type="button" onClick={() => setItems([...items, blankItem()])}
-              className="inline-flex items-center gap-1 text-blue-600 text-sm font-medium hover:text-blue-700 transition-colors">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-              {t.form_add_line}
-            </button>
+            <div className="flex items-center gap-4">
+              <button type="button" onClick={addFullCase}
+                className="inline-flex items-center gap-1 text-gray-600 text-sm font-medium hover:text-gray-800 transition-colors">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                {t.form_full_case}
+              </button>
+              <button type="button" onClick={() => setItems([...items, blankItem()])}
+                className="inline-flex items-center gap-1 text-blue-600 text-sm font-medium hover:text-blue-700 transition-colors">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                {t.form_add_line}
+              </button>
+            </div>
           )}
         </div>
         <div className="overflow-x-visible">
