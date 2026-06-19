@@ -230,6 +230,7 @@ const en = {
   form_phone_number: "Phone number",
   form_products: "Products",
   form_add_line: "Add line",
+  form_full_case: "Full case",
   form_col_stt: "No.",
   form_col_name: "Name *",
   form_col_cond: "Cond.",

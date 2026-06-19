@@ -232,6 +232,7 @@ const vi: Translations = {
   form_phone_number: "Số điện thoại",
   form_products: "Sản phẩm",
   form_add_line: "Thêm dòng",
+  form_full_case: "Full case",
   form_col_stt: "STT",
   form_col_name: "Tên *",
   form_col_cond: "TT",
