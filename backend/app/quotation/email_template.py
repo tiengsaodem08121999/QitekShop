@@ -192,8 +192,7 @@ def build_quotation_email_html(
             <td valign="top" style="padding-right:12px;font-size:26px;">{icon("person", 30)}</td>
             <td valign="top">
               <div style="font-size:17px;font-weight:800;color:{_INK};">Kính gửi: {_esc(customer.name)}</div>
-              <div style="font-size:13px;color:{_GRAY};margin-top:6px;">Cảm ơn Quý khách đã quan tâm sản phẩm tại {_esc(shop_name)}.</div>
-              <div style="font-size:13px;color:{_GRAY};">Dưới đây là thông tin báo giá chi tiết:</div>
+              <div style="font-size:13px;color:{_GRAY};margin-top:6px;">Dưới đây là thông tin báo giá chi tiết:</div>
             </td>
           </tr></table>
         </td>

@@ -215,6 +215,14 @@ def test_partial_banner_still_red_message(db_session, sales_user):
     assert "ĐƠN HÀNG ĐÃ THANH TOÁN ĐẦY ĐỦ" not in html
 
 
+def test_greeting_thanks_line_removed(db_session, sales_user):
+    q = _confirmed_quotation(db_session, sales_user)
+    html = build_quotation_email_html(enrich_response(q), {"shop_name": "QITEK COMPUTER"})
+    assert "quan tâm sản phẩm" not in html
+    # the detail intro line stays
+    assert "Dưới đây là thông tin báo giá chi tiết" in html
+
+
 def test_header_subtitle_removed(db_session, sales_user):
     q = _confirmed_quotation(db_session, sales_user)
     html = build_quotation_email_html(enrich_response(q), {"shop_name": "QITEK COMPUTER"})
