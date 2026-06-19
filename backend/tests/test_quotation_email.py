@@ -199,6 +199,20 @@ def test_remaining_row_shown_when_partial(db_session, sales_user):
     assert "CÒN THANH TOÁN" in html
 
 
+def test_overpaid_shows_refund(db_session, sales_user):
+    # paid 10.000.000 against total 8.300.000 -> remaining -1.700.000 (refund due)
+    q = _quotation_with_payment(db_session, sales_user, paid=10000000)
+    html = build_quotation_email_html(enrich_response(q), {})
+    assert "Số tiền sẽ được hoàn lại" in html
+    assert "1.700.000đ" in html
+    assert "-1.700.000đ" not in html
+    # the "owe" label is replaced by the refund label
+    assert "CÒN THANH TOÁN" not in html
+    # refund banner message present, not the dunning one
+    assert "hoàn lại số tiền chênh lệch" in html
+    assert "vui lòng thanh toán số tiền còn lại" not in html
+
+
 def test_fully_paid_banner_is_green(db_session, sales_user):
     q = _quotation_with_payment(db_session, sales_user, paid=8300000)  # remaining 0
     html = build_quotation_email_html(enrich_response(q), {})

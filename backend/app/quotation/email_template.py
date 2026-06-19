@@ -231,7 +231,16 @@ def build_quotation_email_html(
         summary_lines += summary_line(icon("recycle", 17), "Giá trị thu cũ", "-" + _vnd(total_trade_in), _GREEN)
     if total_paid:
         summary_lines += summary_line(icon("card", 17), "Đã thanh toán", _vnd(total_paid), _GREEN)
-    remaining_row = "" if remaining == 0 else f"""
+    if remaining == 0:
+        remaining_row = ""
+    elif remaining < 0:
+        remaining_row = f"""
+            <tr>
+              <td colspan="2" style="font-size:18px;font-weight:800;color:#b45309;padding:10px 12px;background:#fef3c7;">Số tiền sẽ được hoàn lại</td>
+              <td align="right" style="font-size:24px;font-weight:800;color:#b45309;padding:10px 12px;background:#fef3c7;">{_vnd(-remaining)}</td>
+            </tr>"""
+    else:
+        remaining_row = f"""
             <tr>
               <td colspan="2" style="font-size:18px;font-weight:800;color:{_RED};padding-top:10px;">CÒN THANH TOÁN</td>
               <td align="right" style="font-size:24px;font-weight:800;color:{_RED};padding-top:10px;">{_vnd(remaining)}</td>
@@ -381,6 +390,30 @@ def build_quotation_email_html(
             </td>
           </tr></table>
           <div style="font-size:12px;color:{_GRAY};margin-top:10px;">Cảm ơn Quý khách đã hoàn tất thanh toán. Rất mong được tiếp tục phục vụ Quý khách!</div>
+        </td>
+      </tr></table>
+    </td></tr>"""
+    elif remaining < 0:
+        refund_badge = (
+            f'<span style="display:inline-block;width:34px;height:34px;line-height:34px;'
+            f'text-align:center;border-radius:50%;background:#d97706;color:#ffffff;'
+            f'font-size:18px;font-weight:800;">$</span>'
+        )
+        due_banner = f"""
+    <tr><td style="padding:16px 28px 8px 28px;">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+             style="background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;"><tr>
+        <td valign="middle" width="42%" style="padding:18px 22px;">
+          <table cellpadding="0" cellspacing="0" role="presentation"><tr>
+            <td valign="middle" style="padding-right:12px;">{refund_badge}</td>
+            <td valign="middle">
+              <div style="font-size:13px;font-weight:700;color:#92400e;letter-spacing:0.3px;">SỐ TIỀN SẼ ĐƯỢC HOÀN LẠI</div>
+              <div style="font-size:26px;font-weight:800;color:#b45309;">{_vnd(-remaining)}</div>
+            </td>
+          </tr></table>
+        </td>
+        <td valign="middle" style="padding:18px 22px;border-left:1px solid #fcd34d;">
+          <div style="font-size:12px;color:{_GRAY};">Cửa hàng sẽ hoàn lại số tiền chênh lệch cho Quý khách.</div>
         </td>
       </tr></table>
     </td></tr>"""
