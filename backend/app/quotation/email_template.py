@@ -232,6 +232,11 @@ def build_quotation_email_html(
         summary_lines += summary_line(icon("recycle", 17), "Giá trị thu cũ", "-" + _vnd(total_trade_in), _GREEN)
     if total_paid:
         summary_lines += summary_line(icon("card", 17), "Đã thanh toán", _vnd(total_paid), _GREEN)
+    remaining_row = "" if remaining == 0 else f"""
+            <tr>
+              <td colspan="2" style="font-size:18px;font-weight:800;color:{_RED};padding-top:10px;">CÒN THANH TOÁN</td>
+              <td align="right" style="font-size:24px;font-weight:800;color:{_RED};padding-top:10px;">{_vnd(remaining)}</td>
+            </tr>"""
     summary = f"""
     <tr><td style="padding:10px 28px;">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
@@ -241,10 +246,7 @@ def build_quotation_email_html(
           <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
             {summary_lines}
             <tr><td colspan="3" style="border-top:1px solid #d7dee8;padding-top:2px;"></td></tr>
-            <tr>
-              <td colspan="2" style="font-size:18px;font-weight:800;color:{_RED};padding-top:10px;">CÒN THANH TOÁN</td>
-              <td align="right" style="font-size:24px;font-weight:800;color:{_RED};padding-top:10px;">{_vnd(remaining)}</td>
-            </tr>
+            {remaining_row}
           </table>
         </td>
         <td width="150" align="center" valign="middle">{receipt_art}</td>

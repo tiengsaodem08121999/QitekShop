@@ -187,6 +187,18 @@ def test_paid_amount_shown_positive(db_session, sales_user):
     assert "-3.000.000đ" not in html
 
 
+def test_remaining_row_hidden_when_fully_paid(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=8300000)  # remaining 0
+    html = build_quotation_email_html(enrich_response(q), {})
+    assert "CÒN THANH TOÁN" not in html
+
+
+def test_remaining_row_shown_when_partial(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=3000000)  # remaining > 0
+    html = build_quotation_email_html(enrich_response(q), {})
+    assert "CÒN THANH TOÁN" in html
+
+
 def test_header_subtitle_removed(db_session, sales_user):
     q = _confirmed_quotation(db_session, sales_user)
     html = build_quotation_email_html(enrich_response(q), {"shop_name": "QITEK COMPUTER"})
