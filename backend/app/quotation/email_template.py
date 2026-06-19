@@ -168,7 +168,6 @@ def build_quotation_email_html(
         <td align="left" valign="middle" width="42%">{brand(92)}</td>
         <td align="right" valign="middle">
           <div style="font-size:22px;font-weight:800;color:#ffffff;line-height:1.1;">{header_title}</div>
-          <div style="font-size:12px;color:#aebfd6;margin-top:5px;">Cảm ơn Quý khách đã tin tưởng lựa chọn {_esc(shop_name)}!</div>
         </td>
       </tr></table>
     </td></tr>"""

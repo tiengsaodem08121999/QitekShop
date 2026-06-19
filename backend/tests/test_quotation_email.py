@@ -163,6 +163,12 @@ def test_icons_use_cid_when_available_else_emoji(db_session, sales_user):
     assert 'cid:ic_cart' not in html2
 
 
+def test_header_subtitle_removed(db_session, sales_user):
+    q = _confirmed_quotation(db_session, sales_user)
+    html = build_quotation_email_html(enrich_response(q), {"shop_name": "QITEK COMPUTER"})
+    assert "tin tưởng lựa chọn" not in html
+
+
 def test_header_title_depends_on_trade_in(db_session, sales_user):
     from app.quotation.models import QuotationItem
     q = _confirmed_quotation(db_session, sales_user)
