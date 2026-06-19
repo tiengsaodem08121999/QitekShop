@@ -32,6 +32,22 @@ def _confirmed_quotation(db, sales_user, *, email="cust@example.com"):
     return q
 
 
+def _quotation_with_payment(db, sales_user, paid):
+    """A confirmed quotation (total_amount 8.300.000) plus one cash payment of `paid`.
+    paid == 8300000 -> remaining 0 (fully paid); paid < 8300000 -> partial."""
+    from datetime import date as _date
+    from app.quotation.models import Payment, PaymentMethod, PaymentType
+    q = _confirmed_quotation(db, sales_user)
+    db.add(Payment(
+        quotation_id=q.id, amount=paid, method=PaymentMethod.cash,
+        payment_type=PaymentType.payment, date=_date(2026, 6, 19),
+        created_by=sales_user.id,
+    ))
+    db.commit()
+    db.refresh(q)
+    return q
+
+
 def test_send_email_rejects_draft(client, sales_user, db_session):
     cust = Customer(name="A", email="a@example.com")
     db_session.add(cust)
@@ -161,6 +177,75 @@ def test_icons_use_cid_when_available_else_emoji(db_session, sales_user):
     html2 = build_quotation_email_html(enriched, {}, icons=set())
     assert "🛒" in html2
     assert 'cid:ic_cart' not in html2
+
+
+def test_paid_amount_shown_positive(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=3000000)  # partial
+    html = build_quotation_email_html(enrich_response(q), {})
+    assert "Đã thanh toán" in html
+    assert "3.000.000đ" in html
+    assert "-3.000.000đ" not in html
+
+
+def test_remaining_row_hidden_when_fully_paid(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=8300000)  # remaining 0
+    html = build_quotation_email_html(enrich_response(q), {})
+    assert "CÒN THANH TOÁN" not in html
+
+
+def test_remaining_row_shown_when_partial(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=3000000)  # remaining > 0
+    html = build_quotation_email_html(enrich_response(q), {})
+    assert "CÒN THANH TOÁN" in html
+
+
+def test_overpaid_shows_refund(db_session, sales_user):
+    # paid 10.000.000 against total 8.300.000 -> remaining -1.700.000 (refund due)
+    q = _quotation_with_payment(db_session, sales_user, paid=10000000)
+    html = build_quotation_email_html(enrich_response(q), {})
+    assert "Số tiền sẽ được hoàn lại" in html
+    assert "1.700.000đ" in html
+    assert "-1.700.000đ" not in html
+    # the "owe" label is replaced by the refund label
+    assert "CÒN THANH TOÁN" not in html
+    # refund banner message present, not the dunning one
+    assert "hoàn lại số tiền chênh lệch" in html
+    assert "vui lòng thanh toán số tiền còn lại" not in html
+
+
+def test_fully_paid_banner_is_green(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=8300000)  # remaining 0
+    html = build_quotation_email_html(enrich_response(q), {})
+    assert "ĐƠN HÀNG ĐÃ THANH TOÁN ĐẦY ĐỦ" in html
+    assert "Cảm ơn Quý khách đã hoàn tất thanh toán" in html
+    # red dunning message must NOT appear when fully paid
+    assert "vui lòng thanh toán số tiền còn lại" not in html
+    # "Hoàn tất" subtext and the closing line are dropped when fully paid
+    assert "Hoàn tất" not in html
+    assert "Trân trọng cảm ơn và rất mong được phục vụ Quý khách" not in html
+
+
+def test_partial_banner_still_red_message(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=3000000)  # remaining > 0
+    html = build_quotation_email_html(enrich_response(q), {})
+    assert "vui lòng thanh toán số tiền còn lại" in html
+    assert "ĐƠN HÀNG ĐÃ THANH TOÁN ĐẦY ĐỦ" not in html
+    # closing line still present when not fully paid
+    assert "Trân trọng cảm ơn và rất mong được phục vụ Quý khách" in html
+
+
+def test_greeting_thanks_line_removed(db_session, sales_user):
+    q = _confirmed_quotation(db_session, sales_user)
+    html = build_quotation_email_html(enrich_response(q), {"shop_name": "QITEK COMPUTER"})
+    assert "quan tâm sản phẩm" not in html
+    # the detail intro line stays
+    assert "Dưới đây là thông tin báo giá chi tiết" in html
+
+
+def test_header_subtitle_removed(db_session, sales_user):
+    q = _confirmed_quotation(db_session, sales_user)
+    html = build_quotation_email_html(enrich_response(q), {"shop_name": "QITEK COMPUTER"})
+    assert "tin tưởng lựa chọn" not in html
 
 
 def test_header_title_depends_on_trade_in(db_session, sales_user):
