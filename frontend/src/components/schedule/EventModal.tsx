@@ -8,7 +8,9 @@ import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/Confirm";
 import { trimSeconds, withSeconds } from "@/lib/schedule";
 import DateInput from "@/components/shared/DateInput";
+import EventStatusIcon from "./EventStatusIcon";
 import type { EventStatus, ScheduleEvent, ScheduleTag } from "@/types";
+import { normalizeEventStatus, SCHEDULE_STATUSES } from "@/lib/scheduleStatus";
 
 interface Props {
   tags: ScheduleTag[];
@@ -20,7 +22,7 @@ interface Props {
   onDeleted?: () => void;
 }
 
-const STATUSES: EventStatus[] = ["pending", "in_progress", "done", "cancelled"];
+const STATUSES = SCHEDULE_STATUSES;
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
 
@@ -138,7 +140,9 @@ export default function EventModal({
     setStartTime(v);
     setEndTime(addOneHour(v));
   }
-  const [status, setStatus] = useState<EventStatus>(initial?.status ?? "pending");
+  const [status, setStatus] = useState<EventStatus>(
+    initial ? normalizeEventStatus(initial.status) : "pending"
+  );
   const [description, setDescription] = useState(initial?.description ?? "");
   const [tagIds, setTagIds] = useState<number[]>(initial?.tags.map((tag) => tag.id) ?? []);
   const [saving, setSaving] = useState(false);
@@ -223,12 +227,24 @@ export default function EventModal({
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t.schedule_field_status}</label>
-            <select value={status} onChange={(e) => setStatus(e.target.value as EventStatus)}
-              className="border rounded px-3 py-2 w-full text-sm">
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>{t[`schedule_status_${s}` as keyof typeof t] as string}</option>
-              ))}
-            </select>
+            <div className="bg-gray-50 rounded-lg border border-gray-100 p-2 space-y-0.5">
+              {STATUSES.map((s) => {
+                const active = status === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setStatus(s)}
+                    className={`flex items-center gap-2.5 w-full text-sm px-3 py-2 rounded-md transition-colors ${
+                      active ? "bg-white shadow-sm ring-1 ring-gray-200 text-gray-900" : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <EventStatusIcon status={s} size={14} />
+                    {t[`schedule_status_${s}` as keyof typeof t] as string}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t.schedule_field_description}</label>

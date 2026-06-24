@@ -14,6 +14,7 @@ import { useToast } from "@/components/Toast";
 import {
   addDays, addMonths, getMonthGridRange, getWeekRange, toIsoDate,
 } from "@/lib/schedule";
+import { normalizeEventStatus } from "@/lib/scheduleStatus";
 import type { EventStatus, ScheduleEvent, ScheduleTag } from "@/types";
 
 type View = "week" | "month";
@@ -59,7 +60,7 @@ export default function SchedulePage() {
   useEffect(loadEvents, [loadEvents]);
 
   const filteredEvents = useMemo(() => events.filter((e) => {
-    if (statusFilter.length > 0 && !statusFilter.includes(e.status)) return false;
+    if (statusFilter.length > 0 && !statusFilter.includes(normalizeEventStatus(e.status))) return false;
     if (tagFilter.length > 0 && !e.tags.some((tag) => tagFilter.includes(tag.id))) return false;
     return true;
   }), [events, statusFilter, tagFilter]);
