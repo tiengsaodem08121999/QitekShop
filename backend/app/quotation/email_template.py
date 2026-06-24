@@ -219,6 +219,29 @@ def build_quotation_email_html(
             f'</div></div>'
         )
 
+    if remaining > 0 and payment_qrs:
+        def _payment_qr_block(qr: dict) -> str:
+            note = qr.get("note") or ""
+            note_html = ""
+            if note:
+                note_html = (
+                    f'<div style="font-size:10px;color:{_GRAY};margin-top:6px;text-align:center;'
+                    f'line-height:1.35;">{_esc(note)}</div>'
+                )
+            return (
+                f'<div style="margin:0 auto 12px auto;text-align:center;max-width:130px;">'
+                f'<div style="font-size:11px;font-weight:700;color:{_NAVY};margin-bottom:8px;'
+                f'line-height:1.35;">Quét QR để thanh toán</div>'
+                f'<img src="{_esc(qr["image"])}" alt="{_esc(qr.get("name", "QR"))}" width="118" height="118"'
+                f' style="display:block;margin:0 auto;border:3px solid #ffffff;border-radius:8px;'
+                f'box-shadow:0 1px 4px rgba(0,0,0,0.08);" />'
+                f'{note_html}'
+                f'</div>'
+            )
+        summary_side = "".join(_payment_qr_block(qr) for qr in payment_qrs)
+    else:
+        summary_side = receipt_art
+
     def summary_line(ic_html, label, value, color, weight="700"):
         return (
             f'<tr>'
@@ -258,7 +281,7 @@ def build_quotation_email_html(
             {remaining_row}
           </table>
         </td>
-        <td width="150" align="center" valign="middle">{receipt_art}</td>
+        <td width="150" align="center" valign="middle">{summary_side}</td>
       </tr></table>
     </td></tr>"""
 
@@ -419,44 +442,7 @@ def build_quotation_email_html(
       </tr></table>
     </td></tr>"""
     else:
-        payment_qr_html = ""
-        if payment_qrs:
-            qr_cells = []
-            for qr in payment_qrs:
-                qr_cells.append(f"""
-            <td align="center" valign="middle" style="padding:0 6px;">
-              <img src="{_esc(qr['image'])}" alt="{_esc(qr.get('name', 'QR'))}" width="110" height="110"
-                   style="display:block;border:3px solid #ffffff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.08);" />
-            </td>""")
-            payment_qr_html = f"""
-          <td valign="middle" align="right" width="130">
-            <table cellpadding="0" cellspacing="0" role="presentation"><tr>
-              {"".join(qr_cells)}
-            </tr></table>
-          </td>"""
-        due_banner = f"""
-    <tr><td style="padding:16px 28px 8px 28px;">
-      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-             style="background:#fef2f3;border:1px solid #f6c9cd;border-radius:12px;"><tr>
-        <td valign="middle" width="42%" style="padding:18px 22px;">
-          <table cellpadding="0" cellspacing="0" role="presentation"><tr>
-            <td valign="middle" style="font-size:30px;padding-right:12px;">{icon("dollar", 32)}</td>
-            <td valign="middle">
-              <div style="font-size:13px;font-weight:700;color:{_INK};letter-spacing:0.3px;">SỐ TIỀN CẦN THANH TOÁN</div>
-              <div style="font-size:26px;font-weight:800;color:{_RED};">{_vnd(remaining)}</div>
-            </td>
-          </tr></table>
-        </td>
-        <td valign="middle" style="padding:18px 22px;border-left:1px solid #f6c9cd;">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>
-            <td valign="middle" style="padding-right:14px;">
-              <div style="font-size:12px;color:{_GRAY};line-height:1.5;">Quý khách vui lòng thanh toán số tiền còn lại để hoàn tất đơn hàng.</div>
-            </td>
-            {payment_qr_html}
-          </tr></table>
-        </td>
-      </tr></table>
-    </td></tr>"""
+        due_banner = ""
 
     # ===== closing + footer =====
     closing = "" if remaining == 0 else f"""
