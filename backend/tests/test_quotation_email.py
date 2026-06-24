@@ -234,6 +234,53 @@ def test_partial_banner_still_red_message(db_session, sales_user):
     assert "Trân trọng cảm ơn và rất mong được phục vụ Quý khách" in html
 
 
+def test_partial_banner_shows_payment_qr(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=3000000)
+    png_b64 = ("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4"
+               "2mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+    payment_qrs = [{"name": "VCB", "image": "cid:payqr0", "note": "1234567890"}]
+    html = build_quotation_email_html(enrich_response(q), {}, payment_qrs=payment_qrs)
+    assert "cid:payqr0" in html
+    assert "width=\"110\"" in html
+    assert "1234567890" not in html
+    assert "vui lòng thanh toán số tiền còn lại" in html
+
+
+def test_payment_qr_attached_when_sending_email(client, sales_user, db_session, monkeypatch):
+    from app.payment_qr.models import PaymentQr
+    from datetime import date as _date
+    from app.quotation.models import Payment, PaymentMethod, PaymentType
+
+    png_b64 = ("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4"
+               "2mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+    db_session.add(PaymentQr(
+        name="VCB",
+        image=f"data:image/png;base64,{png_b64}",
+        note="1234567890",
+    ))
+    q = _confirmed_quotation(db_session, sales_user)
+    db_session.add(Payment(
+        quotation_id=q.id, amount=3000000, method=PaymentMethod.cash,
+        payment_type=PaymentType.payment, date=_date(2026, 6, 19),
+        created_by=sales_user.id,
+    ))
+    db_session.commit()
+
+    monkeypatch.setattr(settings, "SMTP_HOST", "smtp.test")
+    smtp_instance = MagicMock()
+    smtp_cm = MagicMock()
+    smtp_cm.__enter__.return_value = smtp_instance
+    with patch.object(email_service.smtplib, "SMTP", return_value=smtp_cm):
+        r = client.post(f"/api/quotations/{q.id}/send-email", headers=auth_headers(sales_user))
+
+    assert r.status_code == 200
+    sent_msg = smtp_instance.send_message.call_args.args[0]
+    html_part = next(p for p in sent_msg.walk() if p.get_content_type() == "text/html")
+    html_body = html_part.get_content()
+    assert "cid:payqr0" in html_body
+    assert "data:image/png;base64" not in html_body
+
+
 def test_greeting_thanks_line_removed(db_session, sales_user):
     q = _confirmed_quotation(db_session, sales_user)
     html = build_quotation_email_html(enrich_response(q), {"shop_name": "QITEK COMPUTER"})

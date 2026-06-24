@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
+import PaymentQrManager from "@/components/settings/PaymentQrManager";
 import TagManager from "@/components/shared/TagManager";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
@@ -60,7 +61,6 @@ export default function SettingsPage() {
       <h1 className="text-xl font-bold mb-6">{t.settings_title}</h1>
       <div className="max-w-5xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          {/* Left column */}
           <div className="space-y-6">
             <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
               <h2 className="text-lg font-semibold text-gray-800">{t.settings_section_shop}</h2>
@@ -106,7 +106,6 @@ export default function SettingsPage() {
             </section>
           </div>
 
-          {/* Right column */}
           <div className="space-y-6">
             <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
               <h2 className="text-lg font-semibold text-gray-800">{t.settings_section_branding}</h2>
@@ -150,11 +149,12 @@ export default function SettingsPage() {
               </div>
             </section>
 
+            <PaymentQrManager />
+
             <TagManager />
           </div>
         </div>
 
-        {/* Full-width save bar */}
         <div className="mt-6 flex items-center gap-3 border-t border-gray-200 pt-4">
           <button onClick={handleSave} disabled={saving}
             className="bg-blue-600 text-white px-6 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50">

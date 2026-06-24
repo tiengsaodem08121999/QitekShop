@@ -117,6 +117,7 @@ def build_quotation_email_html(
     settings_dict: dict,
     salesperson_name: str = "",
     icons: set = None,
+    payment_qrs: list | None = None,
 ) -> str:
     """Render the quotation email body matching the QITEK quotation design.
 
@@ -418,6 +419,21 @@ def build_quotation_email_html(
       </tr></table>
     </td></tr>"""
     else:
+        payment_qr_html = ""
+        if payment_qrs:
+            qr_cells = []
+            for qr in payment_qrs:
+                qr_cells.append(f"""
+            <td align="center" valign="middle" style="padding:0 6px;">
+              <img src="{_esc(qr['image'])}" alt="{_esc(qr.get('name', 'QR'))}" width="110" height="110"
+                   style="display:block;border:3px solid #ffffff;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.08);" />
+            </td>""")
+            payment_qr_html = f"""
+          <td valign="middle" align="right" width="130">
+            <table cellpadding="0" cellspacing="0" role="presentation"><tr>
+              {"".join(qr_cells)}
+            </tr></table>
+          </td>"""
         due_banner = f"""
     <tr><td style="padding:16px 28px 8px 28px;">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
@@ -432,7 +448,12 @@ def build_quotation_email_html(
           </tr></table>
         </td>
         <td valign="middle" style="padding:18px 22px;border-left:1px solid #f6c9cd;">
-          <div style="font-size:12px;color:{_GRAY};">Quý khách vui lòng thanh toán số tiền còn lại để hoàn tất đơn hàng.</div>
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>
+            <td valign="middle" style="padding-right:14px;">
+              <div style="font-size:12px;color:{_GRAY};line-height:1.5;">Quý khách vui lòng thanh toán số tiền còn lại để hoàn tất đơn hàng.</div>
+            </td>
+            {payment_qr_html}
+          </tr></table>
         </td>
       </tr></table>
     </td></tr>"""

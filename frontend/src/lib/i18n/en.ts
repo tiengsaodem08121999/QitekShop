@@ -339,6 +339,20 @@ const en = {
   settings_section_branding: "Logo & QR code",
   settings_section_finance: "Finance",
 
+  payment_qr_section: "Payment QR codes",
+  payment_qr_section_hint: "Manage bank transfer QR codes for customers",
+  payment_qr_create: "Add QR",
+  payment_qr_empty: "No payment QR codes yet",
+  payment_qr_name: "Name",
+  payment_qr_name_placeholder: "e.g. Vietcombank – Quy LV",
+  payment_qr_note: "Account info",
+  payment_qr_note_placeholder: "e.g. 1234567890 – Vietcombank",
+  payment_qr_image: "QR image",
+  payment_qr_upload: "Upload QR",
+  payment_qr_remove: "Remove QR",
+  payment_qr_view_large: "View larger QR",
+  payment_qr_delete_confirm: (name: string) => `Delete payment QR "${name}"?`,
+
   // Toast
   toast_create_success: "Quotation created successfully",
   toast_update_success: "Quotation updated successfully",

@@ -41,6 +41,7 @@ def send_quotation_email(
     enriched: dict,
     settings_dict: dict,
     salesperson_name: str = "",
+    payment_qrs: list | None = None,
 ) -> str:
     """Build and send the quotation email. Returns the recipient address.
 
@@ -78,8 +79,23 @@ def send_quotation_email(
             tmpl_settings[key] = f"cid:{cid}"
             attachments.append((cid, subtype, img_bytes))
 
+    tmpl_payment_qrs = []
+    for i, qr in enumerate(payment_qrs or []):
+        image = getattr(qr, "image", None) or (qr.get("image") if isinstance(qr, dict) else None) or ""
+        decoded = _decode_image_data_url(image)
+        if decoded is None:
+            continue
+        subtype, img_bytes = decoded
+        cid = f"payqr{i}"
+        attachments.append((cid, subtype, img_bytes))
+        name = getattr(qr, "name", None) or (qr.get("name") if isinstance(qr, dict) else "")
+        note = getattr(qr, "note", None) or (qr.get("note") if isinstance(qr, dict) else None)
+        tmpl_payment_qrs.append({"name": name, "image": f"cid:{cid}", "note": note})
+
     icons = icon_files_present()
-    html = build_quotation_email_html(enriched, tmpl_settings, salesperson_name, icons=icons)
+    html = build_quotation_email_html(
+        enriched, tmpl_settings, salesperson_name, icons=icons, payment_qrs=tmpl_payment_qrs,
+    )
     msg.add_alternative(html, subtype="html")
 
     html_part = msg.get_payload()[-1]  # the html alternative
