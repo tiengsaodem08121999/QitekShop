@@ -9,6 +9,7 @@ from app.dashboard_router import router as dashboard_router
 from app.schedule.router import router as schedule_router
 from app.inventory.router import router as inventory_router
 from app.note.router import router as note_router
+from app.payment_qr.router import router as payment_qr_router
 
 app = FastAPI(title="QitekComputer API")
 
@@ -29,6 +30,7 @@ app.include_router(dashboard_router)
 app.include_router(schedule_router)
 app.include_router(inventory_router)
 app.include_router(note_router)
+app.include_router(payment_qr_router)
 
 
 @app.get("/api/health")

@@ -341,6 +341,20 @@ const vi: Translations = {
   settings_section_branding: "Logo & Mã QR",
   settings_section_finance: "Tài chính",
 
+  payment_qr_section: "Mã QR thanh toán",
+  payment_qr_section_hint: "Quản lý mã QR chuyển khoản cho khách hàng",
+  payment_qr_create: "Thêm QR",
+  payment_qr_empty: "Chưa có mã QR thanh toán",
+  payment_qr_name: "Tên",
+  payment_qr_name_placeholder: "VD: Vietcombank – Quy LV",
+  payment_qr_note: "Thông tin tài khoản",
+  payment_qr_note_placeholder: "VD: 1234567890 – Vietcombank",
+  payment_qr_image: "Ảnh QR",
+  payment_qr_upload: "Tải QR lên",
+  payment_qr_remove: "Xóa QR",
+  payment_qr_view_large: "Xem QR phóng to",
+  payment_qr_delete_confirm: (name: string) => `Xóa mã QR "${name}"?`,
+
   // Toast
   toast_create_success: "Tạo báo giá thành công",
   toast_update_success: "Cập nhật báo giá thành công",

@@ -271,6 +271,7 @@ def send_quotation_email_endpoint(
 ):
     from app.auth.models import User as AuthUser
     from app.models import Setting
+    from app.payment_qr.service import list_payment_qrs
     from app.quotation.email_service import send_quotation_email
 
     quotation = get_quotation(db, quotation_id)
@@ -287,7 +288,10 @@ def send_quotation_email_endpoint(
 
     try:
         to_addr = send_quotation_email(
-            enrich_response(quotation), settings_dict, salesperson_name
+            enrich_response(quotation),
+            settings_dict,
+            salesperson_name,
+            payment_qrs=list_payment_qrs(db),
         )
     except RuntimeError as exc:
         # err_customer_no_email is already guarded above; remaining causes are

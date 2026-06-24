@@ -208,3 +208,10 @@ export interface ScheduleEvent {
   created_by_name: string;
   created_at: string;
 }
+
+export interface PaymentQr {
+  id: number;
+  name: string;
+  image: string;
+  note: string | null;
+}
