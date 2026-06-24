@@ -225,28 +225,40 @@ def test_fully_paid_banner_is_green(db_session, sales_user):
     assert "Trân trọng cảm ơn và rất mong được phục vụ Quý khách" not in html
 
 
-def test_partial_banner_still_red_message(db_session, sales_user):
+def test_partial_banner_hidden_when_amount_due(db_session, sales_user):
     q = _quotation_with_payment(db_session, sales_user, paid=3000000)  # remaining > 0
     html = build_quotation_email_html(enrich_response(q), {})
-    assert "vui lòng thanh toán số tiền còn lại" in html
-    assert "ĐƠN HÀNG ĐÃ THANH TOÁN ĐẦY ĐỦ" not in html
-    # closing line still present when not fully paid
+    assert "SỐ TIỀN CẦN THANH TOÁN" not in html
+    assert "vui lòng thanh toán số tiền còn lại" not in html
+    assert "CÒN THANH TOÁN" in html
     assert "Trân trọng cảm ơn và rất mong được phục vụ Quý khách" in html
 
 
-def test_partial_banner_shows_payment_qr(db_session, sales_user):
+def test_partial_summary_shows_payment_qr(db_session, sales_user):
     q = _quotation_with_payment(db_session, sales_user, paid=3000000)
-    png_b64 = ("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4"
-               "2mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
-    payment_qrs = [{"name": "VCB", "image": "cid:payqr0", "note": "1234567890"}]
+    payment_qrs = [{"name": "VCB", "image": "cid:payqr0", "note": "0707602497 - TPBank"}]
     html = build_quotation_email_html(enrich_response(q), {}, payment_qrs=payment_qrs)
     assert "cid:payqr0" in html
-    assert "width=\"110\"" in html
-    assert "1234567890" not in html
-    assert "vui lòng thanh toán số tiền còn lại" in html
+    assert "Quét QR để thanh toán" in html
+    assert "0707602497 - TPBank" in html
+    assert html.index("cid:payqr0") < html.index("DANH SÁCH SẢN PHẨM")
 
 
-def test_payment_qr_attached_when_sending_email(client, sales_user, db_session, monkeypatch):
+def test_fully_paid_summary_hides_payment_qr(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=8300000)
+    payment_qrs = [{"name": "VCB", "image": "cid:payqr0"}]
+    html = build_quotation_email_html(enrich_response(q), {}, payment_qrs=payment_qrs)
+    assert "cid:payqr0" not in html
+
+
+def test_overpaid_summary_hides_payment_qr(db_session, sales_user):
+    q = _quotation_with_payment(db_session, sales_user, paid=10000000)
+    payment_qrs = [{"name": "VCB", "image": "cid:payqr0"}]
+    html = build_quotation_email_html(enrich_response(q), {}, payment_qrs=payment_qrs)
+    assert "cid:payqr0" not in html
+
+
+def test_payment_qr_attached_in_summary_when_partial(client, sales_user, db_session, monkeypatch):
     from app.payment_qr.models import PaymentQr
     from datetime import date as _date
     from app.quotation.models import Payment, PaymentMethod, PaymentType
@@ -278,6 +290,9 @@ def test_payment_qr_attached_when_sending_email(client, sales_user, db_session, 
     html_part = next(p for p in sent_msg.walk() if p.get_content_type() == "text/html")
     html_body = html_part.get_content()
     assert "cid:payqr0" in html_body
+    assert "Quét QR để thanh toán" in html_body
+    assert "1234567890" in html_body
+    assert html_body.index("cid:payqr0") < html_body.index("DANH SÁCH SẢN PHẨM")
     assert "data:image/png;base64" not in html_body
 
 
