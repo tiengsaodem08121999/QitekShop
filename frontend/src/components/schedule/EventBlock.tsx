@@ -1,5 +1,6 @@
 "use client";
 
+import EventStatusIcon from "./EventStatusIcon";
 import { trimSeconds } from "@/lib/schedule";
 import type { ScheduleEvent } from "@/types";
 
@@ -13,15 +14,15 @@ interface Props {
 
 export default function EventBlock({ event, onClick, style }: Props) {
   const color = event.tags[0]?.color ?? NEUTRAL;
-  const dim = event.status === "done" || event.status === "cancelled";
 
   return (
     <button onClick={onClick}
-      style={{ backgroundColor: color, opacity: dim ? 0.5 : 1, ...style }}
-      className={`text-left text-xs p-1.5 rounded text-white shadow-sm hover:shadow transition-shadow w-full overflow-hidden ${
-        dim ? "line-through" : ""
-      }`}>
-      <div className="font-medium truncate">{event.title}</div>
+      style={{ backgroundColor: color, ...style }}
+      className="text-left text-xs p-1.5 rounded text-white shadow-sm hover:shadow transition-shadow w-full overflow-hidden">
+      <div className="font-medium truncate flex items-center gap-1.5">
+        <EventStatusIcon status={event.status} size={16} className="opacity-90 shrink-0" />
+        <span className="truncate">{event.title}</span>
+      </div>
       <div className="text-[10px] opacity-90">
         {trimSeconds(event.start_time)}–{trimSeconds(event.end_time)}
       </div>

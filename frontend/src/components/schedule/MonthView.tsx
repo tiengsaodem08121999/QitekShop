@@ -1,5 +1,6 @@
 "use client";
 
+import EventStatusIcon from "./EventStatusIcon";
 import { useT } from "@/lib/i18n";
 import { getMonthGridDates, isSameDay, toIsoDate } from "@/lib/schedule";
 import type { ScheduleEvent } from "@/types";
@@ -48,13 +49,13 @@ export default function MonthView({ anchorDate, events, onDayClick, onEventClick
               <div className="space-y-0.5">
                 {dayEvents.slice(0, MAX_CHIPS).map((ev) => {
                   const color = ev.tags[0]?.color ?? NEUTRAL;
-                  const dim = ev.status === "done" || ev.status === "cancelled";
                   return (
                     <button key={ev.id}
                       onClick={(e) => { e.stopPropagation(); onEventClick(ev); }}
-                      style={{ backgroundColor: color, opacity: dim ? 0.5 : 1 }}
-                      className={`text-left text-[10px] px-1.5 py-0.5 rounded text-white w-full truncate ${dim ? "line-through" : ""}`}>
-                      {ev.title}
+                      style={{ backgroundColor: color }}
+                      className="text-left text-[10px] px-1.5 py-0.5 rounded text-white w-full truncate flex items-center gap-1.5">
+                      <EventStatusIcon status={ev.status} size={12} className="shrink-0 opacity-90" />
+                      <span className="truncate">{ev.title}</span>
                     </button>
                   );
                 })}

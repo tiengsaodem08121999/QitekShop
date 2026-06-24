@@ -364,7 +364,7 @@ const vi: Translations = {
   schedule_status_all: "Tất cả",
   schedule_status_pending: "Chưa làm",
   schedule_status_in_progress: "Đang làm",
-  schedule_status_done: "Đã xong",
+  schedule_status_done: "Đã làm",
   schedule_status_cancelled: "Đã hủy",
 
   schedule_field_title: "Tiêu đề",
