@@ -22,7 +22,7 @@ export type InventoryItemTypeOption = (typeof INVENTORY_ITEM_TYPE_OPTIONS)[numbe
 
 /** Split stored name like "Main Z690 tuf" into type + remainder. */
 export function splitInventoryItemName(fullName: string): {
-  type: InventoryItemTypeOption | "";
+  type: InventoryItemTypeOption;
   name: string;
 } {
   for (const type of INVENTORY_ITEM_TYPES) {
