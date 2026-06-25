@@ -9,6 +9,13 @@ import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
 import { useAlert } from "@/components/Confirm";
 import { formatDate, formatNumber, parseNumber } from "@/lib/format";
+import {
+  buildInventoryItemName,
+  INVENTORY_ITEM_TYPE_OPTIONS,
+  INVENTORY_ITEM_TYPE_OTHER,
+  splitInventoryItemName,
+  type InventoryItemTypeOption,
+} from "@/lib/inventoryItemTypes";
 import Pagination from "@/components/shared/Pagination";
 import type { InventoryItem, InventoryStatus, PaginatedResponse } from "@/types";
 
@@ -195,7 +202,11 @@ export default function InventoryPage() {
 }
 
 function InventoryModal({ t, initial, onClose, onSaved }: { t: ReturnType<typeof import("@/lib/i18n").useT>; initial?: InventoryItem; onClose: () => void; onSaved: () => void }) {
-  const [name, setName] = useState(initial?.name || "");
+  const initialParts = splitInventoryItemName(initial?.name || "");
+  const [itemType, setItemType] = useState<InventoryItemTypeOption>(
+    initial ? initialParts.type : INVENTORY_ITEM_TYPE_OTHER,
+  );
+  const [name, setName] = useState(initialParts.name);
   const [serial, setSerial] = useState(initial?.serial_number || "");
   const [purchasePrice, setPurchasePrice] = useState(initial ? formatNumber(initial.purchase_price) : "");
   const [sellingPrice, setSellingPrice] = useState(initial?.selling_price != null ? formatNumber(initial.selling_price) : "");
@@ -209,7 +220,7 @@ function InventoryModal({ t, initial, onClose, onSaved }: { t: ReturnType<typeof
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
-        name,
+        name: buildInventoryItemName(itemType, name),
         serial_number: serial || null,
         purchase_price: parseNumber(purchasePrice),
         selling_price: sellingPrice ? parseNumber(sellingPrice) : null,
@@ -234,6 +245,21 @@ function InventoryModal({ t, initial, onClose, onSaved }: { t: ReturnType<typeof
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-bold mb-4">{initial ? t.inventory_modal_edit : t.inventory_modal_add}</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">{t.inventory_item_type}</label>
+            <select
+              value={itemType}
+              onChange={(e) => setItemType(e.target.value as InventoryItemTypeOption)}
+              className="border rounded px-3 py-2 w-full text-sm bg-white"
+              required
+            >
+              {INVENTORY_ITEM_TYPE_OPTIONS.map((type) => (
+                <option key={type} value={type}>
+                  {type === INVENTORY_ITEM_TYPE_OTHER ? t.inventory_item_type_other : type}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t.inventory_name_required}</label>
             <input value={name} onChange={(e) => setName(e.target.value)} className="border rounded px-3 py-2 w-full text-sm" required />
