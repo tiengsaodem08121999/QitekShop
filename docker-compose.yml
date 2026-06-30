@@ -52,6 +52,12 @@ services:
       - frontend
       - backend
       - phpmyadmin
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/api/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
 
   phpmyadmin:
     image: phpmyadmin:latest
@@ -72,7 +78,8 @@ services:
     restart: unless-stopped
     command: tunnel --no-autoupdate --protocol http2 --url http://nginx:80
     depends_on:
-      - nginx
+      nginx:
+        condition: service_healthy
 
 volumes:
   mysql_data:
