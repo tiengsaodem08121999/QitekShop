@@ -166,10 +166,9 @@ export default function InventoryPage() {
                 <td className="px-4 py-3.5"><StatusBadge status={it.status} /></td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-1">
-                    <button onClick={() => { if (it.status !== "sold") { setEditItem(it); setShowModal(true); } }}
-                      disabled={it.status === "sold"}
+                    <button onClick={() => { setEditItem(it); setShowModal(true); }}
                       title={it.status === "sold" ? t.inventory_edit_blocked : t.edit}
-                      className="p-1.5 rounded-md hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed">
+                      className="p-1.5 rounded-md hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     </button>
                     <button onClick={() => { if (it.status !== "sold") setDeleteItem(it); }} disabled={it.status === "sold"}
@@ -214,6 +213,7 @@ function InventoryModal({ t, initial, onClose, onSaved }: { t: ReturnType<typeof
   const [status, setStatus] = useState<InventoryStatus>(initial?.status === "returned" ? "returned" : "in_stock");
   const [saving, setSaving] = useState(false);
   const notify = useAlert();
+  const readOnly = initial?.status === "sold";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -243,15 +243,16 @@ function InventoryModal({ t, initial, onClose, onSaved }: { t: ReturnType<typeof
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold mb-4">{initial ? t.inventory_modal_edit : t.inventory_modal_add}</h2>
+        <h2 className="text-lg font-bold mb-4">{readOnly ? t.inventory_modal_view : initial ? t.inventory_modal_edit : t.inventory_modal_add}</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className="block text-sm font-medium mb-1">{t.inventory_item_type}</label>
             <select
               value={itemType}
               onChange={(e) => setItemType(e.target.value as InventoryItemTypeOption)}
-              className="border rounded px-3 py-2 w-full text-sm bg-white"
+              className="border rounded px-3 py-2 w-full text-sm bg-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
               required
+              disabled={readOnly}
             >
               {INVENTORY_ITEM_TYPE_OPTIONS.map((type) => (
                 <option key={type} value={type}>
@@ -262,25 +263,25 @@ function InventoryModal({ t, initial, onClose, onSaved }: { t: ReturnType<typeof
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t.inventory_name_required}</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="border rounded px-3 py-2 w-full text-sm" required />
+            <input value={name} onChange={(e) => setName(e.target.value)} className="border rounded px-3 py-2 w-full text-sm disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" required disabled={readOnly} />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t.inventory_col_serial}</label>
-            <input value={serial} onChange={(e) => setSerial(e.target.value)} className="border rounded px-3 py-2 w-full text-sm" />
+            <input value={serial} onChange={(e) => setSerial(e.target.value)} className="border rounded px-3 py-2 w-full text-sm disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" disabled={readOnly} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">{t.inventory_col_purchase_price}</label>
-              <input inputMode="numeric" value={purchasePrice} onChange={(e) => setPurchasePrice(formatNumber(e.target.value))} className="border rounded px-3 py-2 w-full text-sm text-right" />
+              <input inputMode="numeric" value={purchasePrice} onChange={(e) => setPurchasePrice(formatNumber(e.target.value))} className="border rounded px-3 py-2 w-full text-sm text-right disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" disabled={readOnly} />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">{t.inventory_col_selling_price}</label>
-              <input inputMode="numeric" value={sellingPrice} onChange={(e) => setSellingPrice(formatNumber(e.target.value))} className="border rounded px-3 py-2 w-full text-sm text-right" />
+              <input inputMode="numeric" value={sellingPrice} onChange={(e) => setSellingPrice(formatNumber(e.target.value))} className="border rounded px-3 py-2 w-full text-sm text-right disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" disabled={readOnly} />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t.inventory_col_supplier}</label>
-            <input value={supplier} onChange={(e) => setSupplier(e.target.value)} className="border rounded px-3 py-2 w-full text-sm" />
+            <input value={supplier} onChange={(e) => setSupplier(e.target.value)} className="border rounded px-3 py-2 w-full text-sm disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" disabled={readOnly} />
           </div>
           {initial && initial.status !== "sold" && (
             <div>
@@ -292,10 +293,16 @@ function InventoryModal({ t, initial, onClose, onSaved }: { t: ReturnType<typeof
             </div>
           )}
           <div className="flex gap-3 pt-2">
-            <button type="submit" disabled={saving} className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50">
-              {saving ? t.saving : t.save}
-            </button>
-            <button type="button" onClick={onClose} className="border px-4 py-2 rounded text-sm hover:bg-gray-50">{t.cancel}</button>
+            {readOnly ? (
+              <button type="button" onClick={onClose} className="border px-4 py-2 rounded text-sm hover:bg-gray-50">{t.close}</button>
+            ) : (
+              <>
+                <button type="submit" disabled={saving} className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50">
+                  {saving ? t.saving : t.save}
+                </button>
+                <button type="button" onClick={onClose} className="border px-4 py-2 rounded text-sm hover:bg-gray-50">{t.cancel}</button>
+              </>
+            )}
           </div>
         </form>
       </div>
