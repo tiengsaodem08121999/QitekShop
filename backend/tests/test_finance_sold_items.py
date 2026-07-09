@@ -132,6 +132,34 @@ def test_update_type_to_chi_rolls_back_all(client, admin_user):
     assert inv["status"] == "in_stock" and inv["selling_price"] is None
 
 
+def test_finance_sale_propagates_price_to_trade_in_line(client, admin_user, db_session):
+    from conftest import auth_headers as _auth
+    from app.inventory.models import InventoryItem
+    # Quotation with a trade-in imported to stock at resale 0 (stock selling stays blank).
+    q = client.post(
+        "/api/quotations",
+        json={
+            "new_customer": {"name": "A"},
+            "items": [
+                {"is_trade_in": False, "name": "Laptop", "selling_price": 1000},
+                {"is_trade_in": True, "name": "Old GPU", "purchase_price": 1500, "resale_price": 0},
+            ],
+            "import_trade_ins": True,
+        },
+        headers=_auth(admin_user),
+    ).json()
+    db_session.expire_all()
+    inv = db_session.query(InventoryItem).filter(InventoryItem.name == "Old GPU").one()
+    # Sell that stock item via a finance transaction at 2300.
+    body = _txn_body(sold_items=[{"inventory_item_id": inv.id, "selling_price": 2300}])
+    r = client.post("/api/finance/transactions", json=body, headers=_auth(admin_user))
+    assert r.status_code == 201, r.text
+    # The entered sale price must propagate to the quotation's trade-in line resale_price.
+    detail = client.get(f"/api/quotations/{q['id']}", headers=_auth(admin_user)).json()
+    trade_line = [it for it in detail["items"] if it["is_trade_in"]][0]
+    assert int(trade_line["resale_price"]) == 2300
+
+
 def test_delete_rolls_back_items(client, admin_user):
     a = _item(client, admin_user, name="A")
     txn = _create_txn_with(client, admin_user, [(a["id"], 100)])
