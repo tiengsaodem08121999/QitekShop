@@ -23,6 +23,8 @@ export default function QuotationsPage() {
   const confirm = useConfirm();
   const [data, setData] = useState<PaginatedResponse<QuotationListItem> | null>(null);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] =
+    useState<"all" | "outstanding" | "overpaid" | "delivered" | "confirmed">("all");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -33,8 +35,6 @@ export default function QuotationsPage() {
       .catch((err) => toast(apiError(err, t), "error"));
   }, [toast, t.error]);
 
-  // Reset to page 1 whenever the search term changes.
-  useEffect(() => { setPage(1); }, [search]);
 
   async function handleCopy(quotationId: number) {
     try {
@@ -63,9 +63,16 @@ export default function QuotationsPage() {
   }
 
   const items = data?.items ?? []; // ALL quotations — summary cards use this
-  const filtered = search
-    ? items.filter((q) => q.customer_name.toLowerCase().includes(search.toLowerCase()))
-    : items;
+  const filtered = items.filter((q) => {
+    if (search && !q.customer_name.toLowerCase().includes(search.toLowerCase())) return false;
+    switch (statusFilter) {
+      case "outstanding": return q.remaining > 0;
+      case "overpaid": return q.remaining < 0;
+      case "delivered": return q.status === "delivered";
+      case "confirmed": return q.status === "confirmed";
+      default: return true; // "all"
+    }
+  });
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages); // stay valid after deletes
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
@@ -153,9 +160,20 @@ export default function QuotationsPage() {
         <div className="flex gap-3 p-4 border-b border-gray-50 shrink-0">
           <div className="relative flex-1 max-w-xs">
             <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input placeholder={t.quotations_search} value={search} onChange={(e) => setSearch(e.target.value)}
+            <input placeholder={t.quotations_search} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors" />
           </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value as typeof statusFilter); setPage(1); }}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
+          >
+            <option value="all">{t.quotations_filter_all}</option>
+            <option value="outstanding">{t.quotations_filter_outstanding}</option>
+            <option value="overpaid">{t.quotations_filter_overpaid}</option>
+            <option value="delivered">{t.quotations_filter_delivered}</option>
+            <option value="confirmed">{t.quotations_filter_confirmed}</option>
+          </select>
         </div>
         <div className="overflow-auto flex-1" style={{ paddingBottom: 20 }}>
         <table className="w-full text-sm">
