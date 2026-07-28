@@ -25,6 +25,8 @@ const vi: Translations = {
   nav_inventory: "Kho hàng",
   nav_schedule: "Lịch",
   nav_settings: "Cài đặt",
+  sidebar_collapse: "Thu gọn thanh bên",
+  sidebar_expand: "Mở rộng thanh bên",
 
   // Note
   note_title: "Ghi chú",
