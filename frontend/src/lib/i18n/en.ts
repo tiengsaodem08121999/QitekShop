@@ -23,6 +23,8 @@ const en = {
   nav_inventory: "Inventory",
   nav_schedule: "Schedule",
   nav_settings: "Settings",
+  sidebar_collapse: "Collapse sidebar",
+  sidebar_expand: "Expand sidebar",
 
   // Note
   note_title: "Note",
