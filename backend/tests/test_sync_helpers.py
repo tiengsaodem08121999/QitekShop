@@ -41,13 +41,21 @@ def test_line_to_stock_copies_nonblank(db_session):
     assert inv.condition == "2nd"
 
 
-def test_line_to_stock_skips_blank_sn_and_zero_price(db_session):
+def test_line_to_stock_skips_blank_sn_but_writes_zero_sale_price(db_session):
     inv = _stock(db_session)
     _q, line = _line(db_session, inv.id, serial_number=None, selling_price=Decimal(0))
     _sync_line_to_stock(db_session, line)
     db_session.commit(); db_session.refresh(inv)
     assert inv.serial_number == "S-OLD"   # blank line S/N must NOT wipe stock
-    assert int(inv.selling_price) == 200  # zero line price must NOT wipe stock
+    assert int(inv.selling_price) == 0    # a sale line's 0 IS an intentional price
+
+
+def test_line_to_stock_skips_zero_purchase_price(db_session):
+    inv = _stock(db_session)
+    _q, line = _line(db_session, inv.id, purchase_price=Decimal(0))
+    _sync_line_to_stock(db_session, line)
+    db_session.commit(); db_session.refresh(inv)
+    assert int(inv.purchase_price) == 100  # zero line cost must NOT wipe stock
 
 
 def test_trade_in_resale_maps_to_stock_selling(db_session):
