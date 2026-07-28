@@ -119,6 +119,34 @@ def test_update_remove_trade_in_deletes_stock_with_button(client, sales_user, db
     assert db_session.query(InventoryItem).filter(InventoryItem.name == "Old RAM").count() == 0
 
 
+def test_remove_linked_sale_line_resets_stock_selling_to_zero(client, sales_user, db_session):
+    it = _add_item(db_session)  # selling_price 200
+    q = _quote(client, sales_user, [
+        dict(SALE),
+        {"is_trade_in": False, "name": "RAM", "selling_price": 777, "inventory_item_id": it.id},
+    ])
+    db_session.expire_all()
+    assert int(db_session.get(InventoryItem, it.id).selling_price) == 777  # linked -> synced
+    # Remove the linked RAM line, keeping only the unlinked SALE line.
+    items = [i for i in _detail(client, sales_user, q["id"])["items"]
+             if i.get("inventory_item_id") is None]
+    assert _put(client, sales_user, q["id"], items).status_code == 200
+    db_session.expire_all()
+    assert int(db_session.get(InventoryItem, it.id).selling_price) == 0  # unlinked -> reset
+
+
+def test_keep_linked_sale_line_does_not_reset_stock(client, sales_user, db_session):
+    it = _add_item(db_session)
+    q = _quote(client, sales_user, [{"is_trade_in": False, "name": "RAM",
+                                     "selling_price": 777, "inventory_item_id": it.id}])
+    # Edit an unrelated field (name) but keep the link -> price stays.
+    items = list(_detail(client, sales_user, q["id"])["items"])
+    items[0]["name"] = "RAM-2"
+    assert _put(client, sales_user, q["id"], items).status_code == 200
+    db_session.expire_all()
+    assert int(db_session.get(InventoryItem, it.id).selling_price) == 777
+
+
 def test_normal_update_does_not_touch_trade_in_stock(client, sales_user, db_session):
     q = _quote(client, sales_user, [dict(SALE), dict(TRADE)], import_trade_ins=True)
     assert db_session.query(InventoryItem).filter(InventoryItem.name == "Old RAM").count() == 1

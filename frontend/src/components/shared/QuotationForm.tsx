@@ -48,7 +48,7 @@ function blankItem(): QuotationItem {
 }
 
 // Component rows seeded by the "Full case" button, in display order.
-const FULL_CASE_NAMES = ["Main", "CPU", "Ram", "SSD", "Vga", "PSU", "Case", "Tan", "Fan"];
+const FULL_CASE_NAMES = ["Main", "CPU", "SSD", "Vga", "PSU", "Case", "Tản", "Fan", "Ram"];
 
 // True when a row is an untouched blankItem (no name, no S/N, no prices, not linked).
 function isBlankItem(item: QuotationItem): boolean {
