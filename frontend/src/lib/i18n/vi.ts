@@ -93,6 +93,7 @@ const vi: Translations = {
   err_inventory_delete_locked: "Không thể xóa món đã bán hoặc đang trong báo giá đã xác nhận",
   err_inventory_no_manual_sold: "Không thể đặt trạng thái 'đã bán' bằng tay",
   err_quotation_has_transactions: "Không thể xóa báo giá đã có thanh toán hoặc trả hàng. Vui lòng gỡ hết trước.",
+  err_customer_has_quotations: "Không thể xóa khách hàng đã có báo giá. Vui lòng xóa hết báo giá trước.",
   err_item_conflict: "Có sản phẩm đã bị báo giá khác giữ",
   err_inventory_edit_sold: "Món đã bán không thể sửa",
   err_inventory_delete_sold: "Món đã bán không thể xóa",
@@ -279,6 +280,10 @@ const vi: Translations = {
   customers_modal_add: "Thêm khách hàng",
   customers_modal_edit: "Sửa khách hàng",
   customers_name_required: "Tên *",
+  customers_delete: "Xóa khách hàng",
+  customers_delete_prompt: (name: string) => `Xóa khách hàng ${name}?`,
+  customers_delete_success: "Đã xóa khách hàng",
+  customers_delete_blocked: (n: number) => `Khách hàng có ${n} báo giá — xóa báo giá trước`,
 
   // Finance
   finance_title: "Thu chi",

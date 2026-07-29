@@ -91,6 +91,7 @@ const en = {
   err_inventory_delete_locked: "Cannot delete a sold or claimed item",
   err_inventory_no_manual_sold: "Cannot set the status to 'sold' manually",
   err_quotation_has_transactions: "Cannot delete a quotation that has payments or returns. Remove them first.",
+  err_customer_has_quotations: "Cannot delete a customer that has quotations. Delete the quotations first.",
   err_item_conflict: "A product is already held by another quotation",
   err_inventory_edit_sold: "A sold item cannot be edited",
   err_inventory_delete_sold: "A sold item cannot be deleted",
@@ -277,6 +278,10 @@ const en = {
   customers_modal_add: "Add customer",
   customers_modal_edit: "Edit customer",
   customers_name_required: "Name *",
+  customers_delete: "Delete customer",
+  customers_delete_prompt: (name: string) => `Delete customer ${name}?`,
+  customers_delete_success: "Customer deleted",
+  customers_delete_blocked: (n: number) => `Customer has ${n} quotation(s) — delete those first`,
 
   // Finance
   finance_title: "Finance",
