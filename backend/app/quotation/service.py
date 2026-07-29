@@ -39,6 +39,46 @@ def update_customer(db: Session, customer_id: int, **kwargs) -> Optional[Custome
     return customer
 
 
+def delete_customer(db: Session, customer_id: int) -> Optional[bool]:
+    """Hard-delete a customer.
+
+    Blocked while the customer still has quotations: those carry items,
+    payments and inventory links, so deleting the customer would orphan
+    them. The caller must delete the quotations first.
+
+    Returns True on success, None if the customer does not exist. Raises
+    ValueError (with a user-facing message) when blocked.
+    """
+    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+    if not customer:
+        return None
+    if customer.quotations:
+        raise ValueError("err_customer_has_quotations")
+    db.delete(customer)
+    db.commit()
+    return True
+
+
+def count_quotations_by_customer(db: Session, customer_ids: List[int]) -> dict:
+    """Map customer_id -> number of quotations, for the customer list.
+
+    Counts quotations directly rather than reusing the `total_purchased`
+    aggregate, which joins QuotationItem and skips trade-in lines: a customer
+    whose only quotation is empty or all trade-in would count 0 there and the
+    UI would wrongly offer to delete them.
+    """
+    if not customer_ids:
+        return {}
+    from sqlalchemy import func as sa_func
+    rows = (
+        db.query(Quotation.customer_id, sa_func.count(Quotation.id))
+        .filter(Quotation.customer_id.in_(customer_ids))
+        .group_by(Quotation.customer_id)
+        .all()
+    )
+    return {row[0]: int(row[1]) for row in rows}
+
+
 def get_claimed_inventory_ids(db: Session, exclude_quotation_id: Optional[int] = None) -> set:
     """Stock item ids claimed by a confirmed/delivered quotation."""
     q = (
