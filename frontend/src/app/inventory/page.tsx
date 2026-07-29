@@ -49,7 +49,7 @@ export default function InventoryPage() {
   const [showSelling, setShowSelling] = useState(false);
   const [statusFilter, setStatusFilter] = useState<
     "all" | "in_stock" | "in_stock_available" | "in_stock_claimed" | "sold"
-  >("all");
+  >("in_stock");
 
   function load() {
     const params = new URLSearchParams();
