@@ -16,8 +16,8 @@ import type { PaginatedResponse, Quotation, QuotationListItem } from "@/types";
 
 const PAGE_SIZE = 12;
 const CURRENT_YEAR = new Date().getFullYear();
-// Three years back and three forward: quotations can be dated ahead of today.
-const YEAR_OPTIONS = Array.from({ length: 7 }, (_, i) => CURRENT_YEAR + 3 - i);
+// This year plus the three before it; future years have nothing to show.
+const YEAR_OPTIONS = Array.from({ length: 4 }, (_, i) => CURRENT_YEAR - i);
 
 export default function QuotationsPage() {
   const router = useRouter();
