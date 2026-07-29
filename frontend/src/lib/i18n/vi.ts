@@ -48,6 +48,8 @@ const vi: Translations = {
   inventory_col_import_date: "Ngày nhập",
   inventory_col_status: "Trạng thái",
   inventory_modal_add: "Thêm món hàng",
+  inventory_modal_copy: "Sao chép món hàng",
+  inventory_copy: "Sao chép",
   inventory_modal_edit: "Sửa món hàng",
   inventory_modal_view: "Chi tiết món hàng",
   inventory_name_required: "Tên hàng *",

@@ -46,6 +46,8 @@ const en = {
   inventory_col_import_date: "Import date",
   inventory_col_status: "Status",
   inventory_modal_add: "Add item",
+  inventory_modal_copy: "Copy item",
+  inventory_copy: "Copy",
   inventory_modal_edit: "Edit item",
   inventory_modal_view: "Item details",
   inventory_name_required: "Item name *",
