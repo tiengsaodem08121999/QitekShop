@@ -127,6 +127,7 @@ const en = {
   quotations_outstanding: "Outstanding",
   quotations_overpaid: "Overpaid",
   quotations_filter_all: "All",
+  quotations_year_all: "All years",
   quotations_filter_outstanding: "Outstanding",
   quotations_filter_overpaid: "Overpaid",
   quotations_filter_delivered: "Delivered",

@@ -15,6 +15,9 @@ import { useConfirm } from "@/components/Confirm";
 import type { PaginatedResponse, Quotation, QuotationListItem } from "@/types";
 
 const PAGE_SIZE = 12;
+const CURRENT_YEAR = new Date().getFullYear();
+// Three years back and three forward: quotations can be dated ahead of today.
+const YEAR_OPTIONS = Array.from({ length: 7 }, (_, i) => CURRENT_YEAR + 3 - i);
 
 export default function QuotationsPage() {
   const router = useRouter();
@@ -25,6 +28,7 @@ export default function QuotationsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<"all" | "outstanding" | "overpaid" | "delivered" | "confirmed">("all");
+  const [yearFilter, setYearFilter] = useState<number | "all">(CURRENT_YEAR);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -62,7 +66,12 @@ export default function QuotationsPage() {
     }
   }
 
-  const items = data?.items ?? []; // ALL quotations — summary cards use this
+  const all = data?.items ?? [];
+  // The year scopes the whole page, summary cards included: cards counting every
+  // year while the list shows one would just look like a bug.
+  const items = yearFilter === "all"
+    ? all
+    : all.filter((q) => new Date(q.created_at).getFullYear() === yearFilter);
   const filtered = items.filter((q) => {
     if (search && !q.customer_name.toLowerCase().includes(search.toLowerCase())) return false;
     switch (statusFilter) {
@@ -87,9 +96,22 @@ export default function QuotationsPage() {
     <AppLayout>
       <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center mb-6 shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">{t.quotations_title}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{t.quotations_subtitle}</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">{t.quotations_title}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{t.quotations_subtitle}</p>
+          </div>
+          <select
+            value={yearFilter}
+            onChange={(e) => {
+              setYearFilter(e.target.value === "all" ? "all" : Number(e.target.value));
+              setPage(1);
+            }}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
+          >
+            <option value="all">{t.quotations_year_all}</option>
+            {YEAR_OPTIONS.map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
         </div>
         <Link href="/quotations/new"
           className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm">

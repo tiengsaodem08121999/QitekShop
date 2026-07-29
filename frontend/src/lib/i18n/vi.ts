@@ -129,6 +129,7 @@ const vi: Translations = {
   quotations_outstanding: "Còn nợ",
   quotations_overpaid: "Trả dư",
   quotations_filter_all: "Tất cả",
+  quotations_year_all: "Tất cả năm",
   quotations_filter_outstanding: "Còn nợ",
   quotations_filter_overpaid: "Trả dư",
   quotations_filter_delivered: "Đã giao hàng",
