@@ -304,7 +304,6 @@ def build_quotation_email_html(
           <td style="{cell}color:{_INK};font-weight:600;">{_esc(item.name)}</td>
           <td style="{cell}color:{_GRAY};font-family:monospace;font-size:12px;">{_esc(item.serial_number or "—")}</td>
           <td align="center" style="{cell}">{cond}</td>
-          <td align="right" style="{cell}color:{_INK};">{_vnd(item.selling_price)}</td>
           <td style="{cell}color:{_INK};">{warranty_html}</td>
           <td align="right" style="{cell}color:{_INK};font-weight:700;">{_vnd(item.selling_price)}</td>
         </tr>"""
@@ -319,11 +318,11 @@ def build_quotation_email_html(
       <div style="font-size:16px;font-weight:800;color:{_NAVY};margin-bottom:10px;">{icon("cart", 18)} DANH SÁCH SẢN PHẨM</div>
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border:1px solid {_BORDER};border-radius:10px;border-collapse:separate;overflow:hidden;">
         <tr style="background:{_NAVY};">
-          {_th("STT", "center")}{_th("Sản phẩm")}{_th("S/N")}{_th("Tình trạng", "center")}{_th("Đơn giá", "right")}{_th("Bảo hành")}{_th("Thành tiền", "right")}
+          {_th("STT", "center")}{_th("Sản phẩm")}{_th("S/N")}{_th("Tình trạng", "center")}{_th("Bảo hành")}{_th("Giá", "right")}
         </tr>
         {product_rows}
         <tr style="background:{_LIGHT};">
-          <td colspan="6" align="right" style="font-size:13px;font-weight:800;color:{_INK};padding:11px 8px;">TỔNG GIÁ TRỊ SẢN PHẨM</td>
+          <td colspan="5" align="right" style="font-size:13px;font-weight:800;color:{_INK};padding:11px 8px;">TỔNG GIÁ TRỊ SẢN PHẨM</td>
           <td align="right" style="font-size:13px;font-weight:800;color:{_INK};padding:11px 8px;">{_vnd(total_products)}</td>
         </tr>
       </table>
@@ -340,7 +339,6 @@ def build_quotation_email_html(
               <td style="{cell}color:{_INK};font-weight:600;">{_esc(item.name)}</td>
               <td align="center" style="{cell}color:{_GRAY};">{_esc(item.serial_number or "—")}</td>
               <td align="center" style="{cell}color:{_GRAY};">{_esc(item.condition or "—")}</td>
-              <td align="right" style="{cell}color:{_INK};">{_vnd(item.purchase_price)}</td>
               <td align="right" style="{cell}color:{_INK};font-weight:700;">{_vnd(item.purchase_price)}</td>
             </tr>"""
         trade_rows = "".join(trade_row(i + 1, it) for i, it in enumerate(trade_ins))
@@ -349,11 +347,11 @@ def build_quotation_email_html(
           <div style="font-size:16px;font-weight:800;color:{_NAVY};margin-bottom:10px;">{icon("recycle", 18)} THIẾT BỊ THU CŨ</div>
           <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border:1px solid {_BORDER};border-radius:10px;border-collapse:separate;overflow:hidden;">
             <tr style="background:{_NAVY};">
-              {_th("STT", "center")}{_th("Thiết bị thu cũ")}{_th("S/N", "center")}{_th("Tình trạng", "center")}{_th("Giá thu", "right")}{_th("Thành tiền", "right")}
+              {_th("STT", "center")}{_th("Thiết bị thu cũ")}{_th("S/N", "center")}{_th("Tình trạng", "center")}{_th("Giá thu", "right")}
             </tr>
             {trade_rows}
             <tr style="background:{_LIGHT};">
-              <td colspan="5" align="right" style="font-size:13px;font-weight:800;color:{_INK};padding:11px 8px;">TỔNG GIÁ TRỊ THU CŨ</td>
+              <td colspan="4" align="right" style="font-size:13px;font-weight:800;color:{_INK};padding:11px 8px;">TỔNG GIÁ TRỊ THU CŨ</td>
               <td align="right" style="font-size:13px;font-weight:800;color:{_GREEN};padding:11px 8px;">{_vnd(total_trade_in)}</td>
             </tr>
           </table>
