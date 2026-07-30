@@ -153,7 +153,7 @@ def attach_sold_items(db: Session, txns: list[Transaction]) -> None:
 
 def _sell_items(db: Session, txn_id: int, sold_items: list) -> None:
     """Validate and mark each item sold, linking it to txn_id."""
-    from app.quotation.service import get_claimed_inventory_ids
+    from app.quotation.service import get_claimed_inventory_ids, sync_stock_to_quotations
 
     claimed = get_claimed_inventory_ids(db)
     for si in sold_items:
@@ -171,6 +171,9 @@ def _sell_items(db: Session, txn_id: int, sold_items: list) -> None:
         item.status = InventoryStatus.sold
         item.selling_price = si.selling_price
         item.transaction_id = txn_id
+        # Propagate the entered sale price onto any linked quotation lines (e.g. a
+        # trade-in line's resale_price), same as editing the price on the stock page.
+        sync_stock_to_quotations(db, item)
     db.flush()
 
 

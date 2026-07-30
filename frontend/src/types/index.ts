@@ -16,6 +16,7 @@ export interface Customer {
   notes: string | null;
   total_purchased?: number;
   profit_margin_pct?: number | null;
+  quotation_count?: number;
   created_at: string;
 }
 

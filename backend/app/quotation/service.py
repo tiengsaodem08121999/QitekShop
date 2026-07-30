@@ -39,6 +39,46 @@ def update_customer(db: Session, customer_id: int, **kwargs) -> Optional[Custome
     return customer
 
 
+def delete_customer(db: Session, customer_id: int) -> Optional[bool]:
+    """Hard-delete a customer.
+
+    Blocked while the customer still has quotations: those carry items,
+    payments and inventory links, so deleting the customer would orphan
+    them. The caller must delete the quotations first.
+
+    Returns True on success, None if the customer does not exist. Raises
+    ValueError (with a user-facing message) when blocked.
+    """
+    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+    if not customer:
+        return None
+    if customer.quotations:
+        raise ValueError("err_customer_has_quotations")
+    db.delete(customer)
+    db.commit()
+    return True
+
+
+def count_quotations_by_customer(db: Session, customer_ids: List[int]) -> dict:
+    """Map customer_id -> number of quotations, for the customer list.
+
+    Counts quotations directly rather than reusing the `total_purchased`
+    aggregate, which joins QuotationItem and skips trade-in lines: a customer
+    whose only quotation is empty or all trade-in would count 0 there and the
+    UI would wrongly offer to delete them.
+    """
+    if not customer_ids:
+        return {}
+    from sqlalchemy import func as sa_func
+    rows = (
+        db.query(Quotation.customer_id, sa_func.count(Quotation.id))
+        .filter(Quotation.customer_id.in_(customer_ids))
+        .group_by(Quotation.customer_id)
+        .all()
+    )
+    return {row[0]: int(row[1]) for row in rows}
+
+
 def get_claimed_inventory_ids(db: Session, exclude_quotation_id: Optional[int] = None) -> set:
     """Stock item ids claimed by a confirmed/delivered quotation."""
     q = (
@@ -145,9 +185,16 @@ def _copy_line_fields_to_stock(item, inv) -> None:
         inv.condition = item.condition
     if not _blank_price(item.purchase_price):
         inv.purchase_price = item.purchase_price
-    sell = item.resale_price if item.is_trade_in else item.selling_price
-    if not _blank_price(sell):
-        inv.selling_price = sell
+    if item.is_trade_in:
+        # Trade-in resale keeps the blank-guard: a 0 resale means "not yet priced".
+        if not _blank_price(item.resale_price):
+            inv.selling_price = item.resale_price
+    elif item.selling_price is not None:
+        # A sale line's selling price is authored on the quotation, so 0 is an
+        # intentional price (not a blank) and must write through to stock — this
+        # lets a linked item's sale price be updated to 0. (Blank guard would
+        # otherwise skip it, and stock's old price would sync back over it.)
+        inv.selling_price = item.selling_price
 
 
 def _sync_line_to_stock(db: Session, item) -> None:
@@ -159,6 +206,22 @@ def _sync_line_to_stock(db: Session, item) -> None:
     if inv is None:
         return
     _copy_line_fields_to_stock(item, inv)
+
+
+def _reset_removed_sale_stock(db: Session, quotation, old_sale_links: set) -> None:
+    """When a linked sale line is removed from a quotation, reset that stock item's
+    selling price back to 0 — the sale price was authored on the now-deleted line,
+    so it no longer applies. Only sale lines still on this quotation keep their price."""
+    from app.inventory.models import InventoryItem
+    new_sale_links = {
+        i.inventory_item_id for i in quotation.items
+        if not i.is_trade_in and i.inventory_item_id is not None
+    }
+    removed = old_sale_links - new_sale_links
+    if not removed:
+        return
+    for inv in db.query(InventoryItem).filter(InventoryItem.id.in_(removed)).all():
+        inv.selling_price = 0
 
 
 def _sync_quotation_to_stock(db: Session, quotation) -> None:
@@ -338,6 +401,10 @@ def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> O
             i.inventory_item_id for i in quotation.items
             if i.is_trade_in and i.inventory_item_id is not None
         }
+        old_sale_links = {
+            i.inventory_item_id for i in quotation.items
+            if not i.is_trade_in and i.inventory_item_id is not None
+        }
         _check_duplicate_inventory_links(data.items)
 
         # Replace all items, keeping payload links (sale + existing trade-in) so
@@ -358,6 +425,7 @@ def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> O
                    if not i.is_trade_in and i.inventory_item_id is not None):
                 raise ValueError("err_item_conflict")
         _sync_quotation_to_stock(db, quotation)
+        _reset_removed_sale_stock(db, quotation, old_sale_links)
         if data.import_trade_ins:
             _import_trade_in_stock(db, quotation, old_trade_in_links)
 
@@ -443,6 +511,11 @@ def delete_quotation(db: Session, quotation_id: int) -> Optional[bool]:
             if inv.status != InventoryStatus.sold and inv.id not in claimed_elsewhere:
                 db.delete(inv)
         else:
+            # The sale price was authored on this quotation, which is being
+            # deleted, so reset the stock item's selling price to 0 (unless another
+            # quotation still claims it).
+            if inv.id not in claimed_elsewhere:
+                inv.selling_price = 0
             # Release a sold sale-line item back to stock.
             if inv.status == InventoryStatus.sold:
                 inv.status = InventoryStatus.in_stock
