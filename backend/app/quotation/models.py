@@ -135,6 +135,12 @@ class Return(Base):
     inventory_item_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("inventory_items.id", ondelete="SET NULL"), nullable=True
     )
+    # The originally-sold stock item this return refers to. Pins the return to one
+    # sale line when several lines share a name (line ids are regenerated on every
+    # quotation edit, stock links are not).
+    sold_inventory_item_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("inventory_items.id", ondelete="SET NULL"), nullable=True
+    )
     reason: Mapped[ReturnReason] = mapped_column(Enum(ReturnReason))
     selling_price: Mapped[Decimal] = mapped_column(Numeric(12, 0))
     refund_percent: Mapped[int] = mapped_column(default=100)

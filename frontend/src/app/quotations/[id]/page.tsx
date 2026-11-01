@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { formatDate, formatNumber, parseNumber } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { apiError } from "@/lib/apiError";
+import { matchReturnsToLines } from "@/lib/returns";
 import { useToast } from "@/components/Toast";
 import ProductsTable from "@/components/quotation/ProductsTable";
 import PaymentModal, { type PaymentSubmitBody } from "@/components/quotation/PaymentModal";
@@ -231,7 +232,7 @@ export default function QuotationDetailPage() {
 
   const products = q.items.filter((i) => !i.is_trade_in);
   const tradeIns = q.items.filter((i) => i.is_trade_in);
-  const returnedNames = new Set(q.returns.map((r) => r.item_name));
+  const returnedLines = matchReturnsToLines(products, q.returns);
 
   return (
     <AppLayout>
@@ -316,7 +317,7 @@ export default function QuotationDetailPage() {
       {/* Products table */}
       <ProductsTable
         products={products}
-        returnedNames={returnedNames}
+        returnedLines={returnedLines}
         customerName={q.customer.name}
         showCost={showCost}
         onToggleShowCost={() => setShowCost(!showCost)}
@@ -625,7 +626,7 @@ export default function QuotationDetailPage() {
         <ReturnModal
           initial={editingReturn}
           products={products}
-          returnedNames={returnedNames}
+          returnedLines={returnedLines}
           onClose={() => setShowReturnModal(false)}
           onSubmit={handleReturnSubmit}
         />

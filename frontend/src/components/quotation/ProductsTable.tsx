@@ -6,7 +6,7 @@ import type { QuotationItem } from "@/types";
 
 interface Props {
   products: QuotationItem[];
-  returnedNames: Set<string>;
+  returnedLines: Map<number, number>;
   customerName: string;
   showCost: boolean;
   onToggleShowCost: () => void;
@@ -16,7 +16,7 @@ interface Props {
 
 export default function ProductsTable({
   products,
-  returnedNames,
+  returnedLines,
   customerName,
   showCost,
   onToggleShowCost,
@@ -87,7 +87,7 @@ export default function ProductsTable({
         </thead>
         <tbody className="divide-y divide-gray-50">
           {products.map((item, i) => {
-            const isReturned = returnedNames.has(item.name);
+            const isReturned = returnedLines.has(i);
             return (
               <tr key={i} className={`hover:bg-gray-50/50 transition-colors ${isReturned ? "line-through opacity-50" : ""}`}>
                 <td className="px-2 py-3 text-center hide-on-screenshot">
