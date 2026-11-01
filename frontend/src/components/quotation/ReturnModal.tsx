@@ -8,6 +8,7 @@ import type { QuotationItem, Return, ReturnReason } from "@/types";
 
 export interface ReturnSubmitBody {
   item_name: string;
+  quotation_item_id: number | null;
   reason: ReturnReason;
   selling_price: number;
   refund_percent: number;
@@ -18,7 +19,8 @@ export interface ReturnSubmitBody {
 interface Props {
   initial: Return | null;
   products: QuotationItem[];
-  returnedNames: Set<string>;
+  /** Line index (into `products`) -> id of the return that line is matched to. */
+  returnedLines: Map<number, number>;
   onClose: () => void;
   onSubmit: (body: ReturnSubmitBody) => Promise<void>;
 }
@@ -26,12 +28,19 @@ interface Props {
 export default function ReturnModal({
   initial,
   products,
-  returnedNames,
+  returnedLines,
   onClose,
   onSubmit,
 }: Props) {
   const t = useT();
-  const [itemName, setItemName] = useState(() => initial?.item_name ?? "");
+  // Lines are picked by index: several lines can share the same name.
+  const [lineIndex, setLineIndex] = useState(() => {
+    if (!initial) return "";
+    for (const [idx, returnId] of returnedLines) if (returnId === initial.id) return String(idx);
+    return "";
+  });
+  const selected = lineIndex === "" ? null : products[Number(lineIndex)];
+  const itemName = selected?.name ?? initial?.item_name ?? "";
   const [reason, setReason] = useState<ReturnReason>(() => initial?.reason ?? "seller_fault");
   const [sellingPrice, setSellingPrice] = useState(() =>
     initial ? formatNumber(initial.selling_price) : "",
@@ -42,9 +51,9 @@ export default function ReturnModal({
   const [date, setDate] = useState(() => initial?.date ?? new Date().toISOString().split("T")[0]);
   const [note, setNote] = useState(() => initial?.note ?? "");
 
-  function handleItemChange(name: string) {
-    setItemName(name);
-    const product = products.find((p) => p.name === name);
+  function handleItemChange(value: string) {
+    setLineIndex(value);
+    const product = value === "" ? undefined : products[Number(value)];
     if (product) setSellingPrice(formatNumber(product.selling_price));
   }
 
@@ -56,6 +65,7 @@ export default function ReturnModal({
   async function handleSave() {
     await onSubmit({
       item_name: itemName,
+      quotation_item_id: selected?.id ?? null,
       reason,
       selling_price: parseNumber(sellingPrice),
       refund_percent: parseInt(refundPercent) || 0,
@@ -76,18 +86,20 @@ export default function ReturnModal({
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">{t.return_item_name} *</label>
             <select
-              value={itemName}
+              value={lineIndex}
               onChange={(e) => handleItemChange(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
             >
               <option value="">--</option>
-              {products
-                .filter((p) => !returnedNames.has(p.name) || (initial !== null && initial.item_name === p.name))
-                .map((p) => (
-                  <option key={p.id ?? p.name} value={p.name}>
-                    {p.name} — {p.selling_price.toLocaleString()}
+              {products.map((p, i) => {
+                const returnId = returnedLines.get(i);
+                if (returnId !== undefined && returnId !== initial?.id) return null;
+                return (
+                  <option key={p.id ?? i} value={String(i)}>
+                    {i + 1}. {p.name}{p.serial_number ? ` (${p.serial_number})` : ""} — {p.selling_price.toLocaleString()}
                   </option>
-                ))}
+                );
+              })}
             </select>
           </div>
           <div>

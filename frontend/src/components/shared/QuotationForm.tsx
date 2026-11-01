@@ -17,7 +17,8 @@ interface Props {
   initialCustomer?: Customer;
   initialItems?: QuotationItem[];
   initialNote?: string | null;
-  returnedNames?: Set<string>;
+  /** Ids of sale lines that have a return; their name is locked. */
+  returnedItemIds?: Set<number>;
   status?: QuotationStatus;
 }
 
@@ -61,7 +62,7 @@ function isBlankItem(item: QuotationItem): boolean {
   );
 }
 
-export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems, initialNote, returnedNames, status }: Props) {
+export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems, initialNote, returnedItemIds, status }: Props) {
   // Delivered quotations: sale lines locked to price/warranty/condition/note only
   // (no add/remove/relink). Trade-ins stay editable.
   const saleLocked = status === "delivered";
@@ -392,7 +393,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
             </thead>
             <tbody className="divide-y divide-gray-50">
               {items.map((item, i) => {
-                const isReturned = returnedNames?.has(item.name);
+                const isReturned = item.id != null && !!returnedItemIds?.has(item.id);
                 const nameLocked = isReturned || saleLocked;
                 return (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">

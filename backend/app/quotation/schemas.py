@@ -206,6 +206,8 @@ class PaymentResponse(DecimalModel):
 
 class ReturnCreate(BaseModel):
     item_name: str
+    # The sale line being returned; disambiguates lines that share a name.
+    quotation_item_id: Optional[int] = None
     reason: ReturnReason
     selling_price: Decimal
     refund_percent: int = 100
@@ -215,6 +217,7 @@ class ReturnCreate(BaseModel):
 
 class ReturnUpdate(BaseModel):
     item_name: Optional[str] = None
+    quotation_item_id: Optional[int] = None
     reason: Optional[ReturnReason] = None
     selling_price: Optional[Decimal] = None
     refund_percent: Optional[int] = None
@@ -226,6 +229,7 @@ class ReturnResponse(DecimalModel):
     id: int
     quotation_id: int
     item_name: str
+    sold_inventory_item_id: Optional[int] = None
     reason: ReturnReason
     selling_price: Decimal
     refund_percent: int

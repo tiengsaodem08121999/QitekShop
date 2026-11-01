@@ -80,6 +80,7 @@ export interface Return {
   id: number;
   quotation_id: number;
   item_name: string;
+  sold_inventory_item_id: number | null;
   reason: ReturnReason;
   selling_price: number;
   refund_percent: number;
