@@ -17,11 +17,14 @@ from app.inventory.service import (
 
 router = APIRouter(prefix="/api/inventory", tags=["inventory"])
 
+_SELLABLE = (InventoryStatus.in_stock, InventoryStatus.shipping)
+
 
 @router.get("")
 def list_inventory_endpoint(
     search: Optional[str] = None,
     available: bool = False,
+    sellable: bool = False,  # Finance sale picker: available items plus ones being shipped
     exclude_quotation_id: Optional[int] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(100, ge=0),  # 0 = return all items
@@ -37,11 +40,13 @@ def list_inventory_endpoint(
     for i in items:
         if available and (i.status != InventoryStatus.in_stock or i.id in claimed):
             continue
+        if sellable and (i.status not in _SELLABLE or i.id in claimed):
+            continue
         data = InventoryItemResponse.model_validate(i).model_dump()
         data["is_claimed"] = i.id in claimed
         data["in_use"] = i.id in referenced
         result.append(data)
-    if available:
+    if available or sellable:
         total = len(result)
     return {"items": result, "total": total, "page": page, "limit": limit}
 

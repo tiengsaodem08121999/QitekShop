@@ -144,6 +144,8 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
     setItems((prev) => prev.map((item, i) => i === index ? {
       ...item, name: inv.name, serial_number: inv.serial_number,
       purchase_price: inv.purchase_price, inventory_item_id: inv.id,
+      // Start from the stock item's expected price unless a price is already typed.
+      selling_price: item.selling_price || inv.expected_price || 0,
     } : item));
     setStockOpenRow(null);
   }

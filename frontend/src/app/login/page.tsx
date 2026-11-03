@@ -69,6 +69,9 @@ export default function LoginPage() {
             {loading ? t.login_submitting : t.login_submit}
           </button>
         </form>
+        <a href="/kho-hang" className="block text-center text-sm text-blue-600 hover:underline mt-5">
+          {t.login_view_stock}
+        </a>
       </div>
     </div>
   );

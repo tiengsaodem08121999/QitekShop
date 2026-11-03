@@ -49,7 +49,7 @@ export default function TransactionModal({ onClose, onSaved, initial }: Props) {
   useEffect(() => {
     if (type !== "thu") return;
     let active = true;
-    apiFetch<PaginatedResponse<InventoryItem>>("/api/inventory?available=true")
+    apiFetch<PaginatedResponse<InventoryItem>>("/api/inventory?sellable=true")
       .then((res) => {
         if (active) setAvailable(res.items);
       })
@@ -70,7 +70,7 @@ export default function TransactionModal({ onClose, onSaved, initial }: Props) {
       {
         inventory_item_id: item.id,
         name: item.name,
-        price: item.selling_price ? formatNumber(item.selling_price) : "",
+        price: item.expected_price ? formatNumber(item.expected_price) : "",
       },
     ]);
   }

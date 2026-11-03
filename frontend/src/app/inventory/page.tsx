@@ -25,6 +25,7 @@ const STATUS_STYLE: Record<InventoryStatus, string> = {
   in_stock: "bg-emerald-50 text-emerald-700",
   sold: "bg-red-50 text-red-600",
   returned: "bg-amber-50 text-amber-700",
+  shipping: "bg-blue-50 text-blue-700",
 };
 
 function StatusBadge({ status }: { status: InventoryStatus }) {
@@ -32,6 +33,7 @@ function StatusBadge({ status }: { status: InventoryStatus }) {
   const label =
     status === "sold" ? t.inventory_status_sold
     : status === "returned" ? t.inventory_status_returned
+    : status === "shipping" ? t.inventory_status_shipping
     : t.inventory_status_in_stock;
   return <span className={`text-[11px] px-2 py-0.5 rounded font-semibold ${STATUS_STYLE[status]}`}>{label}</span>;
 }
@@ -49,7 +51,7 @@ export default function InventoryPage() {
   const [deleting, setDeleting] = useState(false);
   const [showSelling, setShowSelling] = useState(false);
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "in_stock" | "in_stock_available" | "in_stock_claimed" | "sold"
+    "all" | "in_stock" | "in_stock_available" | "in_stock_claimed" | "shipping" | "sold"
   >("in_stock");
 
   function openModal(opts: { edit?: InventoryItem; copy?: InventoryItem } = {}) {
@@ -96,6 +98,7 @@ export default function InventoryPage() {
       case "in_stock": return i.status === "in_stock";
       case "in_stock_available": return i.status === "in_stock" && !i.is_claimed;
       case "in_stock_claimed": return i.status === "in_stock" && !!i.is_claimed;
+      case "shipping": return i.status === "shipping";
       case "sold": return i.status === "sold";
       default: return true; // all
     }
@@ -133,6 +136,7 @@ export default function InventoryPage() {
             <option value="in_stock">{t.inventory_status_in_stock}</option>
             <option value="in_stock_available">{t.inventory_status_in_stock_available}</option>
             <option value="in_stock_claimed">{t.inventory_status_in_stock_claimed}</option>
+            <option value="shipping">{t.inventory_status_shipping}</option>
             <option value="sold">{t.inventory_status_sold}</option>
           </select>
         </div>
@@ -143,6 +147,7 @@ export default function InventoryPage() {
               <th className="px-5 py-3 font-medium">{t.inventory_col_name}</th>
               <th className="px-4 py-3 font-medium">{t.inventory_col_serial}</th>
               <th className="px-4 py-3 font-medium text-right">{t.inventory_col_purchase_price}</th>
+              <th className="px-4 py-3 font-medium text-right">{t.inventory_col_expected_price}</th>
               <th className="px-4 py-3 font-medium text-right">
                 <button
                   onClick={() => setShowSelling((v) => !v)}
@@ -165,14 +170,15 @@ export default function InventoryPage() {
           </thead>
           <tbody className="divide-y divide-gray-50">
             {filteredItems.length === 0 && (
-              <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-400">{t.inventory_empty}</td></tr>
+              <tr><td colSpan={9} className="px-5 py-12 text-center text-gray-400">{t.inventory_empty}</td></tr>
             )}
             {pageItems.map((it) => {
               return (
               <tr key={it.id} className="hover:bg-gray-50/70 transition-colors">
                 <td className="px-5 py-3.5"><div className="font-medium text-gray-800">{it.name}</div></td>
                 <td className="px-4 py-3.5 text-gray-600 font-mono">{it.serial_number || t.dash}</td>
-                <td className="px-4 py-3.5 text-right tabular-nums text-gray-700">{(it.purchase_price || 0).toLocaleString()}</td>
+                <td className="px-4 py-3.5 text-right tabular-nums text-gray-700">{showSelling ? (it.purchase_price || 0).toLocaleString() : "•••"}</td>
+                <td className="px-4 py-3.5 text-right tabular-nums text-gray-700">{it.expected_price != null ? it.expected_price.toLocaleString() : t.dash}</td>
                 <td className="px-4 py-3.5 text-right tabular-nums font-medium text-gray-700">{showSelling ? (it.selling_price != null ? it.selling_price.toLocaleString() : t.dash) : "•••"}</td>
                 <td className="px-4 py-3.5 text-gray-500 max-w-[150px] truncate">{it.supplier || t.dash}</td>
                 <td className="px-4 py-3.5 text-gray-600">{formatDate(it.created_at)}</td>
@@ -202,7 +208,7 @@ export default function InventoryPage() {
         </table>
         </div>
         <Pagination page={safePage} pageSize={PAGE_SIZE} total={filteredItems.length} onPageChange={setPage}
-          center={<span className="text-gray-600 tabular-nums font-medium">{t.inventory_total_purchase}: {totalPurchase.toLocaleString()}</span>} />
+          center={<span className="text-gray-600 tabular-nums font-medium">{t.inventory_total_purchase}: {showSelling ? totalPurchase.toLocaleString() : "•••"}</span>} />
       </div>
       </div>
 
@@ -227,9 +233,10 @@ function InventoryModal({ t, initial, copy = false, onClose, onSaved }: { t: Ret
   // and enters stock regardless of what became of the item it was copied from.
   const [serial, setSerial] = useState(copy ? "" : initial?.serial_number || "");
   const [purchasePrice, setPurchasePrice] = useState(initial ? formatNumber(initial.purchase_price) : "");
-  const [sellingPrice, setSellingPrice] = useState(initial?.selling_price != null ? formatNumber(initial.selling_price) : "");
+  const [expectedPrice, setExpectedPrice] = useState(initial?.expected_price != null ? formatNumber(initial.expected_price) : "");
   const [supplier, setSupplier] = useState(initial?.supplier || "");
-  const [status, setStatus] = useState<InventoryStatus>(!copy && initial?.status === "returned" ? "returned" : "in_stock");
+  const [note, setNote] = useState(initial?.note || "");
+  const [status, setStatus] = useState<InventoryStatus>(!copy && (initial?.status === "returned" || initial?.status === "shipping") ? initial.status : "in_stock");
   const [saving, setSaving] = useState(false);
   const notify = useAlert();
   const readOnly = !copy && initial?.status === "sold";
@@ -242,8 +249,9 @@ function InventoryModal({ t, initial, copy = false, onClose, onSaved }: { t: Ret
         name: buildInventoryItemName(itemType, name),
         serial_number: serial || null,
         purchase_price: parseNumber(purchasePrice),
-        selling_price: sellingPrice ? parseNumber(sellingPrice) : null,
+        expected_price: expectedPrice ? parseNumber(expectedPrice) : null,
         supplier: supplier || null,
+        note: note.trim() || null,
       };
       if (initial && !copy) {
         if (initial.status !== "sold") body.status = status;
@@ -294,19 +302,31 @@ function InventoryModal({ t, initial, copy = false, onClose, onSaved }: { t: Ret
               <input inputMode="numeric" value={purchasePrice} onChange={(e) => setPurchasePrice(formatNumber(e.target.value))} className="border rounded px-3 py-2 w-full text-sm text-right disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" disabled={readOnly} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">{t.inventory_col_selling_price}</label>
-              <input inputMode="numeric" value={sellingPrice} onChange={(e) => setSellingPrice(formatNumber(e.target.value))} className="border rounded px-3 py-2 w-full text-sm text-right disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" disabled={readOnly} />
+              <label className="block text-sm font-medium mb-1">{t.inventory_col_expected_price}</label>
+              <input inputMode="numeric" value={expectedPrice} onChange={(e) => setExpectedPrice(formatNumber(e.target.value))} className="border rounded px-3 py-2 w-full text-sm text-right disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" disabled={readOnly} />
             </div>
           </div>
+          {/* The actual selling price is recorded only when the unit is sold. */}
+          {!copy && initial?.selling_price != null && (
+            <div>
+              <label className="block text-sm font-medium mb-1">{t.inventory_col_selling_price}</label>
+              <input value={formatNumber(initial.selling_price)} className="border rounded px-3 py-2 w-full text-sm text-right bg-gray-100 text-gray-500 cursor-not-allowed" disabled />
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium mb-1">{t.inventory_col_supplier}</label>
             <input value={supplier} onChange={(e) => setSupplier(e.target.value)} className="border rounded px-3 py-2 w-full text-sm disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" disabled={readOnly} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t.inventory_note}</label>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder={t.inventory_note_hint} className="border rounded px-3 py-2 w-full text-sm disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed" disabled={readOnly} />
           </div>
           {initial && !copy && initial.status !== "sold" && (
             <div>
               <label className="block text-sm font-medium mb-1">{t.inventory_col_status}</label>
               <select value={status} onChange={(e) => setStatus(e.target.value as InventoryStatus)} className="border rounded px-3 py-2 w-full text-sm bg-white">
                 <option value="in_stock">{t.inventory_status_in_stock}</option>
+                <option value="shipping">{t.inventory_status_shipping}</option>
                 <option value="returned">{t.inventory_status_returned}</option>
               </select>
             </div>
