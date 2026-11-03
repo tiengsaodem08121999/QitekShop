@@ -184,9 +184,19 @@ export interface DashboardMonth {
   profit: number;
 }
 
+export interface SalesProfitMonth {
+  month: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+  quotation_profit: number;
+  direct_profit: number;
+}
+
 export interface DashboardData {
   year: number;
   months: DashboardMonth[];
+  sales_profit: SalesProfitMonth[];
 }
 
 export type EventStatus = "pending" | "in_progress" | "done" | "cancelled";
