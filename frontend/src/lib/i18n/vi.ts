@@ -120,6 +120,7 @@ const vi: Translations = {
   dashboard_profit: "Lợi nhuận",
   dashboard_year_label: "Năm",
   dashboard_month_labels: ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"],
+  dashboard_year_total: (profit: string, revenue: string, pct: number) => `Cả năm: lãi ${profit} trên ${revenue} doanh thu (${pct}%)`,
   dashboard_sales_profit_title: "Lợi nhuận bán hàng (giá bán − giá nhập)",
   dashboard_sales_profit_quotation: "Báo giá",
   dashboard_sales_profit_direct: "Bán trực tiếp (Thu chi)",

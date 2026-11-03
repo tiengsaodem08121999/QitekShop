@@ -118,6 +118,7 @@ const en = {
   dashboard_profit: "Profit",
   dashboard_year_label: "Year",
   dashboard_month_labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  dashboard_year_total: (profit: string, revenue: string, pct: number) => `Whole year: ${profit} profit on ${revenue} revenue (${pct}%)`,
   dashboard_sales_profit_title: "Sales profit (selling − purchase price)",
   dashboard_sales_profit_quotation: "Quotations",
   dashboard_sales_profit_direct: "Direct sales (Finance)",

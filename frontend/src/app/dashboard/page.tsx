@@ -44,9 +44,14 @@ export default function DashboardPage() {
           </select>
         </label>
       </div>
-      {data && <RevenueProfitChart months={data.months} />}
+      {/* shrink-0: <main> is a full-height flex column, which would squash the charts */}
       {data && (
-        <section className="mt-10">
+        <section className="shrink-0">
+          <RevenueProfitChart months={data.months} />
+        </section>
+      )}
+      {data && (
+        <section className="mt-10 shrink-0">
           <h2 className="text-base font-semibold text-gray-700 mb-3">{t.dashboard_sales_profit_title}</h2>
           <SalesProfitChart months={data.sales_profit} />
         </section>
