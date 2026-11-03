@@ -166,7 +166,8 @@ def _sell_items(db: Session, txn_id: int, sold_items: list) -> None:
         )
         if item is None:
             raise HTTPException(status_code=400, detail="err_txn_sold_item_not_found")
-        if item.status != InventoryStatus.in_stock or item.id in claimed:
+        # A unit being shipped is sold once the customer pays.
+        if item.status not in (InventoryStatus.in_stock, InventoryStatus.shipping) or item.id in claimed:
             raise HTTPException(status_code=400, detail="err_txn_sold_item_unavailable")
         item.status = InventoryStatus.sold
         item.selling_price = si.selling_price

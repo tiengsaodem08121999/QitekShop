@@ -46,13 +46,13 @@ def test_return_keeps_original_sold_and_creates_new_stock(client, sales_user, db
     # Original stays sold (still claimed by the original quotation).
     assert db_session.get(InventoryItem, sold.id).status == InventoryStatus.sold
     assert get_claimed_inventory_ids(db_session) == {sold.id}
-    # A new in-stock item exists: cost = refund (1000 * 80% = 800), price 0, serial copied.
+    # A new in-stock item exists: cost = refund (1000 * 80% = 800), unsold, serial copied.
     new = [i for i in db_session.query(InventoryItem).all() if i.id not in before]
     assert len(new) == 1
     ni = new[0]
     assert ni.status == InventoryStatus.in_stock
     assert ni.purchase_price == 800
-    assert ni.selling_price == 0
+    assert ni.selling_price is None
     assert ni.serial_number == "SN1"
     assert ni.name == "Laptop"
     # The return record points to the new (restocked) item.

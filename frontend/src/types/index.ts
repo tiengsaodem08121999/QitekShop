@@ -20,15 +20,17 @@ export interface Customer {
   created_at: string;
 }
 
-export type InventoryStatus = "in_stock" | "sold" | "returned";
+export type InventoryStatus = "in_stock" | "sold" | "returned" | "shipping";
 
 export interface InventoryItem {
   id: number;
   name: string;
   serial_number: string | null;
   purchase_price: number;
+  expected_price: number | null;
   selling_price: number | null;
   supplier: string | null;
+  note?: string | null;
   status: InventoryStatus;
   is_claimed?: boolean;
   in_use?: boolean;

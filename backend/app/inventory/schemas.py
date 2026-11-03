@@ -16,8 +16,9 @@ class InventoryItemCreate(DecimalModel):
     serial_number: Optional[str] = None
     condition: Optional[str] = None
     purchase_price: Decimal = 0
-    selling_price: Optional[Decimal] = None
+    expected_price: Optional[Decimal] = None
     supplier: Optional[str] = None
+    note: Optional[str] = None
 
 
 class InventoryItemUpdate(DecimalModel):
@@ -25,9 +26,10 @@ class InventoryItemUpdate(DecimalModel):
     serial_number: Optional[str] = None
     condition: Optional[str] = None
     purchase_price: Optional[Decimal] = None
-    selling_price: Optional[Decimal] = None
+    expected_price: Optional[Decimal] = None
     supplier: Optional[str] = None
-    status: Optional[InventoryStatus] = None  # router restricts to in_stock/returned
+    note: Optional[str] = None
+    status: Optional[InventoryStatus] = None  # router rejects sold (set only by a sale)
 
 
 class InventoryItemResponse(DecimalModel):
@@ -36,8 +38,10 @@ class InventoryItemResponse(DecimalModel):
     serial_number: Optional[str]
     condition: Optional[str]
     purchase_price: Decimal
+    expected_price: Optional[Decimal] = None
     selling_price: Optional[Decimal]
     supplier: Optional[str]
+    note: Optional[str] = None
     status: InventoryStatus
     is_claimed: bool = False
     in_use: bool = False
