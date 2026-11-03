@@ -471,6 +471,7 @@ def deliver_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
             if inv:
                 inv.status = InventoryStatus.sold
     quotation.status = QuotationStatus.delivered
+    quotation.delivered_at = date_type.today()
     db.commit()
     db.refresh(quotation)
     return quotation

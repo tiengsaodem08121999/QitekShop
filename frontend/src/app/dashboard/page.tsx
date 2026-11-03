@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import RevenueProfitChart from "@/components/dashboard/RevenueProfitChart";
+import SalesProfitChart from "@/components/dashboard/SalesProfitChart";
 import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { apiError } from "@/lib/apiError";
@@ -44,6 +45,12 @@ export default function DashboardPage() {
         </label>
       </div>
       {data && <RevenueProfitChart months={data.months} />}
+      {data && (
+        <section className="mt-10">
+          <h2 className="text-base font-semibold text-gray-700 mb-3">{t.dashboard_sales_profit_title}</h2>
+          <SalesProfitChart months={data.sales_profit} />
+        </section>
+      )}
     </AppLayout>
   );
 }

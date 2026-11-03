@@ -52,6 +52,8 @@ class Quotation(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
     note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Day the quotation was marked delivered; its sale lines count as sold that month.
+    delivered_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     customer: Mapped["Customer"] = relationship(back_populates="quotations")
     items: Mapped[List["QuotationItem"]] = relationship(

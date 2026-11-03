@@ -113,11 +113,18 @@ const en = {
   login_error: "Invalid username or password",
 
   // Dashboard
-  dashboard_title: "Dashboard",
+  dashboard_title: "Profit by revenue",
   dashboard_revenue: "Revenue",
   dashboard_profit: "Profit",
   dashboard_year_label: "Year",
   dashboard_month_labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  dashboard_sales_profit_title: "Sales profit (selling − purchase price)",
+  dashboard_sales_profit_quotation: "Quotations",
+  dashboard_sales_profit_direct: "Direct sales (Finance)",
+  dashboard_sales_cost: "Total purchase price",
+  dashboard_sales_selling: "Total selling price",
+  dashboard_sales_margin: "Margin",
+  dashboard_sales_year_total: (profit: string, revenue: string, pct: number) => `Whole year: ${profit} profit on ${revenue} sales (${pct}%)`,
 
   // Quotations list
   quotations_title: "Quotations",
