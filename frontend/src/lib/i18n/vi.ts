@@ -310,10 +310,8 @@ const vi: Translations = {
   customers_delete_blocked: (n: number) => `Khách hàng có ${n} báo giá — xóa báo giá trước`,
 
   // Finance
-  finance_title: "Tài chính",
   finance_tab_cashflow: "Quản lý thu chi",
   finance_tab_sales: "Quản lý bán hàng",
-  finance_subtitle: "Tổng quan thu chi theo năm",
   finance_add_txn: "+ Thêm giao dịch",
   finance_total_income: (year: number) => `Tổng thu ${year}`,
   finance_total_expense: (year: number) => `Tổng chi ${year}`,
@@ -346,7 +344,6 @@ const vi: Translations = {
   finance_delete_txn: "Xóa giao dịch này?",
 
   // Finance sales
-  finance_sales_subtitle: "Tổng quan bán hàng theo năm",
   finance_sales_total_purchase_year: (year: number) => `Tổng nhập ${year}`,
   finance_sales_total_selling_year: (year: number) => `Tổng bán ${year}`,
   finance_sales_months_with_sales: (n: number) => `${n} tháng có bán hàng`,

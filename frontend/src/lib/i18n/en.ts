@@ -308,10 +308,8 @@ const en = {
   customers_delete_blocked: (n: number) => `Customer has ${n} quotation(s) — delete those first`,
 
   // Finance
-  finance_title: "Finance",
   finance_tab_cashflow: "Income & expenses",
   finance_tab_sales: "Sales",
-  finance_subtitle: "Yearly income & expense overview",
   finance_add_txn: "+ Add transaction",
   finance_total_income: (year: number) => `Total income ${year}`,
   finance_total_expense: (year: number) => `Total expense ${year}`,
@@ -344,7 +342,6 @@ const en = {
   finance_delete_txn: "Delete this transaction?",
 
   // Finance sales
-  finance_sales_subtitle: "Yearly sales overview",
   finance_sales_total_purchase_year: (year: number) => `Total purchase ${year}`,
   finance_sales_total_selling_year: (year: number) => `Total sales ${year}`,
   finance_sales_months_with_sales: (n: number) => `${n} months with sales`,

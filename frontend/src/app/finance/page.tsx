@@ -23,26 +23,21 @@ function FinanceContent() {
   return (
     <AppLayout>
       <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex justify-between items-center mb-4 shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">{t.finance_title}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{isSales ? t.finance_sales_subtitle : t.finance_subtitle}</p>
+      <div className="flex justify-between items-end border-b border-gray-200 mb-4 shrink-0">
+        <div role="tablist" className="flex gap-1">
+          {tabs.map((tab) => (
+            <button key={tab.key} role="tab" aria-selected={tab.active} onClick={() => router.replace(tab.href)}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${tab.active ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-800"}`}>
+              {tab.label}
+            </button>
+          ))}
         </div>
         {!isSales && (
           <button onClick={() => setShowModal(true)}
-            className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
+            className="bg-blue-600 text-white px-4 py-2 mb-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
             {t.finance_add_txn}
           </button>
         )}
-      </div>
-
-      <div role="tablist" className="flex gap-1 border-b border-gray-200 mb-6 shrink-0">
-        {tabs.map((tab) => (
-          <button key={tab.key} role="tab" aria-selected={tab.active} onClick={() => router.replace(tab.href)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${tab.active ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-800"}`}>
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       {isSales ? <SalesTab /> : <CashflowTab />}
