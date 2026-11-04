@@ -21,7 +21,7 @@ def public_stock(db: Session = Depends(get_db)):
     rows = (
         db.query(InventoryItem.id, InventoryItem.name, InventoryItem.note, InventoryItem.expected_price)
         .filter(InventoryItem.status == InventoryStatus.in_stock)
-        .order_by(InventoryItem.name)
+        .order_by(InventoryItem.created_at.desc(), InventoryItem.id.desc())
         .all()
     )
     return {

@@ -21,7 +21,7 @@ const vi: Translations = {
   nav_note: "Ghi chú",
   nav_quotations: "Báo giá",
   nav_customers: "Khách hàng",
-  nav_finance: "Thu chi",
+  nav_finance: "Tài chính",
   nav_inventory: "Kho hàng",
   nav_schedule: "Lịch",
   nav_settings: "Cài đặt",
@@ -310,8 +310,8 @@ const vi: Translations = {
   customers_delete_blocked: (n: number) => `Khách hàng có ${n} báo giá — xóa báo giá trước`,
 
   // Finance
-  finance_title: "Thu chi",
-  finance_subtitle: "Tổng quan thu chi theo năm",
+  finance_tab_cashflow: "Quản lý thu chi",
+  finance_tab_sales: "Quản lý bán hàng",
   finance_add_txn: "+ Thêm giao dịch",
   finance_total_income: (year: number) => `Tổng thu ${year}`,
   finance_total_expense: (year: number) => `Tổng chi ${year}`,
@@ -342,6 +342,22 @@ const vi: Translations = {
   finance_type_expense: "Chi",
   finance_no_txn_month: "Chưa có giao dịch nào trong tháng này",
   finance_delete_txn: "Xóa giao dịch này?",
+
+  // Finance sales
+  finance_sales_total_purchase_year: (year: number) => `Tổng nhập ${year}`,
+  finance_sales_total_selling_year: (year: number) => `Tổng bán ${year}`,
+  finance_sales_months_with_sales: (n: number) => `${n} tháng có bán hàng`,
+  finance_sales_empty_year: (year: number) => `Chưa bán sản phẩm nào trong năm ${year}`,
+  finance_sales_back: "Quản lý bán hàng",
+  finance_sales_list: "Sản phẩm đã bán",
+  finance_sales_total_purchase: "Tổng nhập",
+  finance_sales_total_selling: "Tổng bán",
+  finance_sales_count: (n: number) => `${n} sản phẩm`,
+  finance_sales_col_name: "Tên sản phẩm",
+  finance_sales_col_purchase: "Giá nhập",
+  finance_sales_col_selling: "Giá bán",
+  finance_sales_total: "Tổng",
+  finance_sales_empty: "Chưa bán sản phẩm nào trong tháng này",
 
   // Transaction modal
   txn_modal_add: "Thêm giao dịch",

@@ -60,3 +60,27 @@ class MonthlySummary(DecimalModel):
     total_expense: Decimal
     profit: Decimal
     closing_balance: Decimal
+
+
+class SalesProfitMonth(BaseModel):
+    month: int
+    revenue: int
+    cost: int
+    profit: int
+    quotation_profit: int
+    direct_profit: int
+
+
+class SoldProduct(BaseModel):
+    name: str
+    purchase_price: int
+    selling_price: int
+
+
+class MonthlySales(BaseModel):
+    year: int
+    month: int
+    total_purchase: int
+    total_selling: int
+    profit: int
+    items: list[SoldProduct]
