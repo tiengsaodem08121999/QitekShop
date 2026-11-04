@@ -180,6 +180,15 @@ export interface PaginatedResponse<T> {
 
 export type YearlySummary = MonthlySummary[];
 
+export interface MonthlySales {
+  year: number;
+  month: number;
+  total_purchase: number;
+  total_selling: number;
+  profit: number;
+  items: { name: string; purchase_price: number; selling_price: number }[];
+}
+
 export interface DashboardMonth {
   month: number;
   revenue: number;

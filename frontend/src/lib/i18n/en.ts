@@ -309,6 +309,8 @@ const en = {
 
   // Finance
   finance_title: "Finance",
+  finance_tab_cashflow: "Income & expenses",
+  finance_tab_sales: "Sales",
   finance_subtitle: "Yearly income & expense overview",
   finance_add_txn: "+ Add transaction",
   finance_total_income: (year: number) => `Total income ${year}`,
@@ -340,6 +342,23 @@ const en = {
   finance_type_expense: "Expense",
   finance_no_txn_month: "No transactions this month",
   finance_delete_txn: "Delete this transaction?",
+
+  // Finance sales
+  finance_sales_subtitle: "Yearly sales overview",
+  finance_sales_total_purchase_year: (year: number) => `Total purchase ${year}`,
+  finance_sales_total_selling_year: (year: number) => `Total sales ${year}`,
+  finance_sales_months_with_sales: (n: number) => `${n} months with sales`,
+  finance_sales_empty_year: (year: number) => `No products sold in ${year}`,
+  finance_sales_back: "Sales",
+  finance_sales_list: "Products sold",
+  finance_sales_total_purchase: "Total purchase",
+  finance_sales_total_selling: "Total sales",
+  finance_sales_count: (n: number) => `${n} products`,
+  finance_sales_col_name: "Product name",
+  finance_sales_col_purchase: "Purchase price",
+  finance_sales_col_selling: "Selling price",
+  finance_sales_total: "Total",
+  finance_sales_empty: "No products sold this month",
 
   // Transaction modal
   txn_modal_add: "Add transaction",

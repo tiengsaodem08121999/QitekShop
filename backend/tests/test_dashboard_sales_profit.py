@@ -2,7 +2,7 @@
 item once whether it went out through a quotation or a Finance sale."""
 from datetime import date
 
-from app.dashboard_service import get_yearly_sales_profit
+from app.dashboard_service import get_monthly_sales_detail, get_yearly_sales_profit
 from app.finance.models import Transaction, TransactionType
 from app.inventory.models import InventoryItem, InventoryStatus
 from app.quotation.models import Customer, Quotation, QuotationItem, QuotationStatus
@@ -85,3 +85,45 @@ def test_deliver_sets_delivered_at(client, sales_user, db_session):
     assert resp.status_code == 200, resp.text
     db_session.expire_all()
     assert db_session.get(Quotation, q.id).delivered_at == date.today()
+
+
+def test_monthly_detail_lists_the_goods_behind_the_chart(db_session, sales_user):
+    sold_via_finance = _direct_sale(db_session, sales_user.id, date(2026, 6, 2), 900, 600)
+    _direct_sale(db_session, sales_user.id, date(2026, 6, 3), 900, 100, deleted=True)
+    _direct_sale(db_session, sales_user.id, date(2026, 7, 1), 50, 10)  # other month
+    q = _quotation(db_session, sales_user.id, QuotationStatus.delivered, date(2026, 6, 20))
+    _line(db_session, q, 1000, 700)
+    _line(db_session, q, 0, 300, trade_in=True)
+    _line(db_session, q, 950, 600, inv_id=sold_via_finance.id)  # already counted via Finance
+    db_session.commit()
+
+    detail = get_monthly_sales_detail(db_session, 2026, 6)
+    assert detail["items"] == [
+        {"name": "Y", "purchase_price": 600, "selling_price": 900},
+        {"name": "X", "purchase_price": 700, "selling_price": 1000},
+    ]
+    chart = _month(get_yearly_sales_profit(db_session, 2026), 6)
+    assert (detail["total_selling"], detail["total_purchase"], detail["profit"]) == (
+        chart["revenue"], chart["cost"], chart["profit"],
+    ) == (1900, 1300, 600)
+
+
+def test_yearly_sales_endpoint_returns_the_chart_series(client, db_session, admin_user, sales_user):
+    from conftest import auth_headers
+    _direct_sale(db_session, sales_user.id, date(2026, 4, 10), 900, 600)
+    db_session.commit()
+    url = "/api/finance/sales/yearly-summary?year=2026"
+    assert client.get(url, headers=auth_headers(sales_user)).status_code == 403
+    resp = client.get(url, headers=auth_headers(admin_user))
+    assert resp.status_code == 200
+    assert resp.json() == get_yearly_sales_profit(db_session, 2026)
+    assert _month(resp.json(), 4)["profit"] == 300
+
+
+def test_sales_endpoint_is_for_finance_roles(client, admin_user, sales_user):
+    from conftest import auth_headers
+    url = "/api/finance/sales?year=2026&month=6"
+    assert client.get(url, headers=auth_headers(sales_user)).status_code == 403
+    resp = client.get(url, headers=auth_headers(admin_user))
+    assert resp.status_code == 200
+    assert resp.json() == {"year": 2026, "month": 6, "total_purchase": 0, "total_selling": 0, "profit": 0, "items": []}

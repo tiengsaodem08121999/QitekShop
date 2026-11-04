@@ -33,3 +33,15 @@ def test_public_stock_lists_only_available_in_stock(client, sales_user, db_sessi
     items = client.get("/api/public/stock").json()["items"]
     assert [i["name"] for i in items] == ["A-no-price", "B-in-stock"]
     assert items[0]["expected_price"] is None
+
+
+def test_public_stock_lists_newest_first(client, db_session):
+    from datetime import datetime
+    for name, created in [("Mid", datetime(2026, 6, 1)), ("Zed-old", datetime(2026, 1, 1)),
+                          ("Alpha-new", datetime(2026, 11, 1)), ("Same-sec-1", datetime(2026, 3, 1)),
+                          ("Same-sec-2", datetime(2026, 3, 1))]:
+        db_session.add(InventoryItem(name=name, purchase_price=100, created_at=created))
+        db_session.flush()
+    db_session.commit()
+    names = [i["name"] for i in client.get("/api/public/stock").json()["items"]]
+    assert names == ["Alpha-new", "Mid", "Same-sec-2", "Same-sec-1", "Zed-old"]

@@ -4,9 +4,12 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_role
 from app.auth.models import User, UserRole
+from app.dashboard_service import get_monthly_sales_detail, get_yearly_sales_profit
 from app.database import get_db
 from app.finance.schemas import (
+    MonthlySales,
     MonthlySummary,
+    SalesProfitMonth,
     TransactionCreate,
     TransactionResponse,
 )
@@ -91,3 +94,22 @@ def summary_endpoint(
     db: Session = Depends(get_db),
 ):
     return get_monthly_summary(db, year, month)
+
+
+@router.get("/sales/yearly-summary", response_model=list[SalesProfitMonth])
+def yearly_sales_endpoint(
+    year: int = Query(...),
+    _user: User = Depends(require_role(UserRole.admin, UserRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    return get_yearly_sales_profit(db, year)
+
+
+@router.get("/sales", response_model=MonthlySales)
+def monthly_sales_endpoint(
+    year: int = Query(...),
+    month: int = Query(..., ge=1, le=12),
+    _user: User = Depends(require_role(UserRole.admin, UserRole.accountant)),
+    db: Session = Depends(get_db),
+):
+    return get_monthly_sales_detail(db, year, month)
