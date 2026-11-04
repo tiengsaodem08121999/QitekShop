@@ -34,6 +34,16 @@ def test_delete_releases_sold_and_reclaims_trade_in(client, sales_user, db_sessi
     assert db_session.get(InventoryItem, trade.id) is None  # reclaimed (deleted)
 
 
+def test_delete_clears_actual_price_of_released_item(client, sales_user, db_session):
+    q, sold, _trade = _delivered_with_stock(db_session, sales_user.id)
+    r = client.delete(f"/api/quotations/{q.id}", headers=auth_headers(sales_user))
+    assert r.status_code == 204
+    db_session.expire_all()
+    released = db_session.get(InventoryItem, sold.id)
+    assert released.status == InventoryStatus.in_stock
+    assert released.selling_price is None  # unsold again -> no actual price
+
+
 def test_delete_blocked_when_payments_exist(client, sales_user, db_session):
     q, _sold, _trade = _delivered_with_stock(db_session, sales_user.id)
     client.post(f"/api/quotations/{q.id}/payments", json={"amount": 100, "method": "cash"},

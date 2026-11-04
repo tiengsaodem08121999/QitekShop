@@ -6,7 +6,7 @@ import { apiFetch } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
-import { useAlert } from "@/components/Confirm";
+import { useAlert, useConfirm } from "@/components/Confirm";
 import Pagination from "@/components/shared/Pagination";
 import type { Customer, PaginatedResponse } from "@/types";
 
@@ -15,6 +15,7 @@ const PAGE_SIZE = 12;
 export default function CustomersPage() {
   const t = useT();
   const toast = useToast();
+  const confirm = useConfirm();
   const [data, setData] = useState<PaginatedResponse<Customer> | null>(null);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -29,6 +30,17 @@ export default function CustomersPage() {
     apiFetch<PaginatedResponse<Customer>>(`/api/customers?${params}`)
       .then(setData)
       .catch((err) => toast(apiError(err, t), "error"));
+  }
+
+  async function handleDelete(c: Customer) {
+    if (!(await confirm(t.customers_delete_prompt(c.name)))) return;
+    try {
+      await apiFetch(`/api/customers/${c.id}`, { method: "DELETE" });
+      toast(t.customers_delete_success);
+      load(); // refetch: pagination is derived from one fetch, so totals must come from the server
+    } catch (err) {
+      toast(apiError(err, t), "error");
+    }
   }
 
   useEffect(() => { load(); }, [search]);
@@ -72,7 +84,7 @@ export default function CustomersPage() {
               <th className="px-4 py-3 font-medium">{t.customers_col_email}</th>
               <th className="px-4 py-3 font-medium">{t.customers_col_address}</th>
               <th className="px-4 py-3 font-medium">{t.customers_col_notes}</th>
-              <th className="px-4 py-3 w-20"></th>
+              <th className="px-4 py-3 w-24"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -82,7 +94,11 @@ export default function CustomersPage() {
                 {t.customers_empty}
               </td></tr>
             )}
-            {pageItems.map((c) => (
+            {pageItems.map((c) => {
+              // A customer with quotations cannot be deleted: those carry items,
+              // payments and inventory links. The backend blocks it too.
+              const blocked = (c.quotation_count ?? 0) > 0;
+              return (
               <tr key={c.id} className="hover:bg-gray-50/70 transition-colors">
                 <td className="px-5 py-3.5"><div className="font-medium text-gray-800">{c.name}</div></td>
                 <td className="px-4 py-3.5 text-gray-600">{c.phone || t.dash}</td>
@@ -98,13 +114,21 @@ export default function CustomersPage() {
                 <td className="px-4 py-3.5 text-gray-500 max-w-[200px] truncate">{c.address || t.dash}</td>
                 <td className="px-4 py-3.5 text-gray-400 max-w-[150px] truncate">{c.notes || t.dash}</td>
                 <td className="px-4 py-3.5">
-                  <button onClick={() => { setEditCustomer(c); setShowModal(true); }}
-                    className="p-1.5 rounded-md hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                  </button>
+                  <div className="flex items-center gap-0.5">
+                    <button onClick={() => { setEditCustomer(c); setShowModal(true); }}
+                      className="p-1.5 rounded-md hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                    <button onClick={() => handleDelete(c)} disabled={blocked}
+                      title={blocked ? t.customers_delete_blocked(c.quotation_count ?? 0) : t.customers_delete}
+                      className={`p-1.5 rounded-md transition-colors ${blocked ? "text-gray-200 cursor-not-allowed" : "text-gray-400 hover:bg-red-50 hover:text-red-600"}`}>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
         </div>

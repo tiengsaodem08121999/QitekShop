@@ -1,4 +1,5 @@
 # backend/app/quotation/service.py
+from collections import Counter
 from datetime import date as date_type
 from decimal import Decimal
 from typing import List, Optional, Tuple
@@ -37,6 +38,46 @@ def update_customer(db: Session, customer_id: int, **kwargs) -> Optional[Custome
             setattr(customer, key, value)
     db.flush()
     return customer
+
+
+def delete_customer(db: Session, customer_id: int) -> Optional[bool]:
+    """Hard-delete a customer.
+
+    Blocked while the customer still has quotations: those carry items,
+    payments and inventory links, so deleting the customer would orphan
+    them. The caller must delete the quotations first.
+
+    Returns True on success, None if the customer does not exist. Raises
+    ValueError (with a user-facing message) when blocked.
+    """
+    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+    if not customer:
+        return None
+    if customer.quotations:
+        raise ValueError("err_customer_has_quotations")
+    db.delete(customer)
+    db.commit()
+    return True
+
+
+def count_quotations_by_customer(db: Session, customer_ids: List[int]) -> dict:
+    """Map customer_id -> number of quotations, for the customer list.
+
+    Counts quotations directly rather than reusing the `total_purchased`
+    aggregate, which joins QuotationItem and skips trade-in lines: a customer
+    whose only quotation is empty or all trade-in would count 0 there and the
+    UI would wrongly offer to delete them.
+    """
+    if not customer_ids:
+        return {}
+    from sqlalchemy import func as sa_func
+    rows = (
+        db.query(Quotation.customer_id, sa_func.count(Quotation.id))
+        .filter(Quotation.customer_id.in_(customer_ids))
+        .group_by(Quotation.customer_id)
+        .all()
+    )
+    return {row[0]: int(row[1]) for row in rows}
 
 
 def get_claimed_inventory_ids(db: Session, exclude_quotation_id: Optional[int] = None) -> set:
@@ -133,10 +174,15 @@ def _blank_price(v) -> bool:
     return v is None or Decimal(v) == 0
 
 
-def _copy_line_fields_to_stock(item, inv) -> None:
+def _copy_line_fields_to_stock(item, inv, delivered: bool = False) -> None:
     """Copy non-blank shared fields from a quotation line onto a stock item object.
     Never overwrites a populated stock field with a blank line value, so a blank
-    S/N or a 0 price cannot wipe real stock data (fixes Bug 1)."""
+    S/N or a 0 price cannot wipe real stock data (fixes Bug 1).
+
+    Prices: a trade-in's resale price is the stock item's expected price. A sale
+    line's price is the stock item's actual selling price, written only once the
+    quotation is delivered (the unit is really sold); before that the quotation
+    leaves stock prices alone."""
     if not _blank_text(item.name):
         inv.name = item.name
     if not _blank_text(item.serial_number):
@@ -145,12 +191,16 @@ def _copy_line_fields_to_stock(item, inv) -> None:
         inv.condition = item.condition
     if not _blank_price(item.purchase_price):
         inv.purchase_price = item.purchase_price
-    sell = item.resale_price if item.is_trade_in else item.selling_price
-    if not _blank_price(sell):
-        inv.selling_price = sell
+    if item.is_trade_in:
+        # Trade-in resale keeps the blank-guard: a 0 resale means "not yet priced".
+        if not _blank_price(item.resale_price):
+            inv.expected_price = item.resale_price
+    elif delivered and item.selling_price is not None:
+        # The price the unit was actually sold at; 0 is an intentional price.
+        inv.selling_price = item.selling_price
 
 
-def _sync_line_to_stock(db: Session, item) -> None:
+def _sync_line_to_stock(db: Session, item, delivered: bool = False) -> None:
     """Sync a quotation line onto its already-linked stock item."""
     from app.inventory.models import InventoryItem
     if item.inventory_item_id is None:
@@ -158,7 +208,7 @@ def _sync_line_to_stock(db: Session, item) -> None:
     inv = db.query(InventoryItem).filter(InventoryItem.id == item.inventory_item_id).first()
     if inv is None:
         return
-    _copy_line_fields_to_stock(item, inv)
+    _copy_line_fields_to_stock(item, inv, delivered)
 
 
 def _sync_quotation_to_stock(db: Session, quotation) -> None:
@@ -168,9 +218,10 @@ def _sync_quotation_to_stock(db: Session, quotation) -> None:
     line in another quotation) sharing the same stock item."""
     from app.inventory.models import InventoryItem
     touched_ids = set()
+    delivered = quotation.status == QuotationStatus.delivered
     for item in quotation.items:
         if item.inventory_item_id is not None:
-            _sync_line_to_stock(db, item)
+            _sync_line_to_stock(db, item, delivered)
             touched_ids.add(item.inventory_item_id)
     for inv_id in touched_ids:
         inv = db.query(InventoryItem).filter(InventoryItem.id == inv_id).first()
@@ -181,7 +232,12 @@ def _sync_quotation_to_stock(db: Session, quotation) -> None:
 def sync_stock_to_quotations(db: Session, inv) -> None:
     """Push non-blank stock fields onto every quotation line linked to this stock
     item (any status), then recompute affected quotations' stored totals. Called
-    after a stock item is edited on the inventory page."""
+    after a stock item is edited on the inventory page.
+
+    A trade-in line's resale price follows the stock item's expected price, or its
+    actual selling price once the unit is sold (so the trade-in shows the real
+    resale). A sale line's price is authored on its quotation and never pulled
+    from stock."""
     lines = db.query(QuotationItem).filter(QuotationItem.inventory_item_id == inv.id).all()
     affected: set = set()
     for item in lines:
@@ -193,11 +249,10 @@ def sync_stock_to_quotations(db: Session, inv) -> None:
             item.condition = inv.condition
         if not _blank_price(inv.purchase_price):
             item.purchase_price = inv.purchase_price
-        if not _blank_price(inv.selling_price):
-            if item.is_trade_in:
-                item.resale_price = inv.selling_price
-            else:
-                item.selling_price = inv.selling_price
+        if item.is_trade_in:
+            resale = inv.selling_price if not _blank_price(inv.selling_price) else inv.expected_price
+            if not _blank_price(resale):
+                item.resale_price = resale
         affected.add(item.quotation_id)
     for qid in affected:
         q = db.query(Quotation).filter(Quotation.id == qid).first()
@@ -326,12 +381,17 @@ def update_quotation(db: Session, quotation_id: int, data: QuotationUpdate) -> O
     quotation.note = data.note
 
     if data.items is not None:
-        # Check: items with returns cannot have their name changed
-        returned_names = {r.item_name for r in quotation.returns}
-        if returned_names:
-            new_names = {item.name for item in data.items if not item.is_trade_in}
-            missing = returned_names - new_names
-            if missing:
+        # Check: returned lines cannot be renamed or removed. A return pinned to a
+        # stock item needs that exact line; others need enough same-name lines.
+        if quotation.returns:
+            new_sale = [item for item in data.items if not item.is_trade_in]
+            new_links = {item.inventory_item_id for item in new_sale if item.inventory_item_id is not None}
+            name_counts = Counter(item.name for item in new_sale)
+            for r in quotation.returns:
+                if r.sold_inventory_item_id is not None and r.sold_inventory_item_id not in new_links:
+                    raise ValueError("err_rename_returned_item")
+                name_counts[r.item_name] -= 1
+            if any(n < 0 for n in name_counts.values()):
                 raise ValueError("err_rename_returned_item")
 
         old_trade_in_links = {
@@ -396,7 +456,11 @@ def deliver_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
             inv = db.query(InventoryItem).filter(InventoryItem.id == item.inventory_item_id).first()
             if inv:
                 inv.status = InventoryStatus.sold
+                inv.selling_price = item.selling_price  # actual sale price
+                # e.g. the unit came in as a trade-in on another quotation.
+                sync_stock_to_quotations(db, inv)
     quotation.status = QuotationStatus.delivered
+    quotation.delivered_at = date_type.today()
     db.commit()
     db.refresh(quotation)
     return quotation
@@ -442,10 +506,11 @@ def delete_quotation(db: Session, quotation_id: int) -> Optional[bool]:
             # Reclaim trade-in stock created from this quotation (unless sold elsewhere).
             if inv.status != InventoryStatus.sold and inv.id not in claimed_elsewhere:
                 db.delete(inv)
-        else:
-            # Release a sold sale-line item back to stock.
-            if inv.status == InventoryStatus.sold:
-                inv.status = InventoryStatus.in_stock
+        elif inv.status == InventoryStatus.sold:
+            # Release a unit sold by this quotation back to stock; it is unsold
+            # again, so it has no actual selling price.
+            inv.status = InventoryStatus.in_stock
+            inv.selling_price = None
     db.delete(quotation)
     db.commit()
     return True
@@ -700,20 +765,43 @@ def list_returns(db: Session, quotation_id: int) -> list[Return]:
     )
 
 
+def _resolve_return_sale_line(
+    db: Session,
+    quotation_id: int,
+    item_name: str,
+    quotation_item_id: Optional[int],
+    exclude_return_id: Optional[int] = None,
+) -> Optional[QuotationItem]:
+    """The stock-linked sale line a return refers to. Prefers the exact line the
+    user picked; otherwise the first same-name line not already returned (several
+    lines can share a name, e.g. two identical RAM sticks)."""
+    base = db.query(QuotationItem).filter(
+        QuotationItem.quotation_id == quotation_id,
+        QuotationItem.is_trade_in == False,  # noqa: E712
+        QuotationItem.inventory_item_id.isnot(None),
+    )
+    if quotation_item_id is not None:
+        line = base.filter(QuotationItem.id == quotation_item_id).first()
+        if line is not None:
+            return line
+    taken_q = db.query(Return.sold_inventory_item_id).filter(
+        Return.quotation_id == quotation_id,
+        Return.sold_inventory_item_id.isnot(None),
+    )
+    if exclude_return_id is not None:
+        taken_q = taken_q.filter(Return.id != exclude_return_id)
+    taken = {row[0] for row in taken_q.all()}
+    for line in base.filter(QuotationItem.name == item_name).order_by(QuotationItem.id).all():
+        if line.inventory_item_id not in taken:
+            return line
+    return None
+
+
 def create_return(db: Session, quotation_id: int, data: ReturnCreate, user_id: int, customer_name: str = "") -> Return:
     from app.inventory.models import InventoryItem, InventoryStatus
     refund_amount = _calc_refund_amount(data.selling_price, data.refund_percent)
     # Resolve the stock item this return brings back (customer returns it to us).
-    sale_line = (
-        db.query(QuotationItem)
-        .filter(
-            QuotationItem.quotation_id == quotation_id,
-            QuotationItem.is_trade_in == False,  # noqa: E712
-            QuotationItem.name == data.item_name,
-            QuotationItem.inventory_item_id.isnot(None),
-        )
-        .first()
-    )
+    sale_line = _resolve_return_sale_line(db, quotation_id, data.item_name, data.quotation_item_id)
     # The originally-sold stock item stays 'sold' to preserve the sale history.
     # The returned unit re-enters stock as a NEW item whose cost basis is the
     # refund we paid out, so it can be resold without disturbing the old sale.
@@ -722,7 +810,6 @@ def create_return(db: Session, quotation_id: int, data: ReturnCreate, user_id: i
         serial_number=sale_line.serial_number if sale_line else None,
         condition=sale_line.condition if sale_line else None,
         purchase_price=refund_amount,
-        selling_price=0,
         status=InventoryStatus.in_stock,
     )
     db.add(restock)
@@ -731,6 +818,7 @@ def create_return(db: Session, quotation_id: int, data: ReturnCreate, user_id: i
         quotation_id=quotation_id,
         item_name=data.item_name,
         inventory_item_id=restock.id,
+        sold_inventory_item_id=sale_line.inventory_item_id if sale_line else None,
         reason=data.reason,
         selling_price=data.selling_price,
         refund_percent=data.refund_percent,
@@ -755,8 +843,26 @@ def update_return(db: Session, return_id: int, quotation_id: int, data: ReturnUp
     if not ret:
         return None
 
-    if data.item_name is not None:
-        ret.item_name = data.item_name
+    if data.item_name is not None or data.quotation_item_id is not None:
+        if data.item_name is not None:
+            ret.item_name = data.item_name
+        sale_line = _resolve_return_sale_line(
+            db, quotation_id, ret.item_name, data.quotation_item_id, exclude_return_id=ret.id
+        )
+        new_sold = sale_line.inventory_item_id if sale_line else None
+        if new_sold != ret.sold_inventory_item_id:
+            ret.sold_inventory_item_id = new_sold
+            # Keep the restocked unit in line with the item actually returned,
+            # as long as it is still sitting in stock.
+            from app.inventory.models import InventoryItem, InventoryStatus
+            restock = (
+                db.query(InventoryItem).filter(InventoryItem.id == ret.inventory_item_id).first()
+                if ret.inventory_item_id is not None else None
+            )
+            if restock is not None and restock.status == InventoryStatus.in_stock:
+                restock.name = sale_line.name if sale_line else ret.item_name
+                restock.serial_number = sale_line.serial_number if sale_line else None
+                restock.condition = sale_line.condition if sale_line else None
     if data.reason is not None:
         ret.reason = data.reason
     if data.selling_price is not None:
@@ -793,7 +899,7 @@ def delete_return(db: Session, return_id: int, quotation_id: int) -> bool:
         inv = db.query(InventoryItem).filter(InventoryItem.id == ret.inventory_item_id).first()
         if inv is not None:
             claimed = get_claimed_inventory_ids(db, exclude_quotation_id=quotation_id)
-            if inv.status == InventoryStatus.sold or inv.id in claimed:
+            if inv.status in (InventoryStatus.sold, InventoryStatus.shipping) or inv.id in claimed:
                 raise ValueError("err_return_restock_sold")
             db.delete(inv)
 

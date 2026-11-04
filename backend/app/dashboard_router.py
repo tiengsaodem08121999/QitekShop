@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_user
 from app.auth.models import User
 from app.database import get_db
+from app.dashboard_service import get_yearly_sales_profit
 from app.finance.service import get_yearly_revenue_profit
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -21,4 +22,8 @@ def dashboard(
 ):
     if year is None:
         year = datetime.now(timezone.utc).year
-    return {"year": year, "months": get_yearly_revenue_profit(db, year)}
+    return {
+        "year": year,
+        "months": get_yearly_revenue_profit(db, year),
+        "sales_profit": get_yearly_sales_profit(db, year),
+    }

@@ -27,12 +27,14 @@ from app.quotation.schemas import (
 from app.quotation.service import (
     annotate_inventory_conflicts,
     confirm_quotation,
+    count_quotations_by_customer,
     create_customer,
     deliver_quotation,
     import_trade_ins,
     create_payment,
     create_quotation,
     create_return,
+    delete_customer,
     delete_payment,
     delete_quotation,
     delete_return,
@@ -83,12 +85,14 @@ def list_customers_endpoint(
         )
         totals = {row[0]: int(row[1]) for row in rows}
         purchases = {row[0]: int(row[2]) for row in rows}
+    quotation_counts = count_quotations_by_customer(db, customer_ids)
     result = []
     for c in items:
         data = CustomerResponse.model_validate(c).model_dump()
         sum_selling = totals.get(c.id, 0)
         sum_purchase = purchases.get(c.id, 0)
         data["total_purchased"] = sum_selling
+        data["quotation_count"] = quotation_counts.get(c.id, 0)
         data["profit_margin_pct"] = (
             round((sum_selling - sum_purchase) / sum_purchase * 100)
             if sum_purchase > 0
@@ -121,6 +125,20 @@ def update_customer_endpoint(
         raise HTTPException(status_code=404, detail="Customer not found")
     db.commit()
     return customer
+
+
+@router.delete("/customers/{customer_id}", status_code=204)
+def delete_customer_endpoint(
+    customer_id: int,
+    user: User = Depends(require_role(UserRole.admin, UserRole.sales)),
+    db: Session = Depends(get_db),
+):
+    try:
+        result = delete_customer(db, customer_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not result:
+        raise HTTPException(status_code=404, detail="Customer not found")
 
 
 # --- Quotations ---

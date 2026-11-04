@@ -45,4 +45,5 @@ def test_detail_import_trade_ins_creates_stock(client, sales_user, db_session):
     assert r.status_code == 200, r.text
     db_session.expire_all()
     created = db_session.query(InventoryItem).filter(InventoryItem.name == "Old GPU").one()
-    assert int(created.purchase_price) == 200 and int(created.selling_price) == 300
+    assert int(created.purchase_price) == 200 and int(created.expected_price) == 300
+    assert created.selling_price is None  # not sold yet

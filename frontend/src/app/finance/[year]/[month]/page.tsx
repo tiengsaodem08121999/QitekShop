@@ -83,22 +83,18 @@ export default function FinanceMonthPage() {
       </div>
 
       {summary && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 shrink-0">
-          <div className="bg-white rounded-xl border border-green-200 p-4">
-            <p className="text-xs font-medium text-green-500 uppercase tracking-wide">{t.finance_income}</p>
-            <p className="text-lg font-bold text-green-600 mt-1">+{summary.total_income.toLocaleString()}</p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 shrink-0">
+          <div className="bg-white rounded-xl border border-green-200 p-3 sm:p-4">
+            <p className="text-[10px] sm:text-xs font-medium text-green-500 uppercase tracking-wide">{t.finance_income}</p>
+            <p className="text-sm sm:text-lg font-bold text-green-600 mt-1 break-words">+{summary.total_income.toLocaleString()}</p>
           </div>
-          <div className="bg-white rounded-xl border border-red-200 p-4">
-            <p className="text-xs font-medium text-red-400 uppercase tracking-wide">{t.finance_expense}</p>
-            <p className="text-lg font-bold text-red-500 mt-1">-{summary.total_expense.toLocaleString()}</p>
+          <div className="bg-white rounded-xl border border-red-200 p-3 sm:p-4">
+            <p className="text-[10px] sm:text-xs font-medium text-red-400 uppercase tracking-wide">{t.finance_expense}</p>
+            <p className="text-sm sm:text-lg font-bold text-red-500 mt-1 break-words">-{summary.total_expense.toLocaleString()}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t.finance_profit}</p>
-            <p className={`text-lg font-bold mt-1 ${summary.profit >= 0 ? "text-gray-800" : "text-red-500"}`}>{summary.profit.toLocaleString()}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 col-span-2 lg:col-span-1">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t.finance_balance}</p>
-            <p className={`text-xl font-bold mt-1 ${summary.profit >= 0 ? "text-gray-800" : "text-red-500"}`}>{summary.profit.toLocaleString()}</p>
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
+            <p className="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wide">{t.finance_profit}</p>
+            <p className={`text-sm sm:text-lg font-bold mt-1 break-words ${summary.profit >= 0 ? "text-gray-800" : "text-red-500"}`}>{summary.profit.toLocaleString()}</p>
           </div>
         </div>
       )}

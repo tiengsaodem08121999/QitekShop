@@ -16,18 +16,21 @@ export interface Customer {
   notes: string | null;
   total_purchased?: number;
   profit_margin_pct?: number | null;
+  quotation_count?: number;
   created_at: string;
 }
 
-export type InventoryStatus = "in_stock" | "sold" | "returned";
+export type InventoryStatus = "in_stock" | "sold" | "returned" | "shipping";
 
 export interface InventoryItem {
   id: number;
   name: string;
   serial_number: string | null;
   purchase_price: number;
+  expected_price: number | null;
   selling_price: number | null;
   supplier: string | null;
+  note?: string | null;
   status: InventoryStatus;
   is_claimed?: boolean;
   in_use?: boolean;
@@ -79,6 +82,7 @@ export interface Return {
   id: number;
   quotation_id: number;
   item_name: string;
+  sold_inventory_item_id: number | null;
   reason: ReturnReason;
   selling_price: number;
   refund_percent: number;
@@ -176,15 +180,34 @@ export interface PaginatedResponse<T> {
 
 export type YearlySummary = MonthlySummary[];
 
+export interface MonthlySales {
+  year: number;
+  month: number;
+  total_purchase: number;
+  total_selling: number;
+  profit: number;
+  items: { name: string; purchase_price: number; selling_price: number }[];
+}
+
 export interface DashboardMonth {
   month: number;
   revenue: number;
   profit: number;
 }
 
+export interface SalesProfitMonth {
+  month: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+  quotation_profit: number;
+  direct_profit: number;
+}
+
 export interface DashboardData {
   year: number;
   months: DashboardMonth[];
+  sales_profit: SalesProfitMonth[];
 }
 
 export type EventStatus = "pending" | "in_progress" | "done" | "cancelled";

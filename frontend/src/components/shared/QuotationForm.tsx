@@ -17,7 +17,8 @@ interface Props {
   initialCustomer?: Customer;
   initialItems?: QuotationItem[];
   initialNote?: string | null;
-  returnedNames?: Set<string>;
+  /** Ids of sale lines that have a return; their name is locked. */
+  returnedItemIds?: Set<number>;
   status?: QuotationStatus;
 }
 
@@ -48,7 +49,7 @@ function blankItem(): QuotationItem {
 }
 
 // Component rows seeded by the "Full case" button, in display order.
-const FULL_CASE_NAMES = ["Main", "CPU", "Ram", "SSD", "Vga", "PSU", "Case", "Tan", "Fan"];
+const FULL_CASE_NAMES = ["Main", "CPU", "SSD", "Vga", "PSU", "Case", "Tản", "Fan", "Ram"];
 
 // True when a row is an untouched blankItem (no name, no S/N, no prices, not linked).
 function isBlankItem(item: QuotationItem): boolean {
@@ -61,7 +62,7 @@ function isBlankItem(item: QuotationItem): boolean {
   );
 }
 
-export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems, initialNote, returnedNames, status }: Props) {
+export default function QuotationForm({ mode, quotationId, initialCustomer, initialItems, initialNote, returnedItemIds, status }: Props) {
   // Delivered quotations: sale lines locked to price/warranty/condition/note only
   // (no add/remove/relink). Trade-ins stay editable.
   const saleLocked = status === "delivered";
@@ -143,6 +144,8 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
     setItems((prev) => prev.map((item, i) => i === index ? {
       ...item, name: inv.name, serial_number: inv.serial_number,
       purchase_price: inv.purchase_price, inventory_item_id: inv.id,
+      // Start from the stock item's expected price unless a price is already typed.
+      selling_price: item.selling_price || inv.expected_price || 0,
     } : item));
     setStockOpenRow(null);
   }
@@ -392,7 +395,7 @@ export default function QuotationForm({ mode, quotationId, initialCustomer, init
             </thead>
             <tbody className="divide-y divide-gray-50">
               {items.map((item, i) => {
-                const isReturned = returnedNames?.has(item.name);
+                const isReturned = item.id != null && !!returnedItemIds?.has(item.id);
                 const nameLocked = isReturned || saleLocked;
                 return (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">

@@ -46,13 +46,13 @@ def test_return_keeps_original_sold_and_creates_new_stock(client, sales_user, db
     # Original stays sold (still claimed by the original quotation).
     assert db_session.get(InventoryItem, sold.id).status == InventoryStatus.sold
     assert get_claimed_inventory_ids(db_session) == {sold.id}
-    # A new in-stock item exists: cost = refund (1000 * 80% = 800), price 0, serial copied.
+    # A new in-stock item exists: cost = refund (1000 * 80% = 800), unsold, serial copied.
     new = [i for i in db_session.query(InventoryItem).all() if i.id not in before]
     assert len(new) == 1
     ni = new[0]
     assert ni.status == InventoryStatus.in_stock
     assert ni.purchase_price == 800
-    assert ni.selling_price == 0
+    assert ni.selling_price is None
     assert ni.serial_number == "SN1"
     assert ni.name == "Laptop"
     # The return record points to the new (restocked) item.
@@ -91,3 +91,37 @@ def test_delete_return_blocked_when_new_stock_sold_elsewhere(client, sales_user,
     assert resp.status_code == 400
     db_session.expire_all()
     assert db_session.get(InventoryItem, new_id) is not None  # still in stock, not deleted
+
+
+def _two_same_name_lines(db, user_id):
+    """A delivered quotation with two identical-name lines (different serials)."""
+    q, first = _delivered_sale(db, user_id, serial="SN1")
+    second = InventoryItem(name="Laptop", serial_number="SN2", purchase_price=500,
+                           selling_price=1000, status=InventoryStatus.sold)
+    db.add(second)
+    db.flush()
+    line2 = QuotationItem(quotation_id=q.id, is_trade_in=False, name="Laptop",
+                          selling_price=1000, serial_number="SN2", inventory_item_id=second.id)
+    db.add(line2)
+    db.commit()
+    return q, first, second, line2
+
+
+def test_return_pins_the_picked_line_among_same_name_lines(client, sales_user, db_session):
+    q, first, second, line2 = _two_same_name_lines(db_session, sales_user.id)
+    r = client.post(f"/api/quotations/{q.id}/returns",
+                    json={"item_name": "Laptop", "quotation_item_id": line2.id,
+                          "reason": "seller_fault", "selling_price": 1000},
+                    headers=auth_headers(sales_user))
+    assert r.status_code == 201, r.text
+    assert r.json()["sold_inventory_item_id"] == second.id
+    db_session.expire_all()
+    restock = db_session.get(InventoryItem, db_session.get(Return, r.json()["id"]).inventory_item_id)
+    assert restock.serial_number == "SN2"
+
+
+def test_second_return_by_name_takes_the_next_free_line(client, sales_user, db_session):
+    q, first, second, _ = _two_same_name_lines(db_session, sales_user.id)
+    a = _post_return(client, sales_user, q).json()
+    b = _post_return(client, sales_user, q).json()
+    assert {a["sold_inventory_item_id"], b["sold_inventory_item_id"]} == {first.id, second.id}

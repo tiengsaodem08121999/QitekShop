@@ -28,6 +28,9 @@ export default function RevenueProfitChart({ months }: { months: DashboardMonth[
   const t = useT();
   const revenue = months.map((m) => m.revenue);
   const profit = months.map((m) => m.profit);
+  const totalRevenue = revenue.reduce((s, v) => s + v, 0);
+  const totalProfit = profit.reduce((s, v) => s + v, 0);
+  const totalPct = totalRevenue ? Math.round((totalProfit / totalRevenue) * 100) : 0;
 
   const data = {
     labels: [...t.dashboard_month_labels],
@@ -87,8 +90,13 @@ export default function RevenueProfitChart({ months }: { months: DashboardMonth[
   };
 
   return (
-    <div className="h-[420px]">
-      <Bar data={data} options={options} />
-    </div>
+    <>
+      <p className="text-sm text-gray-500 mb-2">
+        {t.dashboard_year_total(totalProfit.toLocaleString(), totalRevenue.toLocaleString(), totalPct)}
+      </p>
+      <div className="h-[420px]">
+        <Bar data={data} options={options} />
+      </div>
+    </>
   );
 }
