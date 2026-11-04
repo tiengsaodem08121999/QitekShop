@@ -19,7 +19,8 @@ const vi: Translations = {
   // Nav
   nav_dashboard: "Tổng quan",
   nav_note: "Ghi chú",
-  nav_quotations: "Báo giá",
+  nav_quotations: "Bán hàng",
+  nav_buybacks: "Thu cũ",
   nav_customers: "Khách hàng",
   nav_finance: "Tài chính",
   nav_inventory: "Kho hàng",
@@ -143,7 +144,7 @@ const vi: Translations = {
   dashboard_sales_year_total: (profit: string, revenue: string, pct: number) => `Cả năm: lãi ${profit} trên ${revenue} tiền bán (${pct}%)`,
 
   // Quotations list
-  quotations_title: "Báo giá",
+  quotations_title: "Bán hàng",
   quotations_subtitle: "Quản lý báo giá khách hàng",
   quotations_new: "Tạo báo giá",
   quotations_total: "Tổng",
@@ -308,6 +309,26 @@ const vi: Translations = {
   customers_delete_prompt: (name: string) => `Xóa khách hàng ${name}?`,
   customers_delete_success: "Đã xóa khách hàng",
   customers_delete_blocked: (n: number) => `Khách hàng có ${n} báo giá — xóa báo giá trước`,
+
+  // Buybacks
+  buybacks_title: "Thu cũ",
+  buybacks_subtitle: "Danh sách báo giá thu cũ",
+  buybacks_new: "Tạo báo giá thu cũ",
+  buybacks_search: "Tìm theo tên...",
+  buybacks_col_title: "Tên",
+  buybacks_col_total_purchase: "Tổng giá thu",
+  buybacks_col_total_resale: "Tổng giá bán",
+  buybacks_empty: "Chưa có báo giá thu cũ nào",
+  buyback_title_label: "Tên báo giá thu cũ",
+  buyback_stock_hint: "Khi lưu, sản phẩm tự nhập vào kho và hiện trên trang /kho-hang. Giá bán tự hiện khi sản phẩm được bán ở Bán hàng hoặc Thu chi.",
+  buyback_line_locked: "Sản phẩm này đã bán hoặc đang giữ ở báo giá đã chốt nên một số ô đã bị khóa",
+  err_buyback_line_locked: "Không thể bỏ sản phẩm đã bán hoặc đang giữ ở báo giá đã chốt",
+  buyback_delete_prompt: "Xóa báo giá thu cũ này? Các sản phẩm của phiếu cũng sẽ bị xóa khỏi kho.",
+  buyback_delete_blocked: "Không thể xóa: phiếu có sản phẩm đã bán hoặc đang giữ ở báo giá đã chốt",
+  err_buyback_has_sold: "Không thể xóa báo giá thu cũ có sản phẩm đã bán hoặc đang giữ ở báo giá đã chốt",
+  buyback_delete_success: "Đã xóa báo giá thu cũ",
+  err_buyback_title_required: "Vui lòng nhập tên báo giá thu cũ",
+  err_buyback_no_items: "Vui lòng thêm ít nhất một sản phẩm",
 
   // Finance
   finance_tab_cashflow: "Quản lý thu chi",

@@ -4,11 +4,6 @@ A buyback (báo giá thu cũ) records goods bought back from a customer. It hold
 only trade-in lines, so it reuses their stock import and price sync. Every
 existing quotation is a sale.
 
-NOTE: the buyback feature was removed from the code, but this revision had
-already been applied to a database, so it must stay in the chain (deleting it
-makes `alembic upgrade head` fail with "Can't locate revision"). The extra
-column/nullability is unused by the code and harmless.
-
 Revision ID: 20261101bback
 Revises: 20261101dlvat
 Create Date: 2026-11-01 00:00:00.000000

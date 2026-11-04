@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { formatNumber, parseNumber } from "@/lib/format";
+import { FULL_CASE_NAMES } from "@/lib/inventoryItemTypes";
 import { useT } from "@/lib/i18n";
 import { apiError } from "@/lib/apiError";
 import { useToast } from "@/components/Toast";
@@ -47,9 +48,6 @@ function todayISO(): string {
 function blankItem(): QuotationItem {
   return { ...EMPTY_ITEM, warranty_start: todayISO() };
 }
-
-// Component rows seeded by the "Full case" button, in display order.
-const FULL_CASE_NAMES = ["Main", "CPU", "SSD", "Vga", "PSU", "Case", "Tản", "Fan", "Ram"];
 
 // True when a row is an untouched blankItem (no name, no S/N, no prices, not linked).
 function isBlankItem(item: QuotationItem): boolean {

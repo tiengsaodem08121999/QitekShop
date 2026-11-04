@@ -17,7 +17,8 @@ const en = {
   // Nav
   nav_dashboard: "Dashboard",
   nav_note: "Note",
-  nav_quotations: "Quotations",
+  nav_quotations: "Sales",
+  nav_buybacks: "Buybacks",
   nav_customers: "Customers",
   nav_finance: "Finance",
   nav_inventory: "Inventory",
@@ -141,7 +142,7 @@ const en = {
   dashboard_sales_year_total: (profit: string, revenue: string, pct: number) => `Whole year: ${profit} profit on ${revenue} sales (${pct}%)`,
 
   // Quotations list
-  quotations_title: "Quotations",
+  quotations_title: "Sales",
   quotations_subtitle: "Manage customer quotations",
   quotations_new: "New quotation",
   quotations_total: "Total",
@@ -306,6 +307,26 @@ const en = {
   customers_delete_prompt: (name: string) => `Delete customer ${name}?`,
   customers_delete_success: "Customer deleted",
   customers_delete_blocked: (n: number) => `Customer has ${n} quotation(s) — delete those first`,
+
+  // Buybacks
+  buybacks_title: "Buybacks",
+  buybacks_subtitle: "Buyback quotations",
+  buybacks_new: "New buyback",
+  buybacks_search: "Search by name...",
+  buybacks_col_title: "Name",
+  buybacks_col_total_purchase: "Total buy price",
+  buybacks_col_total_resale: "Total selling price",
+  buybacks_empty: "No buybacks yet",
+  buyback_title_label: "Buyback name",
+  buyback_stock_hint: "Saving adds the products to stock and to the /kho-hang page. The selling price appears once a product is sold through Sales or Finance.",
+  buyback_line_locked: "This product is sold or held by a confirmed quotation, so some fields are locked",
+  err_buyback_line_locked: "A product that is sold or held by a confirmed quotation cannot be removed",
+  buyback_delete_prompt: "Delete this buyback? Its products will also be removed from stock.",
+  buyback_delete_blocked: "Cannot delete: a product is sold or held by a confirmed quotation",
+  err_buyback_has_sold: "A buyback with a product sold or held by a confirmed quotation cannot be deleted",
+  buyback_delete_success: "Buyback deleted",
+  err_buyback_title_required: "Please enter a buyback name",
+  err_buyback_no_items: "Please add at least one product",
 
   // Finance
   finance_tab_cashflow: "Income & expenses",

@@ -17,6 +17,12 @@ class QuotationStatus(str, enum.Enum):
     delivered = "delivered"
 
 
+class QuotationKind(str, enum.Enum):
+    sale = "sale"
+    # Báo giá thu cũ: goods bought back, no customer, only trade-in lines.
+    buyback = "buyback"
+
+
 class WarrantyUnit(str, enum.Enum):
     week = "week"
     month = "month"
@@ -40,7 +46,13 @@ class Quotation(Base):
     __tablename__ = "quotations"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"))
+    # A buyback has no customer; a sale always has one.
+    customer_id: Mapped[Optional[int]] = mapped_column(ForeignKey("customers.id"), nullable=True)
+    kind: Mapped[QuotationKind] = mapped_column(
+        Enum(QuotationKind, name="quotationkind"), default=QuotationKind.sale, server_default="sale"
+    )
+    # User-given name of a buyback; a sale is named after its customer.
+    title: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     status: Mapped[QuotationStatus] = mapped_column(
         Enum(QuotationStatus), default=QuotationStatus.draft
     )
@@ -55,7 +67,7 @@ class Quotation(Base):
     # Day the quotation was marked delivered; its sale lines count as sold that month.
     delivered_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
-    customer: Mapped["Customer"] = relationship(back_populates="quotations")
+    customer: Mapped[Optional["Customer"]] = relationship(back_populates="quotations")
     items: Mapped[List["QuotationItem"]] = relationship(
         back_populates="quotation", cascade="all, delete-orphan"
     )

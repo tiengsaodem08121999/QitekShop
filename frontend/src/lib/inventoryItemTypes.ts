@@ -12,6 +12,9 @@ export const INVENTORY_ITEM_TYPES = [
 
 export const INVENTORY_ITEM_TYPE_OTHER = "Khác" as const;
 
+// Component rows seeded by a form's "Full case" button, in display order.
+export const FULL_CASE_NAMES = ["Main", "CPU", "SSD", "Vga", "PSU", "Case", "Tản", "Fan", "Ram"];
+
 export const INVENTORY_ITEM_TYPE_OPTIONS = [
   ...INVENTORY_ITEM_TYPES,
   INVENTORY_ITEM_TYPE_OTHER,

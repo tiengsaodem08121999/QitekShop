@@ -1,10 +1,5 @@
 """quotations.customer_id nullable: a buyback has no customer
 
-NOTE: the buyback feature was removed from the code, but this revision had
-already been applied to a database, so it must stay in the chain (deleting it
-makes `alembic upgrade head` fail with "Can't locate revision"). The extra
-column/nullability is unused by the code and harmless.
-
 Revision ID: 20261101bnocu
 Revises: 20261101bback
 Create Date: 2026-11-01 00:00:00.000000
