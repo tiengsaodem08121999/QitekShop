@@ -180,6 +180,36 @@ export interface PaginatedResponse<T> {
 
 export type YearlySummary = MonthlySummary[];
 
+export interface BuybackItem {
+  id?: number;
+  name: string;
+  serial_number: string | null;
+  purchase_price: number;
+  expected_price: number;
+  /** What the unit actually sold for; null until it is sold. */
+  selling_price: number | null;
+  inventory_item_id: number | null;
+  /** The whole line is read-only. */
+  sold: boolean;
+  /** Sold, or held by a confirmed quotation: expected price and removal are locked. */
+  locked: boolean;
+}
+
+export interface BuybackListItem {
+  id: number;
+  title: string;
+  total_purchase: number;
+  total_resale: number;
+  created_at: string;
+  /** False once a unit is sold or held by a confirmed quotation. */
+  deletable: boolean;
+}
+
+export interface Buyback extends BuybackListItem {
+  note: string | null;
+  items: BuybackItem[];
+}
+
 export interface MonthlySales {
   year: number;
   month: number;

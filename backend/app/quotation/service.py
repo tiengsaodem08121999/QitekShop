@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple
 from sqlalchemy.orm import Session, joinedload
 
 from app.finance.models import Transaction, TransactionType
-from app.quotation.models import Customer, Payment, PaymentMethod, PaymentType, Quotation, QuotationItem, QuotationStatus, Return, ReturnReason
+from app.quotation.models import Customer, Payment, PaymentMethod, PaymentType, Quotation, QuotationKind, QuotationItem, QuotationStatus, Return, ReturnReason
 from app.quotation.schemas import PaymentCreate, PaymentUpdate, ReturnCreate, ReturnUpdate, QuotationCreate, QuotationItemCreate, QuotationUpdate
 from app.quotation.warranty_status import count_warranty_status
 
@@ -157,6 +157,13 @@ def _import_trade_in_stock(db: Session, quotation, old_trade_in_links: set) -> N
         _copy_line_fields_to_stock(item, inv)
         db.flush()
         item.inventory_item_id = inv.id
+
+    _reclaim_dropped_trade_in_stock(db, quotation, old_trade_in_links)
+
+
+def _reclaim_dropped_trade_in_stock(db: Session, quotation, old_trade_in_links: set) -> None:
+    """Delete the stock of trade-in lines no longer on the quotation (unless sold/claimed)."""
+    from app.inventory.models import InventoryItem, InventoryStatus
 
     claimed = get_claimed_inventory_ids(db, exclude_quotation_id=quotation.id)
     current = {i.inventory_item_id for i in quotation.items if i.is_trade_in and i.inventory_item_id is not None}
@@ -314,7 +321,7 @@ def get_quotation(db: Session, quotation_id: int) -> Optional[Quotation]:
             joinedload(Quotation.payments),
             joinedload(Quotation.returns),
         )
-        .filter(Quotation.id == quotation_id)
+        .filter(Quotation.id == quotation_id, Quotation.kind == QuotationKind.sale)
         .first()
     )
 
@@ -326,7 +333,7 @@ def list_quotations(
     page: int = 1,
     limit: int = 20,
 ):
-    query = db.query(Quotation).join(Customer)
+    query = db.query(Quotation).join(Customer).filter(Quotation.kind == QuotationKind.sale)
     if status:
         query = query.filter(Quotation.status == status)
     if search:
@@ -494,7 +501,15 @@ def delete_quotation(db: Session, quotation_id: int) -> Optional[bool]:
         return None
     if quotation.payments or quotation.returns:
         raise ValueError("err_quotation_has_transactions")
+    _delete_quotation_with_stock(db, quotation)
+    return True
+
+
+def _delete_quotation_with_stock(db: Session, quotation) -> None:
+    """Delete a quotation, reclaiming the stock of its trade-ins (unless sold elsewhere)
+    and releasing units its sale lines sold."""
     from app.inventory.models import InventoryItem, InventoryStatus
+    quotation_id = quotation.id
     claimed_elsewhere = get_claimed_inventory_ids(db, exclude_quotation_id=quotation_id)
     for item in quotation.items:
         if item.inventory_item_id is None:
@@ -513,7 +528,6 @@ def delete_quotation(db: Session, quotation_id: int) -> Optional[bool]:
             inv.selling_price = None
     db.delete(quotation)
     db.commit()
-    return True
 
 
 def update_item_resale(
@@ -535,7 +549,12 @@ def update_item_resale(
     """
     item = (
         db.query(QuotationItem)
-        .filter(QuotationItem.id == item_id, QuotationItem.quotation_id == quotation_id)
+        .join(Quotation, Quotation.id == QuotationItem.quotation_id)
+        .filter(
+            QuotationItem.id == item_id,
+            QuotationItem.quotation_id == quotation_id,
+            Quotation.kind == QuotationKind.sale,
+        )
         .first()
     )
     if not item:
